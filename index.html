@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>کافی‌نت آنلاین | فاکتورساز</title>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { vazir: ["Vazirmatn", "sans-serif"] },
+            colors: {
+              brand: {
+                50: "#eef7ff",
+                100: "#d9edff",
+                500: "#0ea5e9",
+                600: "#0284c7",
+                700: "#0369a1",
+                900: "#0c4a6e",
+              },
+            },
+          },
+        },
+      };
+    </script>
+
+    <!-- فونت وزیر -->
+    <link
+      href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css"
+      rel="stylesheet"
+    />
+
+    <!-- قبل از </body> این کتابخونه رو اضافه کن -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+
+    <style>
+      * {
+        font-family: "Vazirmatn", sans-serif;
+      }
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 8px;
+      }
+
+      .fade-in {
+        animation: fade 0.25s ease;
+      }
+      @keyframes fade {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      .modal-backdrop {
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(3px);
+      }
+
+      /* ==================== چاپ ==================== */
+      #print-area {
+        display: none;
+      }
+
+      @media print {
+        @page {
+          size: A4 landscape;
+          margin: 8mm 10mm;
+        }
+
+        html,
+        body {
+          width: 100% !important;
+          height: auto !important;
+          background: #fff !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+
+        /* همه‌چیز داخل body مخفی، فقط فاکتور چاپ شود */
+        body > *:not(#print-area) {
+          display: none !important;
+        }
+
+        #print-area {
+          display: block !important;
+          width: 100% !important;
+          position: static !important;
+        }
+
+        /* چاپ دقیق رنگ‌ها و گرادیان‌ها */
+        #print-area,
+        #print-area * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+
+        /* جلوگیری از شکستن ردیف‌ها بین صفحات */
+        #print-area tr,
+        #print-area .inv-block {
+          page-break-inside: avoid;
+        }
+        #print-area thead {
+          display: table-header-group;
+        }
+      }
+    </style>
+  </head>
+
+  <body class="bg-slate-100 text-slate-800 min-h-screen">
+    <div class="app-root">
+      <!-- ===================== هدر ===================== -->
+      <header
+        class="no-print bg-white border-b border-slate-200 sticky top-0 z-40"
+      >
+        <div
+          class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3 flex-wrap"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="w-11 h-11 rounded-2xl bg-brand-600 text-white grid place-items-center text-xl font-bold shadow"
+            >
+              ک
+            </div>
+            <div>
+              <h1 class="font-extrabold text-lg leading-5">کافی‌نت آنلاین</h1>
+              <p class="text-xs text-slate-500">
+                سیستم صدور فاکتور و نرخ‌نامه خدمات
+              </p>
+            </div>
+          </div>
+          <div class="text-left">
+            <span class="text-xs text-slate-500 block">تاریخ امروز</span>
+            <span id="today-date" class="font-bold text-sm"></span>
+          </div>
+        </div>
+
+        <!-- تب‌ها -->
+        <nav class="max-w-7xl mx-auto px-4 flex gap-1 text-sm">
+          <button
+            data-view="invoice"
+            class="view-tab px-4 py-2.5 rounded-t-xl font-bold border-b-2 border-transparent"
+          >
+            🧾 صدور فاکتور
+          </button>
+          <button
+            data-view="products"
+            class="view-tab px-4 py-2.5 rounded-t-xl font-bold border-b-2 border-transparent"
+          >
+            📦 محصولات فیزیکی
+          </button>
+          <button
+            data-view="settings"
+            class="view-tab px-4 py-2.5 rounded-t-xl font-bold border-b-2 border-transparent"
+          >
+            ⚙️ تنظیمات
+          </button>
+        </nav>
+      </header>
+
+      <!-- ===================== بدنه ===================== -->
+      <main class="max-w-7xl mx-auto px-4 py-6">
+        <!-- ============ ویو: صدور فاکتور ============ -->
+        <section
+          id="view-invoice"
+          class="view grid grid-cols-1 lg:grid-cols-3 gap-6 items-start"
+        >
+          <!-- ستون راست: جستجو و انتخاب -->
+          <div class="lg:col-span-2 space-y-4">
+            <!-- سرچ سریع -->
+            <div
+              class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4"
+            >
+              <div class="relative">
+                <input
+                  id="search-input"
+                  type="text"
+                  placeholder="جستجوی سریع خدمات یا محصول… (مثلاً: ثنا، پرینت، فلش)"
+                  class="w-full rounded-xl border border-slate-300 py-3 pr-11 pl-4 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none"
+                />
+                <span class="absolute right-3.5 top-3.5 text-slate-400"
+                  >🔍</span
+                >
+              </div>
+              <!-- تب منبع -->
+              <div class="flex gap-2 mt-3">
+                <button
+                  data-src="services"
+                  class="src-tab px-4 py-1.5 rounded-full text-xs font-bold bg-brand-600 text-white"
+                >
+                  خدمات (نرخ‌نامه)
+                </button>
+                <button
+                  data-src="products"
+                  class="src-tab px-4 py-1.5 rounded-full text-xs font-bold bg-slate-200 text-slate-600"
+                >
+                  محصولات فیزیکی
+                </button>
+              </div>
+            </div>
+
+            <!-- فیلتر دسته‌بندی -->
+            <div id="cat-chips" class="no-print flex gap-2 flex-wrap"></div>
+
+            <!-- لیست آیتم‌ها -->
+            <div id="items-list" class="space-y-2"></div>
+          </div>
+
+          <!-- ستون چپ: فاکتور -->
+          <aside
+            class="bg-white rounded-2xl shadow-lg border border-slate-200 p-5 lg:sticky lg:top-32"
+          >
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="font-extrabold">🧾 فاکتور جاری</h2>
+              <button
+                id="btn-clear-invoice"
+                class="text-xs text-rose-600 font-bold hover:bg-rose-50 px-2 py-1 rounded-lg"
+              >
+                پاک کردن
+              </button>
+            </div>
+
+            <!-- مشخصات مشتری -->
+            <div class="grid grid-cols-2 gap-2 mb-3">
+              <input
+                id="cust-name"
+                placeholder="نام مشتری"
+                class="rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+              />
+              <input
+                id="cust-phone"
+                placeholder="شماره تماس"
+                class="rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+
+            <!-- آیتم‌های فاکتور -->
+            <div
+              id="invoice-items"
+              class="space-y-2 max-h-72 overflow-auto pl-1"
+            ></div>
+
+            <!-- تخفیف -->
+            <div class="flex items-center justify-between mt-4 text-sm">
+              <span class="text-slate-500 text-xs">تخفیف (تومان)</span>
+              <input
+                id="invoice-discount"
+                type="number"
+                min="0"
+                value="0"
+                class="w-28 rounded-lg border border-slate-300 px-2 py-1.5 text-left text-xs outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+
+            <!-- جمع‌ها -->
+            <div
+              class="mt-4 space-y-1.5 text-sm border-t border-dashed border-slate-300 pt-3"
+            >
+              <div class="flex justify-between text-slate-500">
+                <span>جمع اقلام</span><b id="sum-subtotal">۰</b>
+              </div>
+              <div class="flex justify-between text-rose-500">
+                <span>تخفیف</span><b id="sum-discount">۰</b>
+              </div>
+              <div
+                class="flex justify-between text-base font-extrabold text-brand-700"
+              >
+                <span>مبلغ قابل پرداخت</span><b id="sum-total">۰</b>
+              </div>
+            </div>
+
+            <!-- دکمه‌ها -->
+            <div class="grid grid-cols-2 gap-2 mt-5">
+              <button
+                id="btn-print"
+                class="bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl text-sm shadow"
+              >
+                🖨️ چاپ فاکتور
+              </button>
+              <button
+                id="btn-save"
+                class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm shadow"
+              >
+                💾 ثبت فاکتور
+              </button>
+            </div>
+          </aside>
+        </section>
+
+        <!-- ============ ویو: مدیریت محصولات ============ -->
+        <section id="view-products" class="view hidden space-y-5">
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <h2 class="font-extrabold text-lg">📦 مدیریت محصولات فیزیکی</h2>
+            <div class="flex gap-2">
+              <input
+                id="product-search"
+                placeholder="جستجوی محصول…"
+                class="rounded-xl border border-slate-300 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+              />
+              <button
+                id="btn-add-product"
+                class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow"
+              >
+                + محصول جدید
+              </button>
+            </div>
+          </div>
+          <div
+            id="products-grid"
+            class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4"
+          ></div>
+          <div
+            id="products-empty"
+            class="hidden bg-white border border-dashed border-slate-300 rounded-2xl p-10 text-center text-slate-400 text-sm"
+          >
+            هنوز محصولی ثبت نشده — روی «محصول جدید» بزنید.
+          </div>
+        </section>
+
+        <!-- ============ ویو: تنظیمات ============ -->
+        <section id="view-settings" class="view hidden">
+          <div class="max-w-2xl mx-auto">
+            <h2 class="font-extrabold text-lg mb-5">
+              ⚙️ اطلاعات کسب‌وکار (روی فاکتور نمایش داده می‌شود)
+            </h2>
+
+            <div
+              class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4"
+            >
+              <!-- لوگو -->
+              <div>
+                <label class="text-sm font-bold text-slate-700 block mb-2"
+                  >🖼️ لوگوی کافی‌نت</label
+                >
+                <div class="flex items-center gap-4">
+                  <div
+                    id="logo-preview"
+                    class="w-24 h-24 rounded-2xl bg-slate-100 border-2 border-dashed border-slate-300 grid place-items-center text-4xl overflow-hidden"
+                  >
+                    <span id="logo-placeholder">🖼️</span>
+                  </div>
+                  <div class="flex-1">
+                    <input
+                      id="shop-logo"
+                      type="file"
+                      accept="image/*"
+                      class="w-full text-xs border border-slate-300 rounded-lg p-2 bg-slate-50"
+                    />
+                    <button
+                      id="btn-remove-logo"
+                      class="mt-2 text-xs text-rose-600 hover:bg-rose-50 px-2 py-1 rounded"
+                    >
+                      حذف لوگو
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- نام -->
+              <div>
+                <label class="text-sm font-bold text-slate-700 block mb-1"
+                  >🏪 نام کافی‌نت</label
+                >
+                <input
+                  id="shop-name"
+                  placeholder="مثلاً: کافی‌نت آنلاین"
+                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+
+              <!-- شعار -->
+              <div>
+                <label class="text-sm font-bold text-slate-700 block mb-1"
+                  >✨ شعار / توضیح کوتاه</label
+                >
+                <input
+                  id="shop-slogan"
+                  placeholder="مثلاً: ارائه‌دهنده خدمات اینترنتی و ثبت‌نام‌های دولتی"
+                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="text-sm font-bold text-slate-700 block mb-1"
+                    >📞 تلفن</label
+                  >
+                  <input
+                    id="shop-phone"
+                    placeholder="۰۲۱-۱۲۳۴۵۶۷۸"
+                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+                <div>
+                  <label class="text-sm font-bold text-slate-700 block mb-1"
+                    >📍 آدرس</label
+                  >
+                  <input
+                    id="shop-address"
+                    placeholder="آدرس کامل"
+                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+              </div>
+
+              <button
+                id="btn-save-shop"
+                class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl text-sm shadow mt-4"
+              >
+                💾 ذخیره تنظیمات
+              </button>
+            </div>
+
+            <div
+              class="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-800"
+            >
+              💡 <b>نکته:</b> این اطلاعات در هدر فاکتور چاپی نمایش داده می‌شوند.
+              لوگو به صورت خودکار در سمت راست فاکتور قرار می‌گیرد.
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- ===================== مودال محصول ===================== -->
+      <div
+        id="product-modal"
+        class="hidden fixed inset-0 z-50 modal-backdrop grid place-items-center p-4"
+      >
+        <div
+          class="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-6 fade-in max-h-[90vh] overflow-auto"
+        >
+          <div class="flex justify-between items-center mb-4">
+            <h3 id="product-modal-title" class="font-extrabold">محصول جدید</h3>
+            <button
+              id="btn-close-modal"
+              class="text-slate-400 hover:text-rose-500 text-xl"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div class="space-y-3 text-sm">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs text-slate-500 block mb-1"
+                  >نام محصول *</label
+                >
+                <input
+                  id="p-name"
+                  class="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+              <div>
+                <label class="text-xs text-slate-500 block mb-1"
+                  >قیمت پایه (تومان) *</label
+                >
+                <input
+                  id="p-price"
+                  type="number"
+                  min="0"
+                  class="w-full rounded-lg border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label class="text-xs text-slate-500 block mb-1"
+                >تصویر محصول</label
+              >
+              <input
+                id="p-image"
+                type="file"
+                accept="image/*"
+                class="w-full text-xs border border-slate-300 rounded-lg p-2 bg-slate-50"
+              />
+              <img
+                id="p-preview"
+                class="hidden mt-2 w-24 h-24 object-cover rounded-xl border"
+              />
+            </div>
+
+            <!-- واریانت‌ها -->
+            <div>
+              <div class="flex justify-between items-center mb-1">
+                <label class="text-xs text-slate-500"
+                  >واریانت‌ها (مثل: حجم ۶۴ گیگ / طول ۱ متر)</label
+                >
+                <button
+                  id="btn-add-variant"
+                  class="text-xs font-bold text-brand-600 hover:bg-brand-50 px-2 py-1 rounded-lg"
+                >
+                  + افزودن واریانت
+                </button>
+              </div>
+              <div id="variants-list" class="space-y-2"></div>
+            </div>
+          </div>
+
+          <div class="flex gap-2 mt-6">
+            <button
+              id="btn-save-product"
+              class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl text-sm"
+            >
+              ذخیره محصول
+            </button>
+            <button
+              id="btn-cancel-product"
+              class="px-5 bg-slate-100 hover:bg-slate-200 rounded-xl text-sm font-bold"
+            >
+              انصراف
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== ناحیه پرینت فاکتور ===================== -->
+    <div id="print-area"></div>
+
+    <!-- توست -->
+    <div
+      id="toast"
+      class="hidden fixed bottom-5 right-5 z-50 bg-slate-800 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg fade-in"
+    ></div>
+
+    <script type="module" src="./src/js/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,272 @@
+import { RATE_CATEGORIES } from "../data/rates.js";
+import { store, faNum, todayFa } from "./store.js";
+import { addItemToInvoice, initInvoiceEvents } from "./invoice.js";
+import { renderProducts, initProductEvents } from "./products.js";
+
+const el = {
+  tabs: document.querySelectorAll(".view-tab"),
+  views: {
+    invoice: document.getElementById("view-invoice"),
+    products: document.getElementById("view-products"),
+    settings: document.getElementById("view-settings"),
+  },
+  srcTabs: document.querySelectorAll(".src-tab"),
+  search: document.getElementById("search-input"),
+  chips: document.getElementById("cat-chips"),
+  items: document.getElementById("items-list"),
+};
+
+let currentView = "invoice";
+let currentSource = "services"; // services | products
+let currentCat = "all";
+
+// ---------- ناوبری بین ویوها ----------
+function setView(view) {
+  currentView = view;
+  Object.entries(el.views).forEach(([k, v]) =>
+    v.classList.toggle("hidden", k !== view),
+  );
+  el.tabs.forEach((t) => {
+    const active = t.dataset.view === view;
+    t.classList.toggle("bg-brand-50", active);
+    t.classList.toggle("text-brand-700", active);
+    t.classList.toggle("border-brand-600", active);
+    t.classList.toggle("text-slate-500", !active);
+  });
+  if (view === "products") renderProducts();
+}
+
+el.tabs.forEach((t) =>
+  t.addEventListener("click", () => setView(t.dataset.view)),
+);
+
+// ---------- تغییر منبع (خدمات / محصولات) ----------
+function setSource(src) {
+  currentSource = src;
+  currentCat = "all";
+  el.srcTabs.forEach((b) => {
+    const active = b.dataset.src === src;
+    b.className = `src-tab px-4 py-1.5 rounded-full text-xs font-bold ${
+      active ? "bg-brand-600 text-white" : "bg-slate-200 text-slate-600"
+    }`;
+  });
+  renderChips();
+  renderItems();
+}
+
+el.srcTabs.forEach((b) =>
+  b.addEventListener("click", () => setSource(b.dataset.src)),
+);
+
+// ---------- چیپس دسته‌بندی ----------
+function renderChips() {
+  if (currentSource === "products") {
+    el.chips.innerHTML = "";
+    return;
+  }
+  el.chips.innerHTML =
+    `<button data-cat="all" class="cat-chip text-[11px] px-3 py-1.5 rounded-full border font-bold ${
+      currentCat === "all"
+        ? "bg-brand-600 text-white border-brand-600"
+        : "bg-white border-slate-300 text-slate-600"
+    }">همه</button>` +
+    RATE_CATEGORIES.map(
+      (c) =>
+        `<button data-cat="${c.id}" class="cat-chip text-[11px] px-3 py-1.5 rounded-full border font-bold ${
+          currentCat === c.id
+            ? "bg-brand-600 text-white border-brand-600"
+            : "bg-white border-slate-300 text-slate-600"
+        }">${c.title}</button>`,
+    ).join("");
+}
+
+el.chips.addEventListener("click", (e) => {
+  const cat = e.target.dataset.cat;
+  if (!cat) return;
+  currentCat = cat;
+  renderChips();
+  renderItems();
+});
+
+// ---------- سرچ سریع (ایندکس ساده برای سرعت) ----------
+function getAllServices() {
+  return RATE_CATEGORIES.flatMap((c) =>
+    c.items.map((i) => ({ ...i, catId: c.id, catTitle: c.title })),
+  );
+}
+
+function searchServices(q) {
+  const all = getAllServices();
+  if (!q) return all;
+  const query = q.trim();
+  // اولویت: شروع کلمه > شامل بودن
+  const starts = all.filter((s) => s.title.startsWith(query));
+  const contains = all.filter(
+    (s) => !s.title.startsWith(query) && s.title.includes(query),
+  );
+  return [...starts, ...contains];
+}
+
+function renderItems() {
+  const q = el.search.value.trim();
+
+  if (currentSource === "services") {
+    let services = searchServices(q);
+    if (currentCat !== "all")
+      services = services.filter((s) => s.catId === currentCat);
+
+    el.items.innerHTML = services.length
+      ? services
+          .map(
+            (s) => `
+        <div class="bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between gap-3 hover:border-brand-500 transition fade-in">
+          <div class="min-w-0">
+            <p class="text-sm font-bold truncate">${s.title}</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">${s.catTitle}</p>
+          </div>
+          <div class="shrink-0 text-left">
+            <p class="text-xs font-extrabold text-brand-700">${faNum(s.price)} تومان</p>
+            <button data-add-service="${s.id}" class="mt-1 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg font-bold">+ فاکتور</button>
+          </div>
+        </div>`,
+          )
+          .join("")
+      : `<p class="text-center text-slate-400 text-sm py-10">موردی یافت نشد.</p>`;
+    return;
+  }
+
+  // منبع: محصولات فیزیکی
+  const products = store.getProducts().filter((p) => !q || p.name.includes(q));
+
+  el.items.innerHTML = products.length
+    ? products
+        .map(
+          (p) => `
+      <div class="bg-white border border-slate-200 rounded-xl p-3 flex items-center gap-3 hover:border-brand-500 transition fade-in">
+        <div class="w-14 h-14 rounded-xl bg-slate-100 grid place-items-center overflow-hidden shrink-0">
+          ${p.image ? `<img src="${p.image}" class="w-full h-full object-cover" />` : "📦"}
+        </div>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-bold truncate">${p.name}</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">${faNum(p.price)} تومان</p>
+          ${p.variants?.length ? `<p class="text-[10px] text-slate-400">${p.variants.map((v) => v.name).join(" | ")}</p>` : ""}
+        </div>
+        <div class="shrink-0 flex flex-col gap-1">
+          <button data-add-product="${p.id}" class="text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg font-bold">+ فاکتور</button>
+          ${
+            p.variants?.length
+              ? p.variants
+                  .map(
+                    (v) =>
+                      `<button data-add-product="${p.id}" data-variant-id="${v.id}" class="text-[10px] bg-brand-50 text-brand-700 px-2 py-1 rounded-lg border border-brand-100 hover:bg-brand-100">${v.name} · ${faNum(v.price)}</button>`,
+                  )
+                  .join("")
+              : ""
+          }
+        </div>
+      </div>`,
+        )
+        .join("")
+    : `<p class="text-center text-slate-400 text-sm py-10">محصولی ثبت نشده است. از تب «محصولات فیزیکی» محصول اضافه کنید.</p>`;
+}
+
+// debounce ساده برای سرچ
+let searchTimer;
+el.search.addEventListener("input", () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(renderItems, 120);
+});
+
+// کلیک برای افزودن به فاکتور
+el.items.addEventListener("click", (e) => {
+  const sId = e.target.dataset.addService;
+  const pId = e.target.dataset.addProduct;
+  const vId = e.target.dataset.variantId;
+
+  if (sId) {
+    const s = getAllServices().find((x) => x.id === sId);
+    addItemToInvoice({ title: s.title, price: s.price, meta: s.catTitle });
+    toast("به فاکتور اضافه شد 🧾");
+  }
+
+  if (pId) {
+    const p = store.getProduct(pId);
+    if (vId) {
+      const v = p.variants.find((x) => x.id === vId);
+      addItemToInvoice({
+        title: p.name,
+        price: v.price,
+        meta: `واریانت: ${v.name}`,
+      });
+    } else {
+      addItemToInvoice({ title: p.name, price: p.price });
+    }
+    toast("به فاکتور اضافه شد 🧾");
+  }
+});
+
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.remove("hidden");
+  setTimeout(() => t.classList.add("hidden"), 2000);
+}
+
+// ---------- تنظیمات کسب‌وکار ----------
+function initSettings() {
+  const shop = store.getShopInfo();
+  document.getElementById("shop-name").value = shop.name || "";
+  document.getElementById("shop-slogan").value = shop.slogan || "";
+  document.getElementById("shop-phone").value = shop.phone || "";
+  document.getElementById("shop-address").value = shop.address || "";
+
+  const logoPreview = document.getElementById("logo-preview");
+  const logoPlaceholder = document.getElementById("logo-placeholder");
+  if (shop.logo) {
+    logoPreview.innerHTML = `<img src="${shop.logo}" class="w-full h-full object-contain" />`;
+  }
+
+  let tempLogo = shop.logo || "";
+
+  document.getElementById("shop-logo").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      tempLogo = reader.result;
+      logoPreview.innerHTML = `<img src="${tempLogo}" class="w-full h-full object-contain" />`;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById("btn-remove-logo").addEventListener("click", () => {
+    tempLogo = "";
+    logoPreview.innerHTML = '<span id="logo-placeholder">🖼️</span>';
+    document.getElementById("shop-logo").value = "";
+  });
+
+  document.getElementById("btn-save-shop").addEventListener("click", () => {
+    const info = {
+      name:
+        document.getElementById("shop-name").value.trim() || "کافی‌نت آنلاین",
+      slogan: document.getElementById("shop-slogan").value.trim(),
+      phone: document.getElementById("shop-phone").value.trim(),
+      address: document.getElementById("shop-address").value.trim(),
+      logo: tempLogo,
+    };
+    store.saveShopInfo(info);
+
+    const toast = document.getElementById("toast");
+    toast.textContent = "✅ تنظیمات ذخیره شد";
+    toast.classList.remove("hidden");
+    setTimeout(() => toast.classList.add("hidden"), 2200);
+  });
+}
+
+// ---------- init ----------
+document.getElementById("today-date").textContent = todayFa();
+initInvoiceEvents();
+initProductEvents();
+initSettings();
+setView("invoice");
+setSource("services");
