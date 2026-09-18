@@ -1,1 +1,1 @@
-(src/js/invoices-list.js)
+Nothing should be ignored in this case, as the only modified file is a source code file (.js) without any build artifacts, dependencies, or temporary files in the changes.
