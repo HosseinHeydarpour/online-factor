@@ -25,7 +25,6 @@ const EMPTY_CUSTOMER = {
   age: "",
   notes: "",
 };
-
 const state = {
   items: [],
   discount: 0,
@@ -68,7 +67,7 @@ export function clearInvoice() {
   state.customer = { ...EMPTY_CUSTOMER }; // ✅
   el.custName.value = ""; // ✅
   el.custPhone.value = ""; // ✅
-  setCustomerDetailsFormValues(state.customer); // ✅ سینک دیالوگ
+  setCustomerDetailsFormValues(state.customer); // ✅
   updateDetailsBadge(); // ✅
   const defaultRadio = document.querySelector(
     'input[name="payment-method"][value="نقدی"]',
@@ -422,10 +421,7 @@ export function saveInvoice() {
     (state.customer.name || "").trim() ||
     (state.customer.phone || "").trim()
   ) {
-    store.saveCustomer({
-      name: state.customer.name,
-      phone: state.customer.phone,
-    });
+    store.saveCustomer({ ...state.customer });
   }
 
   store.saveInvoice(invoice);
@@ -436,6 +432,7 @@ export function saveInvoice() {
   alert(`فاکتور شماره ${faNum(invoice.number)} ذخیره شد ✅`);
   clearInvoice();
 }
+
 export function initInvoiceEvents() {
   // بیمه احتیاطی: print-area باید فرزند مستقیم body باشد تا CSS چاپ درست کار کند
   if (el.printArea && el.printArea.parentElement !== document.body) {
@@ -508,6 +505,24 @@ export function initInvoiceEvents() {
     setCustomerDetailsFormValues(state.customer);
     updateDetailsBadge();
   });
+  // ✅ دکمه دیالوگ اطلاعات تکمیلی
+  document
+    .getElementById("btn-open-customer-details")
+    ?.addEventListener("click", () => {
+      openCustomerDetails(state.customer, (data) => {
+        state.customer = { ...state.customer, ...data };
+        updateDetailsBadge();
+      });
+    });
 
+  // ✅ سینک شدن فیلدهای تکمیلی وقتی مشتری از تب مشتریان انتخاب می‌شود
+  window.addEventListener("customer-selected", (e) => {
+    const c = e.detail || {};
+    state.customer = { ...EMPTY_CUSTOMER, ...c };
+    el.custName.value = c.name || "";
+    el.custPhone.value = c.phone || "";
+    setCustomerDetailsFormValues(state.customer);
+    updateDetailsBadge();
+  });
   render();
 }

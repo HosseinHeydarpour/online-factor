@@ -106,7 +106,7 @@ export const store = {
       lastSeen: toJalali().full,
     };
     FIELDS.forEach((f) => {
-      // اگر کلید در آبجکت ورودی هست (حتی خالی) همان را بگیر، وگرنه مقدار قبلی را نگه دار
+      // اگر کلید در ورودی هست (حتی خالی) همان را بگیر، وگرنه مقدار قبلی را نگه دار
       record[f] =
         f in customer ? String(customer[f] ?? "").trim() : existing[f] || "";
     });

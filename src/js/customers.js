@@ -8,7 +8,7 @@ const el = {
 };
 
 /* ============================================================
-   دیالوگ اطلاعات تکمیلی مشتری (کنترل‌کننده مرکزی)
+   دیالوگ اطلاعات تکمیلی مشتری
 ============================================================ */
 const detailsEl = {
   modal: null,
@@ -96,7 +96,7 @@ export function hasCustomerExtras(c = {}) {
 }
 
 /* ============================================================
-   تب مشتریان
+   تب مشتریان — جدول
 ============================================================ */
 export function initCustomers() {
   el.list = document.getElementById("customers-list");
@@ -157,44 +157,68 @@ export function renderCustomers(query = "") {
   });
 
   el.list.innerHTML = `
-    <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-700 shadow-sm">
-      ${filtered
-        .map((c) => {
-          const count = countByPhone[c.phone] || 0;
-          const last = lastByPhone[c.phone];
-          const lastDate = last ? last.date : "—";
-          const initial = (c.name || "؟").charAt(0);
-          const extrasLine = [
-            c.nationalCode ? `کد ملی: ${c.nationalCode}` : "",
-            c.birthCertNo ? `شناسنامه: ${c.birthCertNo}` : "",
-            c.gender || "",
-            c.age ? `سن ${c.age}` : "",
-            c.address || "",
-          ]
-            .filter(Boolean)
-            .join(" · ");
-          return `
-          <div class="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition">
-            <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 font-extrabold grid place-items-center shrink-0">${initial}</div>
-            <div class="min-w-0 flex-1">
-              <p class="font-bold text-sm truncate">${c.name || "بدون نام"}</p>
-              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">${c.phone || "بدون شماره"}</p>
-              ${extrasLine ? `<p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 truncate">📋 ${extrasLine}</p>` : ""}
-            </div>
-            <div class="text-left shrink-0 hidden md:block">
-              <p class="text-[11px] text-slate-400">آخرین: <span class="font-bold text-slate-600 dark:text-slate-300">${lastDate}</span></p>
-              <p class="text-xs font-bold text-brand-700 dark:text-brand-400 mt-0.5">${faNum(count)} فاکتور</p>
-            </div>
-            <span class="md:hidden text-[10px] font-bold text-brand-700 dark:text-brand-400 shrink-0">${faNum(count)} فاکتور</span>
-            <div class="flex items-center gap-1.5 shrink-0">
-              <button data-use-customer="${c.id}" title="افزودن به فاکتور" class="text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 sm:px-3 py-2 rounded-lg font-bold">➕ فاکتور</button>
-              <button data-details-customer="${c.id}" title="اطلاعات تکمیلی" class="text-xs bg-brand-50 dark:bg-slate-700 hover:bg-brand-100 dark:hover:bg-slate-600 text-brand-700 dark:text-brand-400 px-2.5 py-2 rounded-lg font-bold">📋</button>
-              <button data-edit-customer="${c.id}" title="ویرایش" class="text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-2.5 py-2 rounded-lg font-bold">✏️</button>
-              <button data-delete-customer="${c.id}" title="حذف" class="text-xs bg-rose-50 dark:bg-rose-900/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 px-2.5 py-2 rounded-lg font-bold">🗑️</button>
-            </div>
-          </div>`;
-        })
-        .join("")}
+    <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-slate-50 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 text-xs">
+              <th class="py-3 px-3 text-right font-bold">مشتری</th>
+              <th class="py-3 px-3 text-right font-bold">شماره تماس</th>
+              <th class="py-3 px-3 text-right font-bold">کد ملی</th>
+              <th class="py-3 px-3 text-right font-bold">جنسیت / سن</th>
+              <th class="py-3 px-3 text-right font-bold">آدرس</th>
+              <th class="py-3 px-3 text-right font-bold">توضیحات</th>
+              <th class="py-3 px-3 text-center font-bold">فاکتورها</th>
+              <th class="py-3 px-3 text-right font-bold">آخرین فاکتور</th>
+              <th class="py-3 px-3 text-center font-bold">عملیات</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
+            ${filtered
+              .map((c) => {
+                const count = countByPhone[c.phone] || 0;
+                const last = lastByPhone[c.phone];
+                const lastDate = last ? last.date : "—";
+                const initial = (c.name || "؟").charAt(0);
+                const genderAge = [
+                  c.gender || "",
+                  c.age ? `${faNum(c.age)} سال` : "",
+                ]
+                  .filter(Boolean)
+                  .join(" / ");
+                return `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition">
+                  <td class="py-3 px-3">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span class="w-9 h-9 rounded-lg bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 font-extrabold grid place-items-center shrink-0">${initial}</span>
+                      <span class="font-bold text-slate-800 dark:text-slate-100 truncate">${c.name || "بدون نام"}</span>
+                    </div>
+                  </td>
+                  <td class="py-3 px-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">${c.phone || "—"}</td>
+                  <td class="py-3 px-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">${c.nationalCode || "—"}</td>
+                  <td class="py-3 px-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">${genderAge || "—"}</td>
+                  <td class="py-3 px-3 max-w-[200px]">
+                    <span class="block truncate text-slate-500 dark:text-slate-400" title="${c.address || ""}">${c.address || "—"}</span>
+                  </td>
+                  <td class="py-3 px-3 max-w-[180px]">
+                    <span class="block truncate text-slate-500 dark:text-slate-400" title="${c.notes || ""}">${c.notes || "—"}</span>
+                  </td>
+                  <td class="py-3 px-3 text-center font-bold text-brand-700 dark:text-brand-400">${faNum(count)}</td>
+                  <td class="py-3 px-3 text-slate-500 dark:text-slate-400 whitespace-nowrap">${lastDate}</td>
+                  <td class="py-3 px-3">
+                    <div class="flex items-center justify-center gap-1.5">
+                      <button data-use-customer="${c.id}" title="افزودن به فاکتور" class="text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-2 rounded-lg font-bold">➕</button>
+                      <button data-details-customer="${c.id}" title="اطلاعات تکمیلی" class="text-xs bg-brand-50 dark:bg-slate-700 hover:bg-brand-100 dark:hover:bg-slate-600 text-brand-700 dark:text-brand-400 px-2.5 py-2 rounded-lg font-bold">📋</button>
+                      <button data-edit-customer="${c.id}" title="ویرایش نام/شماره" class="text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-2.5 py-2 rounded-lg font-bold">✏️</button>
+                      <button data-delete-customer="${c.id}" title="حذف" class="text-xs bg-rose-50 dark:bg-rose-900/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 px-2.5 py-2 rounded-lg font-bold">🗑️</button>
+                    </div>
+                  </td>
+                </tr>`;
+              })
+              .join("")}
+          </tbody>
+        </table>
+      </div>
     </div>`;
 
   el.list.querySelectorAll("[data-use-customer]").forEach((btn) => {
@@ -256,7 +280,7 @@ export function renderCustomers(query = "") {
 }
 
 /* ============================================================
-   خروجی اکسل — با ستون‌های اطلاعات تکمیلی
+   خروجی اکسل
 ============================================================ */
 export function exportCustomersExcel() {
   const customers = store.getCustomers();
