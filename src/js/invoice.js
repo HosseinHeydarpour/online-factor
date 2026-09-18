@@ -259,21 +259,23 @@ const PAGE = {
 };
 
 // اندازه‌گیری مخفیانه ارتفاع sheet با عرض واقعی صفحه چاپ
-function measureSheet(sheet) {
-  const area = el.printArea;
-  area.style.cssText =
+export function measureSheet(sheet, widthPx = PAGE.widthPx) {
+  const printArea = document.getElementById("print-area");
+  if (!printArea) return 0;
+  printArea.style.cssText =
     "display:block;position:absolute;left:-10000px;top:0;" +
     "width:" +
-    PAGE.widthPx +
+    widthPx +
     "px;visibility:hidden;";
   const h = sheet.scrollHeight;
-  area.style.cssText = "";
+  printArea.style.cssText = "";
   return h;
 }
 
-function fitToSinglePage() {
-  const fit = el.printArea.querySelector("#invoice-fit");
-  const sheet = el.printArea.querySelector("#invoice-sheet");
+export async function fitToSinglePage() {
+  const printArea = document.getElementById("print-area");
+  const fit = printArea.querySelector("#invoice-fit");
+  const sheet = printArea.querySelector("#invoice-sheet");
   if (!fit || !sheet) return;
 
   // ۱) ریست کامل
@@ -283,8 +285,14 @@ function fitToSinglePage() {
   sheet.style.transformOrigin = "";
   sheet.style.width = "100%";
 
+  const PAGE = {
+    widthPx: 1047,
+    heightPx: 715,
+    minZoom: 0.55,
+  };
+
   // ۲) اندازه‌گیری ارتفاع محتوا در عرض استاندارد
-  const contentH = measureSheet(sheet);
+  const contentH = measureSheet(sheet, PAGE.widthPx);
   if (contentH <= PAGE.heightPx) return; // خودش در یک صفحه جا می‌شود
 
   // ۳) محاسبه ضریب کوچک‌نمایی
@@ -303,7 +311,7 @@ function fitToSinglePage() {
   sheet.style.transform = "scale(" + z + ")";
 
   // ۵) اندازه‌گیری ارتفاع چیدمان جدید (در عرض بزرگ‌تر) و تنظیم ارتفاع پوشش
-  const h2 = measureSheet(sheet);
+  const h2 = measureSheet(sheet, PAGE.widthPx);
   fit.style.overflow = "hidden";
   fit.style.height = Math.ceil(h2 * z) + 4 + "px";
 
