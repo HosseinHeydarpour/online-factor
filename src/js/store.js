@@ -79,6 +79,11 @@ export const store = {
     return read(KEYS.INVOICES, []);
   },
 
+  setInvoices(list) {
+    write(KEYS.INVOICES, list);
+    return list;
+  },
+
   // ---------- اطلاعات کسب‌وکار ----------
   getShopInfo() {
     return read(KEYS.SHOP, {

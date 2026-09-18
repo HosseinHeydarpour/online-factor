@@ -4,6 +4,7 @@ import { addItemToInvoice, initInvoiceEvents } from "./invoice.js";
 import { renderProducts, initProductEvents } from "./products.js";
 import { initInvoicesList } from "./invoices-list.js";
 import { initAuth } from "./auth.js";
+import { initBackup } from "./backup.js";
 
 const el = {
   tabs: document.querySelectorAll(".view-tab"),
@@ -341,6 +342,7 @@ initAuth(); // ✅ اول از همه: بررسی نشست / نمایش صفحه
 initInvoiceEvents();
 initProductEvents();
 initSettings();
+initBackup();
 window.initInvoiceDetailEvents();
 setView("invoice");
 setSource("services");
