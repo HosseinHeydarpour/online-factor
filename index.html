@@ -9,7 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
-        darkMode: 'class',
+        darkMode: "class",
         theme: {
           extend: {
             fontFamily: { vazir: ["Vazirmatn", "sans-serif"] },
@@ -35,20 +35,30 @@
     />
 
     <!-- Flatpickr + Jalali Plugin -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" id="flatpickr-theme" href="https://npmcdn.com/flatpickr/dist/themes/light.css">
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+    />
+    <link
+      rel="stylesheet"
+      id="flatpickr-theme"
+      href="https://npmcdn.com/flatpickr/dist/themes/light.css"
+    />
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    
+
     <!-- jQuery (required for persian-datepicker) -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    
+
     <!-- Chart.js برای نمودارها (باید قبل از ماژول‌ها لود شود) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    
+
     <!-- Persian Datepicker -->
     <script src="https://cdn.jsdelivr.net/npm/persian-date@1.1.0/dist/persian-date.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css"
+    />
 
     <style>
       * {
@@ -129,10 +139,111 @@
           display: table-header-group;
         }
       }
+
+      /* ===== تب‌های نوبار با پشتیبانی دارک‌مود ===== */
+      .view-tab {
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .view-tab:focus {
+        outline: none; /* حذف حلقه فوکوس سفید */
+      }
+      .view-tab.active {
+        background-color: #eef7ff; /* brand-50 */
+        color: #0369a1; /* brand-700 */
+        border-color: #0284c7; /* brand-600 */
+      }
+      .dark .view-tab.active {
+        background-color: #334155; /* slate-700 */
+        color: #7dd3fc; /* آبی روشن */
+        border-color: #0ea5e9; /* brand-500 */
+      }
+
+      /* ===== رفع سفیدی اینپوت‌ها در دارک‌مود ===== */
+      .dark input,
+      .dark textarea,
+      .dark select {
+        background-color: #334155;
+        color: #f1f5f9;
+      }
+      .dark input::placeholder,
+      .dark textarea::placeholder {
+        color: #94a3b8;
+      }
+
+      /* ===== دارک‌مود: override رنگ‌های روشن داخل templateهای JS ===== */
+      .dark .bg-white {
+        background-color: #1e293b;
+      }
+      .dark .bg-slate-50 {
+        background-color: #253347;
+      }
+      .dark .bg-slate-100 {
+        background-color: #334155;
+      }
+      .dark .bg-slate-200 {
+        background-color: #405066;
+      }
+
+      .dark .bg-brand-50 {
+        background-color: rgba(14, 165, 233, 0.16);
+      }
+      .dark .bg-brand-100 {
+        background-color: rgba(14, 165, 233, 0.28);
+      }
+      .dark .bg-rose-50 {
+        background-color: rgba(244, 63, 94, 0.16);
+      }
+
+      .dark .hover\:bg-slate-50:hover {
+        background-color: #334155;
+      }
+      .dark .hover\:bg-slate-100:hover {
+        background-color: #334155;
+      }
+      .dark .hover\:bg-slate-200:hover {
+        background-color: #475569;
+      }
+      .dark .hover\:bg-brand-100:hover {
+        background-color: rgba(14, 165, 233, 0.3);
+      }
+      .dark .hover\:bg-rose-100:hover {
+        background-color: rgba(244, 63, 94, 0.3);
+      }
+
+      .dark .text-slate-800,
+      .dark .text-slate-700 {
+        color: #e2e8f0;
+      }
+      .dark .text-slate-600 {
+        color: #cbd5e1;
+      }
+      .dark .text-slate-500 {
+        color: #9fb0c3;
+      }
+      .dark .text-brand-700 {
+        color: #7dd3fc;
+      }
+      .dark .text-rose-600 {
+        color: #fda4af;
+      }
+      .dark .text-rose-500 {
+        color: #fb7185;
+      }
+
+      .dark .border-slate-100,
+      .dark .border-slate-200 {
+        border-color: #334155;
+      }
+      .dark .border-brand-100 {
+        border-color: rgba(14, 165, 233, 0.35);
+      }
     </style>
   </head>
 
-  <body class="bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-screen">
+  <body
+    class="bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-screen"
+  >
     <div class="app-root">
       <!-- ===================== هدر ===================== -->
       <header
@@ -155,7 +266,9 @@
             </div>
           </div>
           <div class="text-left">
-            <span class="text-xs text-slate-500 dark:text-slate-400 block">تاریخ امروز</span>
+            <span class="text-xs text-slate-500 dark:text-slate-400 block"
+              >تاریخ امروز</span
+            >
             <span id="today-date" class="font-bold text-sm"></span>
           </div>
           <button
@@ -228,7 +341,8 @@
                   placeholder="جستجوی سریع خدمات یا محصول… (مثلاً: ثنا، پرینت، فلش)"
                   class="w-full rounded-xl border border-slate-300 dark:border-slate-600 py-3 pr-11 pl-4 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none"
                 />
-                <span class="absolute right-3.5 top-3.5 text-slate-400 dark:text-slate-300"
+                <span
+                  class="absolute right-3.5 top-3.5 text-slate-400 dark:text-slate-300"
                   >🔍</span
                 >
               </div>
@@ -303,10 +417,14 @@
             <div
               class="mt-4 space-y-1.5 text-sm border-t border-dashed border-slate-300 dark:border-slate-600 pt-3"
             >
-              <div class="flex justify-between text-slate-500 dark:text-slate-400">
+              <div
+                class="flex justify-between text-slate-500 dark:text-slate-400"
+              >
                 <span>جمع اقلام</span><b id="sum-subtotal">۰</b>
               </div>
-              <div class="flex justify-between text-rose-500 dark:text-rose-400">
+              <div
+                class="flex justify-between text-rose-500 dark:text-rose-400"
+              >
                 <span>تخفیف</span><b id="sum-discount">۰</b>
               </div>
               <div
@@ -367,58 +485,126 @@
         <!-- ============ ویو: گزارش‌گیری درآمد ============ -->
         <section id="view-reports" class="view hidden space-y-6">
           <!-- کنترل‌های تاریخ -->
-          <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5">
+          <div
+            class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5"
+          >
             <div class="flex items-center justify-between flex-wrap gap-4 mb-4">
               <h2 class="font-extrabold text-lg">📊 گزارش‌گیری درآمد</h2>
               <div class="flex gap-2">
-                <button id="btn-today-report" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 transition">امروز</button>
-                <button id="btn-month-report" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 transition">این ماه</button>
-                <button id="btn-year-report" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 transition">امسال</button>
+                <button
+                  id="btn-today-report"
+                  class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 transition"
+                >
+                  امروز
+                </button>
+                <button
+                  id="btn-month-report"
+                  class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 transition"
+                >
+                  این ماه
+                </button>
+                <button
+                  id="btn-year-report"
+                  class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 transition"
+                >
+                  امسال
+                </button>
               </div>
             </div>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label class="text-xs text-slate-500 dark:text-slate-400 block mb-1">تاریخ شروع</label>
-                <input type="text" id="report-start-date" placeholder="1404/01/01" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm text-left outline-none focus:ring-2 focus:ring-brand-500" dir="ltr" />
+                <label
+                  class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
+                  >تاریخ شروع</label
+                >
+                <input
+                  type="text"
+                  id="report-start-date"
+                  placeholder="1404/01/01"
+                  class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm text-left outline-none focus:ring-2 focus:ring-brand-500"
+                  dir="ltr"
+                />
               </div>
               <div>
-                <label class="text-xs text-slate-500 dark:text-slate-400 block mb-1">تاریخ پایان</label>
-                <input type="text" id="report-end-date" placeholder="1404/12/29" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm text-left outline-none focus:ring-2 focus:ring-brand-500" dir="ltr" />
+                <label
+                  class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
+                  >تاریخ پایان</label
+                >
+                <input
+                  type="text"
+                  id="report-end-date"
+                  placeholder="1404/12/29"
+                  class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm text-left outline-none focus:ring-2 focus:ring-brand-500"
+                  dir="ltr"
+                />
               </div>
               <div class="flex items-end">
-                <button id="btn-apply-report" class="w-full bg-brand-600 hover:bg-brand-700 dark:bg-brand-600 dark:hover:bg-brand-700 text-white dark:text-white font-bold py-2 rounded-lg text-sm shadow">اعمال فیلتر</button>
+                <button
+                  id="btn-apply-report"
+                  class="w-full bg-brand-600 hover:bg-brand-700 dark:bg-brand-600 dark:hover:bg-brand-700 text-white dark:text-white font-bold py-2 rounded-lg text-sm shadow"
+                >
+                  اعمال فیلتر
+                </button>
               </div>
             </div>
           </div>
-          
+
           <!-- خلاصه گزارش -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-slate-700 dark:to-slate-800 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-5">
-              <p class="text-sm text-emerald-600 dark:text-emerald-400 font-bold mb-1">💰 کل درآمد</p>
-              <p id="report-total-revenue" class="text-2xl font-extrabold text-emerald-800 dark:text-emerald-300">۰ تومان</p>
+            <div
+              class="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-slate-700 dark:to-slate-800 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-5"
+            >
+              <p
+                class="text-sm text-emerald-600 dark:text-emerald-400 font-bold mb-1"
+              >
+                💰 کل درآمد
+              </p>
+              <p
+                id="report-total-revenue"
+                class="text-2xl font-extrabold text-emerald-800 dark:text-emerald-300"
+              >
+                ۰ تومان
+              </p>
             </div>
-            <div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-slate-700 dark:to-slate-800 border border-blue-200 dark:border-blue-800 rounded-2xl p-5">
-              <p class="text-sm text-blue-600 dark:text-blue-400 font-bold mb-1">🧾 تعداد فاکتورها</p>
-              <p id="report-total-invoices" class="text-2xl font-extrabold text-blue-800 dark:text-blue-300">۰ فاکتور</p>
+            <div
+              class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-slate-700 dark:to-slate-800 border border-blue-200 dark:border-blue-800 rounded-2xl p-5"
+            >
+              <p
+                class="text-sm text-blue-600 dark:text-blue-400 font-bold mb-1"
+              >
+                🧾 تعداد فاکتورها
+              </p>
+              <p
+                id="report-total-invoices"
+                class="text-2xl font-extrabold text-blue-800 dark:text-blue-300"
+              >
+                ۰ فاکتور
+              </p>
             </div>
           </div>
-          
+
           <!-- خدمات پرفروش -->
-          <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5">
+          <div
+            class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5"
+          >
             <h3 class="font-extrabold text-base mb-4">🏆 خدمات پرفروش</h3>
             <div id="top-services-list" class="space-y-2"></div>
           </div>
-          
+
           <!-- چارت‌ها -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5">
+            <div
+              class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5"
+            >
               <h3 class="font-extrabold text-base mb-4">📈 درآمد روزانه</h3>
               <div id="daily-chart-container" class="h-64">
                 <canvas id="daily-chart"></canvas>
               </div>
             </div>
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5">
+            <div
+              class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5"
+            >
               <h3 class="font-extrabold text-base mb-4">📊 درآمد ماهانه</h3>
               <div id="monthly-chart-container" class="h-64">
                 <canvas id="monthly-chart"></canvas>
@@ -439,23 +625,56 @@
               />
             </div>
           </div>
-          
+
           <!-- خلاصه آمار -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-slate-700 dark:to-slate-800 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-5">
-              <p class="text-sm text-emerald-600 dark:text-emerald-400 font-bold mb-1">💰 کل درآمد</p>
-              <p id="invoices-total-revenue" class="text-2xl font-extrabold text-emerald-800 dark:text-emerald-300">۰ تومان</p>
+            <div
+              class="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-slate-700 dark:to-slate-800 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-5"
+            >
+              <p
+                class="text-sm text-emerald-600 dark:text-emerald-400 font-bold mb-1"
+              >
+                💰 کل درآمد
+              </p>
+              <p
+                id="invoices-total-revenue"
+                class="text-2xl font-extrabold text-emerald-800 dark:text-emerald-300"
+              >
+                ۰ تومان
+              </p>
             </div>
-            <div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-slate-700 dark:to-slate-800 border border-blue-200 dark:border-blue-800 rounded-2xl p-5">
-              <p class="text-sm text-blue-600 dark:text-blue-400 font-bold mb-1">🧾 تعداد فاکتورها</p>
-              <p id="invoices-total-count" class="text-2xl font-extrabold text-blue-800 dark:text-blue-300">۰ فاکتور</p>
+            <div
+              class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-slate-700 dark:to-slate-800 border border-blue-200 dark:border-blue-800 rounded-2xl p-5"
+            >
+              <p
+                class="text-sm text-blue-600 dark:text-blue-400 font-bold mb-1"
+              >
+                🧾 تعداد فاکتورها
+              </p>
+              <p
+                id="invoices-total-count"
+                class="text-2xl font-extrabold text-blue-800 dark:text-blue-300"
+              >
+                ۰ فاکتور
+              </p>
             </div>
-            <div class="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-2xl p-5">
-              <p class="text-sm text-purple-600 font-bold mb-1">📅 میانگین روزانه</p>
-              <p id="invoices-avg-daily" class="text-2xl font-extrabold text-purple-800">۰ تومان</p>
+            <div
+              class="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-slate-700 dark:to-slate-800 border border-purple-200 dark:border-purple-800 rounded-2xl p-5"
+            >
+              <p
+                class="text-sm text-purple-600 dark:text-purple-400 font-bold mb-1"
+              >
+                📅 میانگین روزانه
+              </p>
+              <p
+                id="invoices-avg-daily"
+                class="text-2xl font-extrabold text-purple-800 dark:text-purple-300"
+              >
+                ۰ تومان
+              </p>
             </div>
           </div>
-          
+
           <!-- لیست فاکتورها -->
           <div id="invoices-list" class="space-y-3"></div>
           <div
@@ -470,18 +689,27 @@
         <section id="view-invoice-detail" class="view hidden">
           <div class="max-w-4xl mx-auto">
             <!-- دکمه بازگشت -->
-            <button id="btn-back-to-invoices" class="mb-4 flex items-center gap-2 text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 dark:text-brand-400 transition">
+            <button
+              id="btn-back-to-invoices"
+              class="mb-4 flex items-center gap-2 text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 dark:text-brand-400 transition"
+            >
               ← بازگشت به لیست فاکتورها
             </button>
-            
+
             <!-- محتوای فاکتور -->
-            <div id="invoice-detail-content" class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div
+              id="invoice-detail-content"
+              class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden"
+            >
               <!-- محتوا توسط جاوااسکریپت پر می‌شود -->
             </div>
-            
+
             <!-- دکمه‌های عملیات -->
             <div class="flex justify-end gap-3 mt-5">
-              <button id="btn-print-from-detail" class="bg-brand-600 hover:bg-brand-700 dark:bg-brand-600 dark:hover:bg-brand-700 text-white dark:text-white font-bold py-2.5 px-6 rounded-xl text-sm shadow flex items-center gap-2">
+              <button
+                id="btn-print-from-detail"
+                class="bg-brand-600 hover:bg-brand-700 dark:bg-brand-600 dark:hover:bg-brand-700 text-white dark:text-white font-bold py-2.5 px-6 rounded-xl text-sm shadow flex items-center gap-2"
+              >
                 🖨️ چاپ فاکتور
               </button>
             </div>
@@ -613,7 +841,8 @@
           <div class="space-y-3 text-sm">
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
+                <label
+                  class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
                   >نام محصول *</label
                 >
                 <input
@@ -622,7 +851,8 @@
                 />
               </div>
               <div>
-                <label class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
+                <label
+                  class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
                   >قیمت پایه (تومان) *</label
                 >
                 <input
@@ -635,7 +865,8 @@
             </div>
 
             <div>
-              <label class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
+              <label
+                class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
                 >تصویر محصول</label
               >
               <input
@@ -696,56 +927,59 @@
 
     <!-- Chart.js برای نمودارها -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    
+
     <!-- QR Code -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 
     <!-- Dark Mode Script -->
     <script>
       // Dark Mode Toggle Script
-      (function() {
+      (function () {
         const html = document.documentElement;
-        const themeToggle = document.getElementById('theme-toggle');
-        const flatpickrTheme = document.getElementById('flatpickr-theme');
-        
+        const themeToggle = document.getElementById("theme-toggle");
+        const flatpickrTheme = document.getElementById("flatpickr-theme");
+
         // Check for saved theme preference or default to light mode
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        if (savedTheme === 'dark') {
-          html.classList.add('dark');
+        const savedTheme = localStorage.getItem("theme") || "light";
+        if (savedTheme === "dark") {
+          html.classList.add("dark");
           if (flatpickrTheme) {
-            flatpickrTheme.href = 'https://npmcdn.com/flatpickr/dist/themes/dark.css';
+            flatpickrTheme.href =
+              "https://npmcdn.com/flatpickr/dist/themes/dark.css";
           }
           if (themeToggle) {
-            themeToggle.innerHTML = '☀️ حالت روشن';
+            themeToggle.innerHTML = "☀️ حالت روشن";
           }
         }
-        
+
         // Toggle theme on button click
         if (themeToggle) {
-          themeToggle.addEventListener('click', function() {
-            html.classList.toggle('dark');
-            const isDark = html.classList.contains('dark');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            
+          themeToggle.addEventListener("click", function () {
+            html.classList.toggle("dark");
+            const isDark = html.classList.contains("dark");
+            localStorage.setItem("theme", isDark ? "dark" : "light");
+
             // Update flatpickr theme
             if (flatpickrTheme) {
-              flatpickrTheme.href = isDark 
-                ? 'https://npmcdn.com/flatpickr/dist/themes/dark.css'
-                : 'https://npmcdn.com/flatpickr/dist/themes/light.css';
+              flatpickrTheme.href = isDark
+                ? "https://npmcdn.com/flatpickr/dist/themes/dark.css"
+                : "https://npmcdn.com/flatpickr/dist/themes/light.css";
             }
-            
+
             // Update button icon
-            this.innerHTML = isDark ? '☀️ حالت روشن' : '🌙 حالت تاریک';
+            this.innerHTML = isDark ? "☀️ حالت روشن" : "🌙 حالت تاریک";
           });
         }
       })();
     </script>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script type="module">
-      import { initReports } from './src/js/reports.js';
+      import { initReports } from "./src/js/reports.js";
       window.initReports = initReports;
-      
-      import { initInvoicesList } from './src/js/invoices-list.js';
+
+      import { initInvoicesList } from "./src/js/invoices-list.js";
       window.initInvoicesList = initInvoicesList;
     </script>
 

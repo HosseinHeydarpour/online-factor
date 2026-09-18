@@ -26,31 +26,20 @@ let expandedCategories = new Set(); // دسته‌بندی‌های باز شد�
 // ---------- ناوبری بین ویوها ----------
 function setView(view) {
   currentView = view;
+
   Object.entries(el.views).forEach(([k, v]) =>
     v.classList.toggle("hidden", k !== view),
   );
+
+  // ✅ فقط یک کلاس active — استایل‌ها در CSS با پشتیبانی دارک‌مود تعریف شده‌اند
   el.tabs.forEach((t) => {
-    const active = t.dataset.view === view;
-    t.classList.toggle("bg-brand-50", active);
-    t.classList.toggle("text-brand-700", active);
-    t.classList.toggle("border-brand-600", active);
-    t.classList.toggle("text-slate-500", !active);
+    t.classList.toggle("active", t.dataset.view === view);
   });
 
-  // مدیریت تب مشاهده فاکتور - این تب فقط هنگام مشاهده فاکتور نمایش داده می‌شود
+  // مدیریت نمایش تب «مشاهده فاکتور» (فقط hidden شدن، بدون دستکاری رنگ)
   const detailTab = document.getElementById("tab-invoice-detail");
   if (view === "invoice-detail") {
     detailTab?.classList.remove("hidden");
-    // فعال کردن تب مشاهده فاکتور
-    el.tabs.forEach((t) => {
-      if (t.dataset.view === "invoice-detail") {
-        t.classList.add("bg-brand-50", "text-brand-700", "border-brand-600");
-        t.classList.remove("text-slate-500");
-      } else {
-        t.classList.remove("bg-brand-50", "text-brand-700", "border-brand-600");
-        t.classList.add("text-slate-500");
-      }
-    });
   } else if (view !== "invoices" && view !== "invoice-detail") {
     detailTab?.classList.add("hidden");
   }
