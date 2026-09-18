@@ -2,16 +2,15 @@ import { store, faNum, toJalali } from "./store.js";
 import { autoSaveInvoices } from "./backup.js";
 import { autoPushGitHub } from "./github.js";
 
-const el = {
-  list: null,
-  empty: null,
-  search: null,
-  total: null,
-};
+const el = { list: null, empty: null, search: null, total: null };
 
-/* ============================================================
-   دیالوگ اطلاعات تکمیلی مشتری
-============================================================ */
+// 💾 سینک بک‌آپ بعد از هر تغییر مشتریان
+function syncBackup() {
+  autoSaveInvoices();
+  autoPushGitHub();
+}
+
+/* ========== دیالوگ اطلاعات تکمیلی ========== */
 const detailsEl = {
   modal: null,
   national: null,
@@ -31,16 +30,15 @@ function initDetailsModal() {
   detailsEl.age = document.getElementById("cd-age");
   detailsEl.address = document.getElementById("cd-address");
   detailsEl.notes = document.getElementById("cd-notes");
-
   if (!detailsEl.modal || detailsEl.modal.dataset.bound) return;
   detailsEl.modal.dataset.bound = "1";
-
   document
     .getElementById("btn-close-customer-details")
     .addEventListener("click", closeCustomerDetails);
-  detailsEl.modal.addEventListener("click", (e) => {
-    if (e.target === detailsEl.modal) closeCustomerDetails();
-  });
+  detailsEl.modal.addEventListener(
+    "click",
+    (e) => e.target === detailsEl.modal && closeCustomerDetails(),
+  );
   document
     .getElementById("btn-save-customer-details")
     .addEventListener("click", () => {
@@ -97,38 +95,118 @@ export function hasCustomerExtras(c = {}) {
   );
 }
 
-/* ============================================================
-   تب مشتریان — جدول
-============================================================ */
+/* ========== مودال مشتری جدید (بدون فاکتور) ========== */
+const formEl = {
+  modal: null,
+  name: null,
+  phone: null,
+  national: null,
+  birthcert: null,
+  gender: null,
+  age: null,
+  address: null,
+  notes: null,
+};
+
+function initCustomerForm() {
+  formEl.modal = document.getElementById("customer-form-modal");
+  if (!formEl.modal || formEl.modal.dataset.bound) return;
+  formEl.modal.dataset.bound = "1";
+  formEl.name = document.getElementById("cf-name");
+  formEl.phone = document.getElementById("cf-phone");
+  formEl.national = document.getElementById("cf-national");
+  formEl.birthcert = document.getElementById("cf-birthcert");
+  formEl.gender = document.getElementById("cf-gender");
+  formEl.age = document.getElementById("cf-age");
+  formEl.address = document.getElementById("cf-address");
+  formEl.notes = document.getElementById("cf-notes");
+  document
+    .getElementById("btn-close-customer-form")
+    .addEventListener("click", closeCustomerForm);
+  document
+    .getElementById("btn-cancel-customer-form")
+    .addEventListener("click", closeCustomerForm);
+  formEl.modal.addEventListener(
+    "click",
+    (e) => e.target === formEl.modal && closeCustomerForm(),
+  );
+  document
+    .getElementById("btn-save-customer-form")
+    .addEventListener("click", saveCustomerFromForm);
+}
+
+function clearCustomerForm() {
+  ["name", "phone", "national", "birthcert", "age", "address", "notes"].forEach(
+    (k) => formEl[k] && (formEl[k].value = ""),
+  );
+  if (formEl.gender) formEl.gender.value = "";
+}
+
+export function openCustomerForm() {
+  if (!formEl.modal) initCustomerForm();
+  clearCustomerForm();
+  formEl.modal.classList.remove("hidden");
+  setTimeout(() => formEl.name?.focus(), 60);
+}
+
+function closeCustomerForm() {
+  formEl.modal?.classList.add("hidden");
+}
+
+function saveCustomerFromForm() {
+  const name = formEl.name?.value.trim() || "";
+  const phone = formEl.phone?.value.trim() || "";
+  if (!name && !phone) return alert("حداقل نام یا شماره تماس را وارد کنید.");
+  if (phone) {
+    const dup = store.getCustomers().find((c) => c.phone === phone);
+    if (
+      dup &&
+      !confirm(
+        `مشتری با شماره ${phone} قبلاً ثبت شده (${dup.name || "بدون نام"}).\nاطلاعات همان مشتری به‌روزرسانی شود؟`,
+      )
+    )
+      return;
+  }
+  store.saveCustomer({
+    name,
+    phone,
+    nationalCode: formEl.national?.value.trim() || "",
+    birthCertNo: formEl.birthcert?.value.trim() || "",
+    gender: formEl.gender?.value || "",
+    age: formEl.age?.value.trim() || "",
+    address: formEl.address?.value.trim() || "",
+    notes: formEl.notes?.value.trim() || "",
+  });
+  closeCustomerForm();
+  renderCustomers(el.search?.value.trim() || "");
+  toast("مشتری ذخیره شد ✅");
+  syncBackup();
+}
+
+/* ========== تب مشتریان ========== */
 export function initCustomers() {
   el.list = document.getElementById("customers-list");
   el.empty = document.getElementById("customers-empty");
   el.search = document.getElementById("customer-search");
   el.total = document.getElementById("customers-total-count");
-
   initDetailsModal();
-
+  initCustomerForm();
   if (el.search && !el.search.dataset.bound) {
     el.search.dataset.bound = "1";
-    el.search.addEventListener("input", () => {
-      renderCustomers(el.search.value.trim());
-    });
+    el.search.addEventListener("input", () =>
+      renderCustomers(el.search.value.trim()),
+    );
   }
-
   const exportBtn = document.getElementById("btn-export-customers");
   if (exportBtn && !exportBtn.dataset.bound) {
     exportBtn.dataset.bound = "1";
     exportBtn.addEventListener("click", exportCustomersExcel);
   }
-
-  initCustomerForm();
-
   const addBtn = document.getElementById("btn-add-customer");
   if (addBtn && !addBtn.dataset.bound) {
     addBtn.dataset.bound = "1";
     addBtn.addEventListener("click", openCustomerForm);
   }
-
   renderCustomers();
 }
 
@@ -143,9 +221,7 @@ export function renderCustomers(query = "") {
       (c.phone || "").toLowerCase().includes(q) ||
       (c.nationalCode || "").toLowerCase().includes(q),
   );
-
   if (el.total) el.total.textContent = faNum(customers.length) + " نفر";
-
   if (!filtered.length) {
     el.list.innerHTML = "";
     el.empty?.classList.remove("hidden");
@@ -153,7 +229,6 @@ export function renderCustomers(query = "") {
   }
   el.empty?.classList.add("hidden");
 
-  // آمار از روی فاکتورها
   const invoices = store.getInvoices();
   const countByPhone = {};
   const lastByPhone = {};
@@ -161,9 +236,8 @@ export function renderCustomers(query = "") {
     const ph = inv.customer?.phone || "";
     if (!ph) return;
     countByPhone[ph] = (countByPhone[ph] || 0) + 1;
-    if (!lastByPhone[ph] || (inv.date && inv.date > lastByPhone[ph].date)) {
+    if (!lastByPhone[ph] || (inv.date && inv.date > lastByPhone[ph].date))
       lastByPhone[ph] = inv;
-    }
   });
 
   el.list.innerHTML = `
@@ -187,8 +261,9 @@ export function renderCustomers(query = "") {
             ${filtered
               .map((c) => {
                 const count = countByPhone[c.phone] || 0;
-                const last = lastByPhone[c.phone];
-                const lastDate = last ? last.date : "—";
+                const lastDate = lastByPhone[c.phone]
+                  ? lastByPhone[c.phone].date
+                  : "—";
                 const initial = (c.name || "؟").charAt(0);
                 const genderAge = [
                   c.gender || "",
@@ -207,12 +282,8 @@ export function renderCustomers(query = "") {
                   <td class="py-3 px-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">${c.phone || "—"}</td>
                   <td class="py-3 px-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">${c.nationalCode || "—"}</td>
                   <td class="py-3 px-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">${genderAge || "—"}</td>
-                  <td class="py-3 px-3 max-w-[200px]">
-                    <span class="block truncate text-slate-500 dark:text-slate-400" title="${c.address || ""}">${c.address || "—"}</span>
-                  </td>
-                  <td class="py-3 px-3 max-w-[180px]">
-                    <span class="block truncate text-slate-500 dark:text-slate-400" title="${c.notes || ""}">${c.notes || "—"}</span>
-                  </td>
+                  <td class="py-3 px-3 max-w-[200px]"><span class="block truncate text-slate-500 dark:text-slate-400" title="${c.address || ""}">${c.address || "—"}</span></td>
+                  <td class="py-3 px-3 max-w-[180px]"><span class="block truncate text-slate-500 dark:text-slate-400" title="${c.notes || ""}">${c.notes || "—"}</span></td>
                   <td class="py-3 px-3 text-center font-bold text-brand-700 dark:text-brand-400">${faNum(count)}</td>
                   <td class="py-3 px-3 text-slate-500 dark:text-slate-400 whitespace-nowrap">${lastDate}</td>
                   <td class="py-3 px-3">
@@ -257,6 +328,7 @@ export function renderCustomers(query = "") {
         store.saveCustomer({ ...c, ...data });
         renderCustomers(el.search?.value.trim() || "");
         toast("اطلاعات تکمیلی مشتری ذخیره شد ✅");
+        syncBackup();
       });
     });
   });
@@ -275,6 +347,7 @@ export function renderCustomers(query = "") {
       store.saveCustomer({ ...c, name: name.trim(), phone: phone.trim() });
       renderCustomers(el.search?.value.trim() || "");
       toast("مشتری ویرایش شد ✅");
+      syncBackup();
     });
   });
 
@@ -285,17 +358,15 @@ export function renderCustomers(query = "") {
       store.deleteCustomer(btn.dataset.deleteCustomer);
       renderCustomers(el.search?.value.trim() || "");
       toast("مشتری حذف شد 🗑️");
+      syncBackup(); // ✅ بک‌آپ بلافاصله بعد از حذف
     });
   });
 }
 
-/* ============================================================
-   خروجی اکسل
-============================================================ */
+/* ========== خروجی اکسل ========== */
 export function exportCustomersExcel() {
   const customers = store.getCustomers();
   if (!customers.length) return alert("مشتری‌ای برای خروجی وجود ندارد!");
-
   const invoices = store.getInvoices();
   const countByPhone = {};
   const sumByPhone = {};
@@ -305,11 +376,9 @@ export function exportCustomersExcel() {
     if (!ph) return;
     countByPhone[ph] = (countByPhone[ph] || 0) + 1;
     sumByPhone[ph] = (sumByPhone[ph] || 0) + inv.total;
-    if (!lastByPhone[ph] || (inv.date && inv.date > lastByPhone[ph].date)) {
+    if (!lastByPhone[ph] || (inv.date && inv.date > lastByPhone[ph].date))
       lastByPhone[ph] = inv;
-    }
   });
-
   const rows = customers.map((c, i) => ({
     ردیف: i + 1,
     "نام مشتری": c.name || "",
@@ -325,9 +394,7 @@ export function exportCustomersExcel() {
     "تاریخ آخرین فاکتور": lastByPhone[c.phone]?.date || "",
     "آخرین مشاهده": c.lastSeen || "",
   }));
-
   const fileName = `customers-${toJalali().full.replaceAll("/", "-")}`;
-
   if (window.XLSX) {
     const ws = XLSX.utils.json_to_sheet(rows);
     ws["!cols"] = [
@@ -375,102 +442,4 @@ function toast(msg) {
   t.textContent = msg;
   t.classList.remove("hidden");
   setTimeout(() => t.classList.add("hidden"), 2200);
-}
-
-/* ============================================================
-   مودال ثبت مشتری جدید (بدون فاکتور)
-============================================================ */
-const formEl = {
-  modal: null,
-  name: null,
-  phone: null,
-  national: null,
-  birthcert: null,
-  gender: null,
-  age: null,
-  address: null,
-  notes: null,
-};
-
-function initCustomerForm() {
-  formEl.modal = document.getElementById("customer-form-modal");
-  if (!formEl.modal || formEl.modal.dataset.bound) return;
-  formEl.modal.dataset.bound = "1";
-
-  formEl.name = document.getElementById("cf-name");
-  formEl.phone = document.getElementById("cf-phone");
-  formEl.national = document.getElementById("cf-national");
-  formEl.birthcert = document.getElementById("cf-birthcert");
-  formEl.gender = document.getElementById("cf-gender");
-  formEl.age = document.getElementById("cf-age");
-  formEl.address = document.getElementById("cf-address");
-  formEl.notes = document.getElementById("cf-notes");
-
-  document
-    .getElementById("btn-close-customer-form")
-    .addEventListener("click", closeCustomerForm);
-  document
-    .getElementById("btn-cancel-customer-form")
-    .addEventListener("click", closeCustomerForm);
-  formEl.modal.addEventListener("click", (e) => {
-    if (e.target === formEl.modal) closeCustomerForm();
-  });
-  document
-    .getElementById("btn-save-customer-form")
-    .addEventListener("click", saveCustomerFromForm);
-}
-
-function clearCustomerForm() {
-  ["name", "phone", "national", "birthcert", "age", "address", "notes"].forEach(
-    (k) => formEl[k] && (formEl[k].value = ""),
-  );
-  if (formEl.gender) formEl.gender.value = "";
-}
-
-export function openCustomerForm() {
-  if (!formEl.modal) initCustomerForm();
-  clearCustomerForm();
-  formEl.modal.classList.remove("hidden");
-  setTimeout(() => formEl.name?.focus(), 60);
-}
-
-function closeCustomerForm() {
-  formEl.modal?.classList.add("hidden");
-}
-
-function saveCustomerFromForm() {
-  const name = formEl.name?.value.trim() || "";
-  const phone = formEl.phone?.value.trim() || "";
-  if (!name && !phone) return alert("حداقل نام یا شماره تماس را وارد کنید.");
-
-  // جلوگیری از ثبت تکراری: اگر مشتری با این شماره هست، سؤال کن
-  if (phone) {
-    const dup = store.getCustomers().find((c) => c.phone === phone);
-    if (
-      dup &&
-      !confirm(
-        `مشتری با شماره ${phone} قبلاً ثبت شده (${dup.name || "بدون نام"}).\nاطلاعات همان مشتری به‌روزرسانی شود؟`,
-      )
-    )
-      return;
-  }
-
-  store.saveCustomer({
-    name,
-    phone,
-    nationalCode: formEl.national?.value.trim() || "",
-    birthCertNo: formEl.birthcert?.value.trim() || "",
-    gender: formEl.gender?.value || "",
-    age: formEl.age?.value.trim() || "",
-    address: formEl.address?.value.trim() || "",
-    notes: formEl.notes?.value.trim() || "",
-  });
-
-  closeCustomerForm();
-  renderCustomers(el.search?.value.trim() || "");
-  toast("مشتری ذخیره شد ✅");
-
-  // 💾 بک‌آپ کامل بعد از ثبت مشتری
-  autoSaveInvoices();
-  autoPushGitHub();
 }

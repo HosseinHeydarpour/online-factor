@@ -329,7 +329,9 @@ export async function restoreFromGitHub({ replace = false } = {}) {
     }
 
     // ----- اطلاعات کسب‌وکار (فقط در حالت جایگزینی) -----
-    if (shop && replace) store.saveShopInfo(shop);
+    if (shop && typeof shop === "object") {
+      store.saveShopInfo({ ...store.getShopInfo(), ...shop });
+    }
 
     // ----- همگام‌سازی شمارنده شماره فاکتور -----
     const maxNum = store
@@ -383,12 +385,26 @@ export function initGitHubUI() {
     updateStatus();
     alert("تنظیمات گیت‌هاب ذخیره شد ✅");
   });
-  $("btn-gh-test").addEventListener("click", testGitHubConnection);
-  $("btn-gh-push").addEventListener("click", () =>
-    pushBackupToGitHub().then(updateStatus),
-  );
-  $("btn-gh-restore").addEventListener("click", () =>
-    restoreFromGitHub({ replace: $("gh-restore-replace").checked }),
-  );
+  const readFormConfig = () => ({
+    owner: $("gh-owner").value.trim(),
+    repo: $("gh-repo").value.trim(),
+    branch: $("gh-branch").value.trim() || "main",
+    token: $("gh-token").value.trim(),
+    autoPush: $("gh-autopush").checked,
+  });
+
+  $("btn-gh-test").addEventListener("click", async () => {
+    saveGitHubConfig(readFormConfig());
+    await testGitHubConnection();
+  });
+  $("btn-gh-push").addEventListener("click", async () => {
+    saveGitHubConfig(readFormConfig());
+    await pushBackupToGitHub();
+    updateStatus();
+  });
+  $("btn-gh-restore").addEventListener("click", async () => {
+    saveGitHubConfig(readFormConfig());
+    await restoreFromGitHub({ replace: $("gh-restore-replace").checked });
+  });
   updateStatus();
 }

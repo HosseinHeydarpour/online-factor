@@ -89,7 +89,6 @@ export const store = {
     let idx = -1;
     if (phone) idx = list.findIndex((c) => c.phone === phone);
     else if (customer.id) idx = list.findIndex((c) => c.id === customer.id);
-
     const existing = idx >= 0 ? list[idx] : {};
     const FIELDS = [
       "name",
@@ -106,11 +105,9 @@ export const store = {
       lastSeen: toJalali().full,
     };
     FIELDS.forEach((f) => {
-      // اگر کلید در ورودی هست (حتی خالی) همان را بگیر، وگرنه مقدار قبلی را نگه دار
       record[f] =
         f in customer ? String(customer[f] ?? "").trim() : existing[f] || "";
     });
-
     if (idx >= 0) list[idx] = record;
     else list.unshift(record);
     write(KEYS.CUSTOMERS, list);
