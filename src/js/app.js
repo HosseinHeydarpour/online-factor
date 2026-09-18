@@ -36,7 +36,7 @@ function setView(view) {
     t.classList.toggle("border-brand-600", active);
     t.classList.toggle("text-slate-500", !active);
   });
-  
+
   // مدیریت تب مشاهده فاکتور - این تب فقط هنگام مشاهده فاکتور نمایش داده می‌شود
   const detailTab = document.getElementById("tab-invoice-detail");
   if (view === "invoice-detail") {
@@ -54,11 +54,13 @@ function setView(view) {
   } else if (view !== "invoices" && view !== "invoice-detail") {
     detailTab?.classList.add("hidden");
   }
-  
+
   if (view === "products") renderProducts();
   if (view === "reports" && window.initReports) window.initReports();
   if (view === "invoices") initInvoicesList();
 }
+
+window.setView = setView;
 
 el.tabs.forEach((t) =>
   t.addEventListener("click", () => setView(t.dataset.view)),
@@ -91,9 +93,9 @@ function getAllServices() {
 function searchServices(q) {
   const all = getAllServices();
   if (!q) return RATE_CATEGORIES; // برگرداندن کل دسته‌بندی‌ها وقتی سرچ خالی است
-  
+
   const query = q.trim();
-  
+
   // پیدا کردن دسته‌بندی‌هایی که عنوانشان با جستجو مطابقت دارد
   return RATE_CATEGORIES.filter((c) => c.title.includes(query));
 }
@@ -103,24 +105,23 @@ function renderItems() {
 
   if (currentSource === "services") {
     let categories = searchServices(q);
-    
+
     el.items.innerHTML = categories.length
       ? categories
-          .map(
-            (c) => {
-              const isExpanded = expandedCategories.has(c.id);
-              return `
+          .map((c) => {
+            const isExpanded = expandedCategories.has(c.id);
+            return `
         <div class="bg-white border border-slate-200 rounded-xl overflow-hidden fade-in">
           <!-- سر‌دسته خدمات -->
-          <div data-cat-id="${c.id}" class="cat-header flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50 transition ${isExpanded ? 'bg-brand-50' : ''}">
+          <div data-cat-id="${c.id}" class="cat-header flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50 transition ${isExpanded ? "bg-brand-50" : ""}">
             <div class="flex items-center gap-2 min-w-0">
-              <span class="text-lg">${isExpanded ? '🔽' : '▶️'}</span>
+              <span class="text-lg">${isExpanded ? "🔽" : "▶️"}</span>
               <p class="text-sm font-bold truncate">${c.title}</p>
             </div>
             <span class="text-xs text-slate-400 shrink-0">${faNum(c.items.length)} خدمت</span>
           </div>
           <!-- زیرمجموعه‌ها -->
-          <div class="cat-items space-y-2 p-3 ${isExpanded ? '' : 'hidden'}">
+          <div class="cat-items space-y-2 p-3 ${isExpanded ? "" : "hidden"}">
             ${c.items
               .map(
                 (s) => `
@@ -137,15 +138,14 @@ function renderItems() {
               .join("")}
           </div>
         </div>`;
-            }
-          )
+          })
           .join("")
       : `<p class="text-center text-slate-400 text-sm py-10">موردی یافت نشد.</p>`;
-    
+
     // افزودن ایونت برای کلیک روی سر‌دسته‌ها
     setTimeout(() => {
-      document.querySelectorAll('.cat-header').forEach(header => {
-        header.addEventListener('click', () => {
+      document.querySelectorAll(".cat-header").forEach((header) => {
+        header.addEventListener("click", () => {
           const catId = header.dataset.catId;
           if (expandedCategories.has(catId)) {
             expandedCategories.delete(catId);
@@ -156,7 +156,7 @@ function renderItems() {
         });
       });
     }, 0);
-    
+
     return;
   }
 
