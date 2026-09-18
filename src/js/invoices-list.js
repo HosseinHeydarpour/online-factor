@@ -168,4 +168,3 @@ window.printInvoice = async function(invId) {
   }, 300);
 };
 
-export { printInvoice: window.printInvoice, viewInvoice: window.viewInvoice };
