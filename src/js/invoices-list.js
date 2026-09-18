@@ -119,10 +119,17 @@ function renderInvoicesList(query = "") {
 
 // قرار دادن توابع در window برای دسترسی از طریق onclick
 window.viewInvoice = function(invId) {
-  const invoice = store.getInvoices().find(inv => inv.id === invId);
-  if (!invoice) return;
+  // تبدیل id رشته‌ای به عدد (چون از HTML می‌آید)
+  const numericId = Number(invId);
+  const invoice = store.getInvoices().find(inv => inv.id === numericId);
   
-  // نمایش مودال یا آلرت با جزئیات فاکتور
+  console.log("GOH");
+  if (!invoice) {
+    console.log("Invoice not found! Received ID:", invId, "Type:", typeof invId);
+    return;
+  }
+  
+  console.log(invoice);
   let itemsHtml = invoice.items.map(item => 
     `• ${item.title} ${item.meta ? `(${item.meta})` : ''}: ${faNum(item.qty)} × ${faNum(item.price)} = ${faNum(item.price * item.qty)} تومان`
   ).join('\n');
