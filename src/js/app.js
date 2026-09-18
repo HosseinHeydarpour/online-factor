@@ -99,12 +99,19 @@ function searchServices(q) {
   const all = getAllServices();
   if (!q) return all;
   const query = q.trim();
-  // اولویت: شروع کلمه > شامل بودن
-  const starts = all.filter((s) => s.title.startsWith(query));
-  const contains = all.filter(
-    (s) => !s.title.startsWith(query) && s.title.includes(query),
-  );
-  return [...starts, ...contains];
+  
+  // پیدا کردن دسته‌بندی‌هایی که عنوانشان با جستجو مطابقت دارد
+  const matchingCatIds = RATE_CATEGORIES
+    .filter((c) => c.title.includes(query))
+    .map((c) => c.id);
+  
+  // اگر دسته‌بندی مطابقی یافت شد، فقط آیتم‌های آن دسته‌بندی‌ها را برگردان
+  if (matchingCatIds.length > 0) {
+    return all.filter((s) => matchingCatIds.includes(s.catId));
+  }
+  
+  // در غیر این صورت هیچ نتیجه‌ای برنگردان
+  return [];
 }
 
 function renderItems() {
