@@ -73,27 +73,41 @@ export const store = {
   // ---------- گزارش‌گیری ----------
   getReportData(startDate, endDate) {
     const invoices = this.getInvoices();
-    const start = startDate ? fromJalali(...startDate.split('/').map(Number)).getTime() : 0;
-    const end = endDate ? fromJalali(...endDate.split('/').map(Number)).setHours(23, 59, 59, 999) : Infinity;
+    
+    // اگر تاریخ شروع و پایان داده نشده باشد، از امروز استفاده کن
+    let start, end;
+    if (startDate && endDate) {
+      const [sy, sm, sd] = startDate.split('/').map(Number);
+      const [ey, em, ed] = endDate.split('/').map(Number);
+      start = fromJalali(sy, sm, sd).getTime();
+      end = fromJalali(ey, em, ed).setHours(23, 59, 59, 999);
+    } else {
+      const today = toJalali();
+      const [ty, tm, td] = today.full.split('/').map(Number);
+      start = fromJalali(ty, tm, td).getTime();
+      end = fromJalali(ty, tm, td).setHours(23, 59, 59, 999);
+    }
     
     const filtered = invoices.filter(inv => {
-      const invDate = new Date(inv.date).getTime();
+      // inv.date فرمت "1404/01/15" دارد - باید به میلادی تبدیل شود
+      const [iy, im, id] = inv.date.split('/').map(Number);
+      const invDate = fromJalali(iy, im, id).getTime();
       return invDate >= start && invDate <= end;
     });
     
     // درآمد روزانه
     const dailyIncome = {};
     filtered.forEach(inv => {
-      const jDate = toJalali(new Date(inv.date));
-      const dateKey = `${jDate.year}/${String(jDate.month).padStart(2, '0')}/${String(jDate.day).padStart(2, '0')}`;
+      // inv.date خودش تاریخ شمسی است
+      const dateKey = inv.date;
       dailyIncome[dateKey] = (dailyIncome[dateKey] || 0) + inv.total;
     });
     
     // درآمد ماهانه
     const monthlyIncome = {};
     filtered.forEach(inv => {
-      const jDate = toJalali(new Date(inv.date));
-      const monthKey = `${jDate.year}/${String(jDate.month).padStart(2, '0')}`;
+      const [year, month] = inv.date.split('/');
+      const monthKey = `${year}/${month}`;
       monthlyIncome[monthKey] = (monthlyIncome[monthKey] || 0) + inv.total;
     });
     
