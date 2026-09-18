@@ -3,6 +3,7 @@ const KEYS = {
   INVOICES: "cafe_invoices",
   COUNTER: "cafe_invoice_counter",
   SHOP: "cafe_shop_info",
+  SETTINGS: "cafe_settings", // ✅ اضافه شد
 };
 
 function read(key, fallback) {
@@ -77,6 +78,20 @@ export const store = {
   saveShopInfo(info) {
     write(KEYS.SHOP, info);
     return info;
+  },
+
+  // ---------- تنظیمات عمومی (حالت توسعه) ----------
+  getSettings() {
+    return read(KEYS.SETTINGS, { devMode: false });
+  },
+  saveSettings(settings) {
+    write(KEYS.SETTINGS, settings);
+    return settings;
+  },
+
+  // ---------- ریست کامل (حذف تمامی اطلاعات) ----------
+  resetAll() {
+    Object.values(KEYS).forEach((k) => localStorage.removeItem(k));
   },
 
   // ---------- گزارش‌گیری ----------

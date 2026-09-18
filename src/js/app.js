@@ -275,6 +275,47 @@ function initSettings() {
     toast.classList.remove("hidden");
     setTimeout(() => toast.classList.add("hidden"), 2200);
   });
+
+  // ---------- حالت توسعه و ریست کامل ----------
+  const devToggle = document.getElementById("dev-mode-toggle");
+  const dangerZone = document.getElementById("danger-zone");
+
+  // نمایش/مخفی‌کردن منطقه خطر بر اساس حالت توسعه
+  const applyDevMode = (on) => {
+    dangerZone.classList.toggle("hidden", !on);
+  };
+
+  // بارگذاری وضعیت ذخیره‌شده
+  const settings = store.getSettings();
+  devToggle.checked = !!settings.devMode;
+  applyDevMode(devToggle.checked);
+
+  // تغییر سوییچ توسعه
+  devToggle.addEventListener("change", () => {
+    store.saveSettings({ ...store.getSettings(), devMode: devToggle.checked });
+    applyDevMode(devToggle.checked);
+  });
+
+  // دکمه ریست کامل با تأییدیه دومرحله‌ای
+  document.getElementById("btn-reset-all").addEventListener("click", () => {
+    if (
+      !confirm(
+        "⚠️ مطمئن هستید؟\nتمامی فاکتورها، محصولات، تنظیمات کسب‌وکار و شمارنده‌ها حذف خواهند شد!",
+      )
+    )
+      return;
+
+    if (
+      !confirm(
+        "❌ تأیید نهایی:\nاین عملیات غیرقابل بازگشت است.\nبرای حذف کامل اطلاعات، OK را بزنید.",
+      )
+    )
+      return;
+
+    store.resetAll();
+    alert("✅ تمامی اطلاعات حذف شد. برنامه به حالت اولیه برمی‌گردد.");
+    location.reload();
+  });
 }
 
 // ---------- init ----------
