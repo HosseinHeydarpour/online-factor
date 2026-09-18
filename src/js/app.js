@@ -7,7 +7,7 @@ import { initAuth } from "./auth.js";
 import { initBackup } from "./backup.js";
 import { initGitHubUI } from "./github.js";
 import { initReports } from "./reports.js"; // ✅ اضافه شد
-
+import { initCustomers, renderCustomers } from "./customers.js";
 const el = {
   tabs: document.querySelectorAll(".view-tab"),
   views: {
@@ -17,6 +17,7 @@ const el = {
     invoices: document.getElementById("view-invoices"),
     "invoice-detail": document.getElementById("view-invoice-detail"),
     settings: document.getElementById("view-settings"),
+    customers: document.getElementById("view-customers"),
   },
   srcTabs: document.querySelectorAll(".src-tab"),
   search: document.getElementById("search-input"),
@@ -51,6 +52,7 @@ function setView(view) {
   if (view === "products") renderProducts();
   if (view === "reports") initReports();
   if (view === "invoices") initInvoicesList();
+  if (view === "customers") renderCustomers();
 }
 
 window.setView = setView;
@@ -346,6 +348,7 @@ initProductEvents();
 initSettings();
 initBackup();
 initGitHubUI(); // ✅ اضافه شد
+initCustomers(); // ✅ بعد از initSettings()
 window.initInvoiceDetailEvents();
 setView("invoice");
 setSource("services");

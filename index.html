@@ -361,6 +361,12 @@
             📋 فاکتورهای ثبت شده
           </button>
           <button
+            data-view="customers"
+            class="view-tab px-4 py-2.5 rounded-t-xl font-bold border-b-2 border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+          >
+            👥 مشتریان
+          </button>
+          <button
             data-view="invoice-detail"
             class="view-tab px-3 sm:px-4 py-2 sm:py-2.5 rounded-t-xl font-bold border-b-2 border-transparent hidden"
             id="tab-invoice-detail"
@@ -566,6 +572,46 @@
             >
               🧾 مشاهده فاکتور
             </button>
+          </div>
+        </section>
+
+        <!-- ============ ویو: مشتریان ============ -->
+        <section id="view-customers" class="view hidden space-y-5">
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <h2 class="font-extrabold text-lg">👥 اطلاعات مشتریان</h2>
+            <div class="flex gap-2 items-center flex-wrap">
+              <input
+                id="customer-search"
+                placeholder="جستجوی نام یا شماره…"
+                class="rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+              />
+              <button
+                id="btn-export-customers"
+                class="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow"
+              >
+                ⬇️ خروجی اکسل
+              </button>
+              <span class="text-xs font-bold text-slate-500 whitespace-nowrap">
+                کل: <b id="customers-total-count">۰</b>
+              </span>
+            </div>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400 leading-6">
+            💡 هنگام ثبت هر فاکتور، نام و شماره مشتری به‌صورت خودکار در این لیست
+            ذخیره می‌شود. با کلیک روی «افزودن به فاکتور» اطلاعات مشتری در فاکتور
+            جاری قرار می‌گیرد.
+          </p>
+          <div
+            id="customers-list"
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
+          ></div>
+          <div
+            id="customers-empty"
+            class="hidden bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 rounded-2xl p-10 text-center text-slate-400 dark:text-slate-300 text-sm"
+          >
+            هنوز مشتری ثبت نشده است.<br />
+            با ثبت اولین فاکتور، نام و شماره مشتری به‌صورت خودکار اینجا ذخیره
+            می‌شود.
           </div>
         </section>
 
@@ -1353,7 +1399,7 @@
         }
       })();
     </script>
-
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script type="module" src="./src/js/app.js"></script>
 
     <script>

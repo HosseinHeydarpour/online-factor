@@ -53,6 +53,10 @@ function collectBackupFiles() {
       content: JSON.stringify(store.getProducts(), null, 2),
     },
     {
+      path: "backup/customers.json", // ✅ جدید
+      content: JSON.stringify(store.getCustomers(), null, 2),
+    },
+    {
       path: "backup/shop-info.json",
       content: JSON.stringify(store.getShopInfo(), null, 2),
     },
@@ -262,6 +266,21 @@ export async function restoreFromGitHub({ replace = false } = {}) {
     const products = await readJson("backup/products.json");
     const shop = await readJson("backup/shop-info.json");
 
+    // ----- مشتریان -----
+    const customers = await readJson("backup/customers.json");
+    if (Array.isArray(customers)) {
+      if (replace) {
+        store.saveCustomers(customers);
+      } else {
+        const current = store.getCustomers();
+        const phones = new Set(current.map((c) => c.phone).filter(Boolean));
+        const added = customers.filter(
+          (c) => c && (!c.phone || !phones.has(c.phone)),
+        );
+        store.saveCustomers([...current, ...added]);
+      }
+    }
+
     if (!invoices && !products && !shop) {
       return alert("هیچ فایل پشتیبانی در پوشه backup/ مخزن پیدا نشد!");
     }
@@ -269,11 +288,13 @@ export async function restoreFromGitHub({ replace = false } = {}) {
     const invCount = Array.isArray(invoices) ? invoices.length : 0;
     const prdCount = Array.isArray(products) ? products.length : 0;
 
+    const cstCount = Array.isArray(customers) ? customers.length : 0;
+
     if (
       !confirm(
         `📥 بازیابی از گیت‌هاب:\n` +
-          `${invCount} فاکتور و ${prdCount} محصول در مخزن یافت شد.\n\n` +
-          `حالت بازیابی: ${replace ? "⚠️ جایگزینی کامل (داده فعلی پاک می‌شود)" : "➕ ادغام با داده فعلی (بدون تکراری)"}\n` +
+          `${invCount} فاکتور، ${prdCount} محصول و ${cstCount} مشتری در مخزن یافت شد.\n\n` +
+          `حالت بازیابی: ${replace ? "⚠️ جایگزینی کامل" : "➕ ادغام بدون تکراری"}\n` +
           `ادامه می‌دهید؟`,
       )
     )

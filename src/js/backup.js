@@ -60,10 +60,17 @@ async function ensurePermission(handle) {
 /* ---------- نوشتن کل فاکتورها داخل فایل ---------- */
 async function writeInvoicesToFile(handle) {
   const writable = await handle.createWritable();
-  await writable.write(JSON.stringify(store.getInvoices(), null, 2));
+  const payload = {
+    version: 2,
+    exportedAt: new Date().toISOString(),
+    invoices: store.getInvoices(),
+    products: store.getProducts(),
+    customers: store.getCustomers(),
+    shop: store.getShopInfo(),
+  };
+  await writable.write(JSON.stringify(payload, null, 2));
   await writable.close();
 }
-
 /* ---------- وضعیت UI ---------- */
 async function refreshStatus() {
   const status = document.getElementById("backup-status");
@@ -138,57 +145,103 @@ export async function autoSaveInvoices() {
 }
 
 /* ---------- اکسپورت (دانلود JSON) ---------- */
-export function exportInvoices() {
-  const list = store.getInvoices();
-  if (!list.length) return alert("فاکتوری برای خروجی وجود ندارد!");
-  const blob = new Blob([JSON.stringify(list, null, 2)], {
+export function exportAllData() {
+  const data = {
+    version: 2,
+    exportedAt: new Date().toISOString(),
+    invoices: store.getInvoices(),
+    products: store.getProducts(),
+    customers: store.getCustomers(),
+    shop: store.getShopInfo(),
+  };
+  if (!data.invoices.length && !data.products.length && !data.customers.length)
+    return alert("هیچ داده‌ای برای خروجی وجود ندارد!");
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
     type: "application/json",
   });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `invoices-${toJalali().full.replaceAll("/", "-")}.json`;
+  a.download = `backup-${toJalali().full.replaceAll("/", "-")}.json`;
   document.body.appendChild(a);
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
 }
-
 /* ---------- ایمپورت (ادغام JSON قبلی) ---------- */
 export function importInvoicesFile(file) {
   const reader = new FileReader();
   reader.onload = () => {
     try {
       const parsed = JSON.parse(reader.result);
-      const arr = Array.isArray(parsed) ? parsed : parsed.invoices;
-      if (!Array.isArray(arr)) throw new Error("bad format");
 
-      const valid = arr.filter(
-        (inv) =>
-          inv &&
-          typeof inv.number === "number" &&
-          Array.isArray(inv.items) &&
-          typeof inv.total === "number",
+      // تشخیص فرمت: آرایه = قدیم، آبجکت = جدید
+      const invoices = Array.isArray(parsed) ? parsed : parsed.invoices;
+      const products = parsed.products;
+      const customers = parsed.customers;
+      const shop = parsed.shop;
+
+      const invValid = Array.isArray(invoices)
+        ? invoices.filter(
+            (inv) =>
+              inv &&
+              typeof inv.number === "number" &&
+              Array.isArray(inv.items) &&
+              typeof inv.total === "number",
+          )
+        : [];
+      const prdValid = Array.isArray(products)
+        ? products.filter((p) => p && p.id && p.name)
+        : [];
+      const cstValid = Array.isArray(customers)
+        ? customers.filter((c) => c && (c.phone || c.name))
+        : [];
+
+      const currentInv = store.getInvoices();
+      const existingInvNums = new Set(currentInv.map((i) => i.number));
+      const addedInv = invValid.filter((i) => !existingInvNums.has(i.number));
+      store.setInvoices(
+        [...currentInv, ...addedInv].sort((a, b) => b.number - a.number),
       );
 
-      const current = store.getInvoices();
-      const existing = new Set(current.map((i) => i.number));
-      const added = valid.filter((i) => !existing.has(i.number));
-      const merged = [...current, ...added].sort((a, b) => b.number - a.number);
+      if (prdValid.length) {
+        const currentPrd = store.getProducts();
+        const prdIds = new Set(currentPrd.map((p) => p.id));
+        store.setProducts([
+          ...currentPrd,
+          ...prdValid.filter((p) => !prdIds.has(p.id)),
+        ]);
+      }
 
-      store.setInvoices(merged);
+      if (cstValid.length) {
+        const currentCst = store.getCustomers();
+        const cstPhones = new Set(
+          currentCst.map((c) => c.phone).filter(Boolean),
+        );
+        store.saveCustomers([
+          ...currentCst,
+          ...cstValid.filter((c) => !c.phone || !cstPhones.has(c.phone)),
+        ]);
+      }
+
+      if (shop && typeof shop === "object") store.saveShopInfo(shop);
+
       alert(
-        `✅ ایمپورت انجام شد:\n${added.length} فاکتور جدید اضافه شد.\n${valid.length - added.length} فاکتور تکراری نادیده گرفته شد.`,
+        `✅ ایمپورت انجام شد:\n` +
+          `فاکتور: ${addedInv.length} جدید از ${invValid.length}\n` +
+          `محصول: ${prdValid.length}\n` +
+          `مشتری: ${cstValid.length}`,
       );
       autoSaveInvoices();
       if (window.initInvoicesList) window.initInvoicesList();
+      location.reload();
     } catch {
-      alert("❌ فایل انتخاب‌شده یک JSON معتبر فاکتورها نیست!");
+      alert("❌ فایل انتخاب‌شده یک JSON معتبر نیست!");
     }
   };
   reader.readAsText(file);
 }
-
 /* ---------- اتصال ایونت‌ها ---------- */
 export async function initBackup() {
   fileHandle = await idbGet(HANDLE_KEY).catch(() => null);
@@ -203,7 +256,7 @@ export async function initBackup() {
     });
   document
     .getElementById("btn-export-json")
-    ?.addEventListener("click", exportInvoices);
+    ?.addEventListener("click", exportAllData);
 
   const fileInput = document.getElementById("import-file");
   document

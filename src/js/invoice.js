@@ -47,11 +47,14 @@ export function clearInvoice() {
   state.items = [];
   state.discount = 0;
   state.number = null;
-  state.payment = "نقدی"; // ✅ اضافه شد
+  state.payment = "نقدی";
+  state.customer = { name: "", phone: "" }; // ✅ پاک‌کردن مشتری قبلی
+  el.custName.value = ""; // ✅ خالی‌کردن فیلدها
+  el.custPhone.value = ""; // ✅
   const defaultRadio = document.querySelector(
     'input[name="payment-method"][value="نقدی"]',
   );
-  if (defaultRadio) defaultRadio.checked = true; // ✅ سینک کردن UI
+  if (defaultRadio) defaultRadio.checked = true;
   el.discountInput.value = 0;
   render();
 }
@@ -392,6 +395,16 @@ export function saveInvoice() {
     items: [...state.items],
     ...t,
   };
+  // ✅ ذخیره خودکار مشتری
+  if (
+    (state.customer.name || "").trim() ||
+    (state.customer.phone || "").trim()
+  ) {
+    store.saveCustomer({
+      name: state.customer.name,
+      phone: state.customer.phone,
+    });
+  }
 
   store.saveInvoice(invoice);
   autoSaveInvoices(); // 💾 ذخیره خودکار روی فایل JSON متصل‌شده

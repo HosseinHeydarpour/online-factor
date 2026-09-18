@@ -4,7 +4,8 @@ const KEYS = {
   COUNTER: "cafe_invoice_counter",
   SHOP: "cafe_shop_info",
   AUTH: "cafe_auth",
-  SETTINGS: "cafe_settings", // ✅ اضافه شد
+  SETTINGS: "cafe_settings",
+  CUSTOMERS: "cafe_customers", // ✅ جدید
 };
 
 function read(key, fallback) {
@@ -77,6 +78,40 @@ export const store = {
   },
   getInvoices() {
     return read(KEYS.INVOICES, []);
+  },
+  // ---------- مشتریان ----------
+  getCustomers() {
+    return read(KEYS.CUSTOMERS, []);
+  },
+  saveCustomer(customer) {
+    const list = this.getCustomers();
+    const phone = (customer.phone || "").trim();
+    // تطبیق بر اساس شماره تماس (اگر داشت) در غیر این صورت id
+    let idx = -1;
+    if (phone) idx = list.findIndex((c) => c.phone === phone);
+    else if (customer.id) idx = list.findIndex((c) => c.id === customer.id);
+
+    const existing = idx >= 0 ? list[idx] : {};
+    const record = {
+      id: existing.id || customer.id || uid(),
+      name: customer.name?.trim() || existing.name || "",
+      phone: phone || existing.phone || "",
+      lastSeen: toJalali().full,
+    };
+    if (idx >= 0) list[idx] = record;
+    else list.unshift(record);
+    write(KEYS.CUSTOMERS, list);
+    return record;
+  },
+  saveCustomers(list) {
+    write(KEYS.CUSTOMERS, list);
+    return list;
+  },
+  deleteCustomer(id) {
+    write(
+      KEYS.CUSTOMERS,
+      this.getCustomers().filter((c) => c.id !== id),
+    );
   },
 
   setInvoices(list) {
