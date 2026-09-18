@@ -120,13 +120,15 @@ function renderInvoicesList(query = "") {
 // قرار دادن توابع در window برای دسترسی از طریق onclick
 let currentViewInvoiceNumber = null;
 
-// ایونت‌های صفحه مشاهده فاکتور
-document.addEventListener('DOMContentLoaded', () => {
+// ایونت‌های صفحه مشاهده فاکتور - باید بعد از رندر شدن DOM اجرا شوند
+function initInvoiceDetailEvents() {
   // دکمه بازگشت به لیست فاکتورها
   const btnBack = document.getElementById('btn-back-to-invoices');
   if (btnBack) {
     btnBack.addEventListener('click', () => {
-      setView('invoices');
+      if (typeof setView === 'function') {
+        setView('invoices');
+      }
     });
   }
   
@@ -139,7 +141,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-});
+}
+
+// اجرای ایونت‌ها بعد از لود شدن صفحه
+initInvoiceDetailEvents();
 
 window.viewInvoice = function(invNumber) {
   // تبدیل شماره فاکتور به عدد (چون از HTML می‌آید)

@@ -2,6 +2,7 @@ import { RATE_CATEGORIES } from "../data/rates.js";
 import { store, faNum, todayFa } from "./store.js";
 import { addItemToInvoice, initInvoiceEvents } from "./invoice.js";
 import { renderProducts, initProductEvents } from "./products.js";
+import { initInvoicesList } from "./invoices-list.js";
 
 const el = {
   tabs: document.querySelectorAll(".view-tab"),
@@ -46,7 +47,7 @@ function setView(view) {
   
   if (view === "products") renderProducts();
   if (view === "reports" && window.initReports) window.initReports();
-  if (view === "invoices" && window.initInvoicesList) window.initInvoicesList();
+  if (view === "invoices") initInvoicesList();
 }
 
 el.tabs.forEach((t) =>
