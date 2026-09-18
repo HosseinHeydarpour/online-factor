@@ -1,4 +1,4 @@
-import { store, faNum, toJalali, fromJalali } from "./store.js";
+import { store, faNum, toJalali, fromJalali, todayFa } from "./store.js";
 
 export function initInvoicesList() {
   const searchInput = document.getElementById("invoice-search");
