@@ -8,6 +8,7 @@ const el = {
   views: {
     invoice: document.getElementById("view-invoice"),
     products: document.getElementById("view-products"),
+    reports: document.getElementById("view-reports"),
     settings: document.getElementById("view-settings"),
   },
   srcTabs: document.querySelectorAll(".src-tab"),
@@ -33,6 +34,7 @@ function setView(view) {
     t.classList.toggle("text-slate-500", !active);
   });
   if (view === "products") renderProducts();
+  if (view === "reports" && window.initReports) window.initReports();
 }
 
 el.tabs.forEach((t) =>

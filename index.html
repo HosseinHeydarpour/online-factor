@@ -161,6 +161,12 @@
             📦 محصولات فیزیکی
           </button>
           <button
+            data-view="reports"
+            class="view-tab px-4 py-2.5 rounded-t-xl font-bold border-b-2 border-transparent"
+          >
+            📊 گزارش‌گیری درآمد
+          </button>
+          <button
             data-view="settings"
             class="view-tab px-4 py-2.5 rounded-t-xl font-bold border-b-2 border-transparent"
           >
@@ -295,7 +301,7 @@
           </aside>
         </section>
 
-        <!-- ============ ویو: مدیریت محصولات ============ -->
+        <!-- ============ ویو: محصولات فیزیکی ============ -->
         <section id="view-products" class="view hidden space-y-5">
           <div class="flex items-center justify-between flex-wrap gap-3">
             <h2 class="font-extrabold text-lg">📦 مدیریت محصولات فیزیکی</h2>
@@ -322,6 +328,69 @@
             class="hidden bg-white border border-dashed border-slate-300 rounded-2xl p-10 text-center text-slate-400 text-sm"
           >
             هنوز محصولی ثبت نشده — روی «محصول جدید» بزنید.
+          </div>
+        </section>
+
+        <!-- ============ ویو: گزارش‌گیری درآمد ============ -->
+        <section id="view-reports" class="view hidden space-y-6">
+          <!-- کنترل‌های تاریخ -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+            <div class="flex items-center justify-between flex-wrap gap-4 mb-4">
+              <h2 class="font-extrabold text-lg">📊 گزارش‌گیری درآمد</h2>
+              <div class="flex gap-2">
+                <button id="btn-today-report" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 transition">امروز</button>
+                <button id="btn-month-report" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 transition">این ماه</button>
+                <button id="btn-year-report" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 transition">امسال</button>
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="text-xs text-slate-500 block mb-1">تاریخ شروع</label>
+                <input type="text" id="report-start-date" placeholder="1404/01/01" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-left outline-none focus:ring-2 focus:ring-brand-500" dir="ltr" />
+              </div>
+              <div>
+                <label class="text-xs text-slate-500 block mb-1">تاریخ پایان</label>
+                <input type="text" id="report-end-date" placeholder="1404/12/29" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-left outline-none focus:ring-2 focus:ring-brand-500" dir="ltr" />
+              </div>
+              <div class="flex items-end">
+                <button id="btn-apply-report" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-2 rounded-lg text-sm shadow">اعمال فیلتر</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- خلاصه گزارش -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200 rounded-2xl p-5">
+              <p class="text-sm text-emerald-600 font-bold mb-1">💰 کل درآمد</p>
+              <p id="report-total-revenue" class="text-2xl font-extrabold text-emerald-800">۰ تومان</p>
+            </div>
+            <div class="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-5">
+              <p class="text-sm text-blue-600 font-bold mb-1">🧾 تعداد فاکتورها</p>
+              <p id="report-total-invoices" class="text-2xl font-extrabold text-blue-800">۰ فاکتور</p>
+            </div>
+          </div>
+          
+          <!-- خدمات پرفروش -->
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+            <h3 class="font-extrabold text-base mb-4">🏆 خدمات پرفروش</h3>
+            <div id="top-services-list" class="space-y-2"></div>
+          </div>
+          
+          <!-- چارت‌ها -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+              <h3 class="font-extrabold text-base mb-4">📈 درآمد روزانه</h3>
+              <div id="daily-chart-container" class="h-64">
+                <canvas id="daily-chart"></canvas>
+              </div>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+              <h3 class="font-extrabold text-base mb-4">📊 درآمد ماهانه</h3>
+              <div id="monthly-chart-container" class="h-64">
+                <canvas id="monthly-chart"></canvas>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -530,6 +599,14 @@
       id="toast"
       class="hidden fixed bottom-5 right-5 z-50 bg-slate-800 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg fade-in"
     ></div>
+
+    <!-- Chart.js برای نمودارها -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <script type="module">
+      import { initReports } from './src/js/reports.js';
+      window.initReports = initReports;
+    </script>
 
     <script type="module" src="./src/js/app.js"></script>
   </body>
