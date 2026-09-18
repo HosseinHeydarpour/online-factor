@@ -23,9 +23,9 @@ function renderInvoicesList(query = "") {
   let filtered = invoices;
   if (query) {
     filtered = invoices.filter(inv => 
-      inv.invoiceNumber.toString().includes(query) ||
-      (inv.customerName && inv.customerName.includes(query)) ||
-      (inv.customerPhone && inv.customerPhone.includes(query))
+      inv.number.toString().includes(query) ||
+      (inv.customer?.name && inv.customer.name.includes(query)) ||
+      (inv.customer?.phone && inv.customer.phone.includes(query))
     );
   }
   
@@ -62,32 +62,21 @@ function renderInvoicesList(query = "") {
       day: jDateParts[2],
       full: inv.date
     };
-    // برای نمایش ساعت، اگر زمان ذخیره شده باشد از آن استفاده کن، در غیر این صورت زمان پیش‌فرض بگذار
+    // برای نمایش ساعت، اگر زمان ذخیره شده باشد از آن استفاده کن
     let jTime = "00:00";
     if (inv.time) {
       jTime = inv.time;
-    } else {
-      // سعی کن زمان را از تاریخ بسازی (اگر تاریخ معتبر باشد)
-      try {
-        const [iy, im, id] = inv.date.split('/').map(Number);
-        const gDate = fromJalali(iy, im, id);
-        if (!isNaN(gDate.getTime())) {
-          jTime = new Intl.DateTimeFormat("fa-IR", { hour: "2-digit", minute: "2-digit" }).format(gDate);
-        }
-      } catch (e) {
-        jTime = "00:00";
-      }
     }
     
-    // استخراج نام و شماره تلفن مشتری - پشتیبانی از هر دو فرمت قدیمی و جدید
-    const customerName = inv.customer?.name || inv.customerName || "مشتری بدون نام";
-    const customerPhone = inv.customer?.phone || inv.customerPhone || "";
+    // استخراج نام و شماره تلفن مشتری
+    const customerName = inv.customer?.name || "مشتری بدون نام";
+    const customerPhone = inv.customer?.phone || "";
     
     return `
       <div class="bg-white border border-slate-200 rounded-xl p-4 hover:border-brand-300 transition fade-in">
         <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
           <div class="flex items-center gap-3">
-            <span class="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 text-sm font-bold grid place-items-center">#${faNum(inv.invoiceNumber)}</span>
+            <span class="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 text-sm font-bold grid place-items-center">#${faNum(inv.number)}</span>
             <div>
               <p class="text-sm font-bold text-slate-700">${customerName}</p>
               <p class="text-xs text-slate-400">${customerPhone}</p>
@@ -148,7 +137,7 @@ function viewInvoice(invId) {
   const invoice = store.getInvoices().find(inv => inv.id === invId);
   if (!invoice) return;
   
-  alert(`فاکتور شماره ${invoice.invoiceNumber}\nمشتری: ${invoice.customerName || "بدون نام"}\nمبلغ کل: ${faNum(invoice.total)} تومان`);
+  alert(`فاکتور شماره ${faNum(invoice.number)}\nمشتری: ${invoice.customer?.name || "بدون نام"}\nمبلغ کل: ${faNum(invoice.total)} تومان`);
 }
 
 function printInvoice(invId) {
@@ -156,5 +145,5 @@ function printInvoice(invId) {
   if (!invoice) return;
   
   // اینجا می‌توانید منطق چاپ را پیاده‌سازی کنید
-  alert(`چاپ فاکتور شماره ${invoice.invoiceNumber}`);
+  alert(`چاپ فاکتور شماره ${faNum(invoice.number)}`);
 }
