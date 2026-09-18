@@ -961,6 +961,99 @@
               </div>
             </div>
 
+            <!-- ========== بک‌آپ ابری گیت‌هاب ========== -->
+            <div
+              class="mt-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-3"
+            >
+              <h3 class="font-extrabold text-base mb-1">
+                ☁️ بک‌آپ ابری روی گیت‌هاب
+              </h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 leading-6">
+                با یک توکن شخصی (Fine-grained با دسترسی Contents روی یک ریپوی
+                خصوصی)، اپ بعد از هر ثبت فاکتور به‌صورت خودکار یک کامیت پشتیبان
+                در پوشه
+                <code class="bg-slate-100 dark:bg-slate-700 px-1 rounded"
+                  >backup/</code
+                >
+                ریپو می‌سازد.
+              </p>
+
+              <div class="grid grid-cols-2 gap-2">
+                <input
+                  id="gh-owner"
+                  placeholder="نام کاربری مالک ریپو"
+                  class="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+                />
+                <input
+                  id="gh-repo"
+                  placeholder="نام ریپازیتوری"
+                  class="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+                />
+                <input
+                  id="gh-branch"
+                  placeholder="شاخه (main)"
+                  class="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+                />
+                <input
+                  id="gh-token"
+                  type="password"
+                  placeholder="توکن شخصی (github_pat_...)"
+                  class="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+
+              <label
+                class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 cursor-pointer"
+              >
+                <input
+                  id="gh-autopush"
+                  type="checkbox"
+                  class="w-4 h-4 accent-brand-600"
+                />
+                push خودکار بعد از هر ثبت فاکتور
+              </label>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <button
+                  id="btn-gh-save"
+                  class="bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl text-sm shadow"
+                >
+                  💾 ذخیره تنظیمات
+                </button>
+                <button
+                  id="btn-gh-test"
+                  class="bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500 text-white font-bold py-2.5 rounded-xl text-sm"
+                >
+                  🔌 تست اتصال
+                </button>
+                <button
+                  id="btn-gh-push"
+                  class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm shadow"
+                >
+                  ⬆️ push همین حالا
+                </button>
+                <button
+                  id="btn-gh-restore"
+                  class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 rounded-xl text-sm shadow"
+                >
+                  ⬇️ بازیابی از گیت‌هاب
+                </button>
+              </div>
+
+              <label
+                class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 cursor-pointer"
+              >
+                <input
+                  id="gh-restore-replace"
+                  type="checkbox"
+                  class="w-4 h-4 accent-amber-600"
+                />
+                هنگام بازیابی، داده فعلی <b>کاملاً جایگزین</b> شود (به‌جای
+                ادغام)
+              </label>
+
+              <p id="gh-status" class="text-xs text-slate-400"></p>
+            </div>
+
             <!-- ========== حالت توسعه ========== -->
             <div
               class="mt-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6"

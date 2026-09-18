@@ -84,6 +84,18 @@ export const store = {
     return list;
   },
 
+  setProducts(list) {
+    write(KEYS.PRODUCTS, list);
+    return list;
+  },
+  getCounter() {
+    return read(KEYS.COUNTER, 1000);
+  },
+  setCounter(n) {
+    write(KEYS.COUNTER, n);
+    return n;
+  },
+
   // ---------- اطلاعات کسب‌وکار ----------
   getShopInfo() {
     return read(KEYS.SHOP, {

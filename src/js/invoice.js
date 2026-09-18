@@ -7,6 +7,7 @@ import {
   toJalali,
 } from "./store.js";
 import { autoSaveInvoices } from "./backup.js";
+import { autoPushGitHub } from "./github.js";
 
 const state = {
   items: [],
@@ -392,6 +393,9 @@ export function saveInvoice() {
 
   store.saveInvoice(invoice);
   autoSaveInvoices(); // 💾 ذخیره خودکار روی فایل JSON متصل‌شده
+
+  autoPushGitHub(); // ☁️ push خودکار به گیت‌هاب (با debounce)
+
   alert(`فاکتور شماره ${faNum(invoice.number)} ذخیره شد ✅`);
   clearInvoice();
 }

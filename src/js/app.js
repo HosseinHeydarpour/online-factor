@@ -5,7 +5,7 @@ import { renderProducts, initProductEvents } from "./products.js";
 import { initInvoicesList } from "./invoices-list.js";
 import { initAuth } from "./auth.js";
 import { initBackup } from "./backup.js";
-
+import { initGitHubUI } from "./github.js";
 const el = {
   tabs: document.querySelectorAll(".view-tab"),
   views: {
@@ -343,6 +343,7 @@ initInvoiceEvents();
 initProductEvents();
 initSettings();
 initBackup();
+initGitHubUI(); // ✅ اضافه شد
 window.initInvoiceDetailEvents();
 setView("invoice");
 setSource("services");
