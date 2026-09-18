@@ -79,14 +79,18 @@ function renderInvoicesList(query = "") {
       }
     }
     
+    // استخراج نام و شماره تلفن مشتری - پشتیبانی از هر دو فرمت قدیمی و جدید
+    const customerName = inv.customer?.name || inv.customerName || "مشتری بدون نام";
+    const customerPhone = inv.customer?.phone || inv.customerPhone || "";
+    
     return `
       <div class="bg-white border border-slate-200 rounded-xl p-4 hover:border-brand-300 transition fade-in">
         <div class="flex items-center justify-between flex-wrap gap-3 mb-3">
           <div class="flex items-center gap-3">
             <span class="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 text-sm font-bold grid place-items-center">#${faNum(inv.invoiceNumber)}</span>
             <div>
-              <p class="text-sm font-bold text-slate-700">${inv.customerName || "مشتری بدون نام"}</p>
-              <p class="text-xs text-slate-400">${inv.customerPhone || ""}</p>
+              <p class="text-sm font-bold text-slate-700">${customerName}</p>
+              <p class="text-xs text-slate-400">${customerPhone}</p>
             </div>
           </div>
           <div class="text-left">
