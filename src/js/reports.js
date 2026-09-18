@@ -11,6 +11,18 @@ export function initReports() {
   document.getElementById("report-start-date").value = `${currentYear}/${currentMonth}/01`;
   document.getElementById("report-end-date").value = `${currentYear}/${currentMonth}/${String(today.day).padStart(2, '0')}`;
   
+  // فعال‌سازی تقویم فارسی برای فیلدهای تاریخ
+  if (typeof $.fn.persianDatepicker !== 'undefined') {
+    $('#report-start-date, #report-end-date').persianDatepicker({
+      format: 'YYYY/MM/DD',
+      initialValue: false,
+      autoClose: true,
+      calendar: {
+        locale: 'fa'
+      }
+    });
+  }
+  
   // ایونت‌ها
   document.getElementById("btn-apply-report").addEventListener("click", applyReport);
   document.getElementById("btn-today-report").addEventListener("click", () => setReportPeriod('today'));
