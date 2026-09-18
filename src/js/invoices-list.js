@@ -109,8 +109,8 @@ function renderInvoicesList(query = "") {
         
         <!-- دکمه‌ها -->
         <div class="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-slate-100">
-          <button onclick="window.viewInvoice('${inv.id}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-bold">👁️ مشاهده</button>
-          <button onclick="window.printInvoice('${inv.id}')" class="text-xs bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg font-bold">🖨️ چاپ</button>
+          <button onclick="window.viewInvoice('${inv.number}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-bold">👁️ مشاهده</button>
+          <button onclick="window.printInvoice('${inv.number}')" class="text-xs bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg font-bold">🖨️ چاپ</button>
         </div>
       </div>
     `;
@@ -118,14 +118,14 @@ function renderInvoicesList(query = "") {
 }
 
 // قرار دادن توابع در window برای دسترسی از طریق onclick
-window.viewInvoice = function(invId) {
-  // تبدیل id رشته‌ای به عدد (چون از HTML می‌آید)
-  const numericId = Number(invId);
-  const invoice = store.getInvoices().find(inv => inv.id === numericId);
+window.viewInvoice = function(invNumber) {
+  // تبدیل شماره فاکتور به عدد (چون از HTML می‌آید)
+  const numericNumber = Number(invNumber);
+  const invoice = store.getInvoices().find(inv => inv.number === numericNumber);
   
   console.log("GOH");
   if (!invoice) {
-    console.log("Invoice not found! Received ID:", invId, "Type:", typeof invId);
+    console.log("Invoice not found! Received Number:", invNumber, "Type:", typeof invNumber);
     return;
   }
   
@@ -148,8 +148,9 @@ window.viewInvoice = function(invId) {
   alert(message);
 };
 
-window.printInvoice = async function(invId) {
-  const invoice = store.getInvoices().find(inv => inv.id === invId);
+window.printInvoice = async function(invNumber) {
+  const numericNumber = Number(invNumber);
+  const invoice = store.getInvoices().find(inv => inv.number === numericNumber);
   if (!invoice) return;
   
   // استفاده از تابع buildPrintHTML برای ساخت HTML چاپ
