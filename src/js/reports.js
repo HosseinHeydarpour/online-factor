@@ -94,20 +94,36 @@ function renderTopServices(services) {
 }
 
 function renderDailyChart(dailyData) {
-  const ctx = document.getElementById("daily-chart");
+  const container = document.getElementById("daily-chart-container");
+  const canvasId = "daily-chart";
+  
+  // حذف چارت قبلی اگر وجود دارد
+  if (chartInstance) {
+    chartInstance.destroy();
+    chartInstance = null;
+  }
+  
+  // پاک کردن کانواس و ایجاد مجدد آن
+  if (container) {
+    container.innerHTML = `<canvas id="${canvasId}"></canvas>`;
+  }
+  
+  const ctx = document.getElementById(canvasId);
   if (!ctx) return;
   
   // تبدیل داده‌ها به فرمت مناسب
   const labels = Object.keys(dailyData).sort();
   const values = labels.map(l => dailyData[l]);
   
-  if (chartInstance) {
-    chartInstance.destroy();
+  // اگر داده‌ای نیست
+  if (labels.length === 0) {
+    container.innerHTML = '<p class="text-center text-slate-400 text-sm py-8">داده‌ای برای نمایش وجود ندارد</p>';
+    return;
   }
   
   // اگر Chart.js لود نشده باشد
   if (typeof Chart === 'undefined') {
-    document.getElementById("daily-chart-container").innerHTML = 
+    container.innerHTML = 
       '<p class="text-center text-slate-400 text-sm py-8">کتابخانه نمودار در حال بارگذاری است...</p>';
     return;
   }
@@ -151,19 +167,34 @@ function renderDailyChart(dailyData) {
 }
 
 function renderMonthlyChart(monthlyData) {
-  const ctx = document.getElementById("monthly-chart");
+  const container = document.getElementById("monthly-chart-container");
+  const canvasId = "monthly-chart";
+  
+  // حذف چارت قبلی اگر وجود دارد
+  if (window.monthlyChartInstance) {
+    window.monthlyChartInstance.destroy();
+    window.monthlyChartInstance = null;
+  }
+  
+  // پاک کردن کانواس و ایجاد مجدد آن
+  if (container) {
+    container.innerHTML = `<canvas id="${canvasId}"></canvas>`;
+  }
+  
+  const ctx = document.getElementById(canvasId);
   if (!ctx) return;
   
   const labels = Object.keys(monthlyData).sort();
   const values = labels.map(l => monthlyData[l]);
   
-  let monthlyChartInstance = window.monthlyChartInstance;
-  if (monthlyChartInstance) {
-    monthlyChartInstance.destroy();
+  // اگر داده‌ای نیست
+  if (labels.length === 0) {
+    container.innerHTML = '<p class="text-center text-slate-400 text-sm py-8">داده‌ای برای نمایش وجود ندارد</p>';
+    return;
   }
   
   if (typeof Chart === 'undefined') {
-    document.getElementById("monthly-chart-container").innerHTML = 
+    container.innerHTML = 
       '<p class="text-center text-slate-400 text-sm py-8">کتابخانه نمودار در حال بارگذاری است...</p>';
     return;
   }
