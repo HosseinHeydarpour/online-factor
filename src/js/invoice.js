@@ -343,10 +343,12 @@ export function saveInvoice() {
   const todayJalali = todayFa().split(' ')[0]; // فقط بخش تاریخ بدون روز هفته
   const [jy, jm, jd] = todayJalali.split('/').map(Number);
   const jalaliDate = `${jy}/${String(jm).padStart(2, '0')}/${String(jd).padStart(2, '0')}`;
+  const jalaliTime = nowTimeFa(); // زمان فعلی به شمسی
   
   const invoice = {
     number: state.number,
     date: jalaliDate, // تاریخ شمسی مثل "1404/01/15"
+    time: jalaliTime, // زمان شمسی مثل "14:30"
     customer: { ...state.customer },
     items: [...state.items],
     ...t,
