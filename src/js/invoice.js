@@ -94,6 +94,8 @@ function render() {
   el.subtotal.textContent = faNum(t.subtotal) + " تومان";
   el.discount.textContent = faNum(t.discount) + " تومان";
   el.total.textContent = faNum(t.total) + " تومان";
+  const mobileTotal = document.getElementById("mobile-sum-total");
+  if (mobileTotal) mobileTotal.textContent = faNum(t.total) + " تومان";
 }
 
 /* ============================================================
@@ -433,7 +435,13 @@ export function initInvoiceEvents() {
     "input",
     () => (state.customer.phone = el.custPhone.value),
   );
-
+  document
+    .getElementById("mobile-show-invoice")
+    ?.addEventListener("click", () => {
+      document
+        .getElementById("invoice-aside")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   document.getElementById("btn-print").addEventListener("click", printInvoice);
   document.getElementById("btn-save").addEventListener("click", saveInvoice);
   document.getElementById("btn-clear-invoice").addEventListener("click", () => {

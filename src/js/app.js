@@ -6,6 +6,8 @@ import { initInvoicesList } from "./invoices-list.js";
 import { initAuth } from "./auth.js";
 import { initBackup } from "./backup.js";
 import { initGitHubUI } from "./github.js";
+import { initReports } from "./reports.js"; // ✅ اضافه شد
+
 const el = {
   tabs: document.querySelectorAll(".view-tab"),
   views: {
@@ -47,7 +49,7 @@ function setView(view) {
   }
 
   if (view === "products") renderProducts();
-  if (view === "reports" && window.initReports) window.initReports();
+  if (view === "reports") initReports();
   if (view === "invoices") initInvoicesList();
 }
 
