@@ -109,29 +109,12 @@ function renderInvoicesList(query = "") {
         
         <!-- دکمه‌ها -->
         <div class="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-slate-100">
-          <button data-view-invoice="${inv.id}" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-bold">👁️ مشاهده</button>
-          <button data-print-invoice="${inv.id}" class="text-xs bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg font-bold">🖨️ چاپ</button>
+          <button onclick="window.viewInvoice('${inv.id}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-bold">👁️ مشاهده</button>
+          <button onclick="window.printInvoice('${inv.id}')" class="text-xs bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg font-bold">🖨️ چاپ</button>
         </div>
       </div>
     `;
   }).join("");
-  
-  // افزودن ایونت‌ها
-  setTimeout(() => {
-    document.querySelectorAll("[data-view-invoice]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const invId = btn.dataset.viewInvoice;
-        viewInvoice(invId);
-      });
-    });
-    
-    document.querySelectorAll("[data-print-invoice]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const invId = btn.dataset.printInvoice;
-        printInvoice(invId);
-      });
-    });
-  }, 0);
 }
 
 function viewInvoice(invId) {
@@ -175,5 +158,9 @@ async function printInvoice(invId) {
     window.print();
   }, 300);
 }
+
+// قرار دادن توابع در window برای دسترسی از طریق onclick
+window.viewInvoice = viewInvoice;
+window.printInvoice = printInvoice;
 
 export { printInvoice, viewInvoice };
