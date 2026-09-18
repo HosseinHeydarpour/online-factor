@@ -7,6 +7,18 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
     <meta name="theme-color" content="#0284c7" />
+    <link rel="manifest" href="/manifest.json" />
+    <link
+      rel="apple-touch-icon"
+      href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='36' fill='%230284c7'/><text x='50%25' y='58%25' text-anchor='middle' font-family='Tahoma,sans-serif' font-size='112' font-weight='900' fill='white'>ک</text></svg>"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="کافی‌نت" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <title>کافی‌نت آنلاین | فاکتورساز</title>
 
     <!-- Tailwind -->
@@ -309,6 +321,13 @@
               class="px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 transition"
             >
               🚪 خروج
+            </button>
+
+            <button
+              id="btn-install-app"
+              class="hidden px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition"
+            >
+              📲 نصب اپ
             </button>
           </div>
         </div>
@@ -1336,5 +1355,34 @@
     </script>
 
     <script type="module" src="./src/js/app.js"></script>
+
+    <script>
+      // ثبت Service Worker
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("/sw.js")
+            .then((reg) => console.log("✅ SW ثبت شد:", reg.scope))
+            .catch((err) => console.warn("❌ ثبت SW ناموفق:", err));
+        });
+      }
+
+      // دکمه نصب سفارشی (اختیاری) — قبل از نصب PWA می‌توان prompt را نشان داد
+      let deferredPrompt = null;
+      window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        const btn = document.getElementById("btn-install-app");
+        if (btn) btn.classList.remove("hidden");
+      });
+      document.addEventListener("click", async (e) => {
+        if (e.target?.id === "btn-install-app" && deferredPrompt) {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          if (outcome === "accepted") e.target.classList.add("hidden");
+          deferredPrompt = null;
+        }
+      });
+    </script>
   </body>
 </html>
