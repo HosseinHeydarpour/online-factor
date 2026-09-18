@@ -12,13 +12,12 @@ const el = {
   },
   srcTabs: document.querySelectorAll(".src-tab"),
   search: document.getElementById("search-input"),
-  chips: document.getElementById("cat-chips"),
   items: document.getElementById("items-list"),
 };
 
 let currentView = "invoice";
 let currentSource = "services"; // services | products
-let currentCat = "all";
+let expandedCategories = new Set(); // دسته‌بندی‌های باز شده
 
 // ---------- ناوبری بین ویوها ----------
 function setView(view) {
@@ -43,50 +42,19 @@ el.tabs.forEach((t) =>
 // ---------- تغییر منبع (خدمات / محصولات) ----------
 function setSource(src) {
   currentSource = src;
-  currentCat = "all";
+  expandedCategories.clear();
   el.srcTabs.forEach((b) => {
     const active = b.dataset.src === src;
     b.className = `src-tab px-4 py-1.5 rounded-full text-xs font-bold ${
       active ? "bg-brand-600 text-white" : "bg-slate-200 text-slate-600"
     }`;
   });
-  renderChips();
   renderItems();
 }
 
 el.srcTabs.forEach((b) =>
   b.addEventListener("click", () => setSource(b.dataset.src)),
 );
-
-// ---------- چیپس دسته‌بندی ----------
-function renderChips() {
-  if (currentSource === "products") {
-    el.chips.innerHTML = "";
-    return;
-  }
-  el.chips.innerHTML =
-    `<button data-cat="all" class="cat-chip text-[11px] px-3 py-1.5 rounded-full border font-bold ${
-      currentCat === "all"
-        ? "bg-brand-600 text-white border-brand-600"
-        : "bg-white border-slate-300 text-slate-600"
-    }">همه</button>` +
-    RATE_CATEGORIES.map(
-      (c) =>
-        `<button data-cat="${c.id}" class="cat-chip text-[11px] px-3 py-1.5 rounded-full border font-bold ${
-          currentCat === c.id
-            ? "bg-brand-600 text-white border-brand-600"
-            : "bg-white border-slate-300 text-slate-600"
-        }">${c.title}</button>`,
-    ).join("");
-}
-
-el.chips.addEventListener("click", (e) => {
-  const cat = e.target.dataset.cat;
-  if (!cat) return;
-  currentCat = cat;
-  renderChips();
-  renderItems();
-});
 
 // ---------- سرچ سریع (ایندکس ساده برای سرعت) ----------
 function getAllServices() {
@@ -97,48 +65,73 @@ function getAllServices() {
 
 function searchServices(q) {
   const all = getAllServices();
-  if (!q) return all;
+  if (!q) return RATE_CATEGORIES; // برگرداندن کل دسته‌بندی‌ها وقتی سرچ خالی است
+  
   const query = q.trim();
   
   // پیدا کردن دسته‌بندی‌هایی که عنوانشان با جستجو مطابقت دارد
-  const matchingCatIds = RATE_CATEGORIES
-    .filter((c) => c.title.includes(query))
-    .map((c) => c.id);
-  
-  // اگر دسته‌بندی مطابقی یافت شد، فقط آیتم‌های آن دسته‌بندی‌ها را برگردان
-  if (matchingCatIds.length > 0) {
-    return all.filter((s) => matchingCatIds.includes(s.catId));
-  }
-  
-  // در غیر این صورت هیچ نتیجه‌ای برنگردان
-  return [];
+  return RATE_CATEGORIES.filter((c) => c.title.includes(query));
 }
 
 function renderItems() {
   const q = el.search.value.trim();
 
   if (currentSource === "services") {
-    let services = searchServices(q);
-    if (currentCat !== "all")
-      services = services.filter((s) => s.catId === currentCat);
-
-    el.items.innerHTML = services.length
-      ? services
+    let categories = searchServices(q);
+    
+    el.items.innerHTML = categories.length
+      ? categories
           .map(
-            (s) => `
-        <div class="bg-white border border-slate-200 rounded-xl p-3 flex items-center justify-between gap-3 hover:border-brand-500 transition fade-in">
-          <div class="min-w-0">
-            <p class="text-sm font-bold truncate">${s.title}</p>
-            <p class="text-[11px] text-slate-400 mt-0.5">${s.catTitle}</p>
+            (c) => {
+              const isExpanded = expandedCategories.has(c.id);
+              return `
+        <div class="bg-white border border-slate-200 rounded-xl overflow-hidden fade-in">
+          <!-- سر‌دسته خدمات -->
+          <div data-cat-id="${c.id}" class="cat-header flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50 transition ${isExpanded ? 'bg-brand-50' : ''}">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-lg">${isExpanded ? '🔽' : '▶️'}</span>
+              <p class="text-sm font-bold truncate">${c.title}</p>
+            </div>
+            <span class="text-xs text-slate-400 shrink-0">${faNum(c.items.length)} خدمت</span>
           </div>
-          <div class="shrink-0 text-left">
-            <p class="text-xs font-extrabold text-brand-700">${faNum(s.price)} تومان</p>
-            <button data-add-service="${s.id}" class="mt-1 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg font-bold">+ فاکتور</button>
+          <!-- زیرمجموعه‌ها -->
+          <div class="cat-items space-y-2 p-3 ${isExpanded ? '' : 'hidden'}">
+            ${c.items
+              .map(
+                (s) => `
+              <div class="bg-slate-50 border border-slate-100 rounded-lg p-2.5 flex items-center justify-between gap-3 hover:border-brand-400 transition">
+                <div class="min-w-0">
+                  <p class="text-sm font-bold truncate text-slate-700">${s.title}</p>
+                </div>
+                <div class="shrink-0 text-left">
+                  <p class="text-xs font-extrabold text-brand-700">${faNum(s.price)} تومان</p>
+                  <button data-add-service="${s.id}" class="mt-1 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg font-bold">+ فاکتور</button>
+                </div>
+              </div>`,
+              )
+              .join("")}
           </div>
-        </div>`,
+        </div>`;
+            }
           )
           .join("")
       : `<p class="text-center text-slate-400 text-sm py-10">موردی یافت نشد.</p>`;
+    
+    // افزودن ایونت برای کلیک روی سر‌دسته‌ها
+    setTimeout(() => {
+      document.querySelectorAll('.cat-header').forEach(header => {
+        header.addEventListener('click', () => {
+          const catId = header.dataset.catId;
+          if (expandedCategories.has(catId)) {
+            expandedCategories.delete(catId);
+          } else {
+            expandedCategories.add(catId);
+          }
+          renderItems();
+        });
+      });
+    }, 0);
+    
     return;
   }
 
