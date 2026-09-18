@@ -338,9 +338,15 @@ export function saveInvoice() {
   if (!state.items.length) return alert("فاکتور خالی است!");
   if (!state.number) state.number = store.nextInvoiceNumber();
   const t = totals();
+  
+  // تبدیل تاریخ به شمسی برای ذخیره‌سازی
+  const todayJalali = todayFa().split(' ')[0]; // فقط بخش تاریخ بدون روز هفته
+  const [jy, jm, jd] = todayJalali.split('/').map(Number);
+  const jalaliDate = `${jy}/${String(jm).padStart(2, '0')}/${String(jd).padStart(2, '0')}`;
+  
   const invoice = {
     number: state.number,
-    date: new Date().toISOString(),
+    date: jalaliDate, // تاریخ شمسی مثل "1404/01/15"
     customer: { ...state.customer },
     items: [...state.items],
     ...t,
