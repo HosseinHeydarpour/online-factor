@@ -55,11 +55,11 @@ function renderInvoicesList(query = "") {
   
   container.innerHTML = filtered.map(inv => {
     // inv.date فرمت شمسی "1404/01/15" دارد
-    let jDateFull = inv.date || todayFa().split(' ')[0];
+    let jDateFull = inv.date || toJalali().full;
     // اطمینان از فرمت صحیح تاریخ
     if (!jDateFull.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
       // اگر فرمت درست نیست، از تاریخ امروز استفاده کن
-      jDateFull = todayFa().split(' ')[0];
+      jDateFull = toJalali().full;
     }
     
     // برای نمایش ساعت، اگر زمان ذخیره شده باشد از آن استفاده کن
