@@ -232,6 +232,41 @@
         color: #d8b4fe;
       }
 
+      /* ===== اسلایدر دوتایی بازه سن ===== */
+      .range-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        background: transparent;
+        pointer-events: none;
+        height: 100%;
+        outline: none;
+      }
+      .range-thumb::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        pointer-events: auto;
+        width: 18px;
+        height: 18px;
+        border-radius: 9999px;
+        background: #0284c7;
+        border: 2px solid #fff;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+        cursor: pointer;
+      }
+      .range-thumb::-moz-range-thumb {
+        pointer-events: auto;
+        width: 18px;
+        height: 18px;
+        border-radius: 9999px;
+        background: #0284c7;
+        border: 2px solid #fff;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+        cursor: pointer;
+      }
+      .range-thumb::-moz-range-track {
+        background: transparent;
+      }
+
       /* ==================== چاپ ==================== */
       #print-area {
         display: none;
@@ -608,6 +643,17 @@
                   class="shrink-0 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow"
                 >
                   ➕ مشتری جدید
+                </button>
+                <button
+                  id="btn-customer-filter"
+                  class="relative shrink-0 bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500 text-white text-xs font-bold px-4 py-2 rounded-xl shadow"
+                >
+                  🔍 فیلتر پیشرفته
+                  <span
+                    id="customer-filter-badge"
+                    class="hidden absolute -top-2 -left-2 w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-bold grid place-items-center"
+                    >۰</span
+                  >
                 </button>
               </div>
               <div class="flex gap-2 items-center flex-wrap">
@@ -1593,6 +1639,143 @@
       id="toast"
       class="hidden fixed bottom-24 lg:bottom-5 right-4 lg:right-5 z-50 bg-slate-800 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg fade-in"
     ></div>
+
+    <!-- ===================== مودال: فیلتر پیشرفته مشتریان ===================== -->
+    <div
+      id="customer-filter-modal"
+      class="hidden fixed inset-0 z-[65] modal-backdrop grid place-items-center p-3 sm:p-4"
+    >
+      <div
+        class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl p-4 sm:p-6 fade-in max-h-[90vh] overflow-auto"
+      >
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-extrabold text-sm sm:text-base">
+            🔍 فیلتر پیشرفته مشتریان
+          </h3>
+          <button
+            id="btn-close-customer-filter"
+            class="text-slate-400 hover:text-rose-500 text-xl"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="space-y-5 text-sm">
+          <!-- جنسیت -->
+          <div>
+            <label
+              class="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1"
+              >جنسیت</label
+            >
+            <select
+              id="cf-gender-filter"
+              class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+            >
+              <option value="">همه</option>
+              <option value="مرد">مرد</option>
+              <option value="زن">زن</option>
+            </select>
+          </div>
+
+          <!-- بازه سن (اسلایدر دوتایی) -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label
+                class="text-xs font-bold text-slate-600 dark:text-slate-300"
+                >بازه سن</label
+              >
+              <span class="text-[11px] text-slate-500 dark:text-slate-400">
+                از <b id="age-min-label">۰</b> تا
+                <b id="age-max-label">۱۰۰</b> سال
+              </span>
+            </div>
+            <div class="relative h-6">
+              <div
+                class="absolute top-1/2 -translate-y-1/2 h-1.5 w-full rounded bg-slate-200 dark:bg-slate-600"
+              ></div>
+              <div
+                id="age-range-highlight"
+                class="absolute top-1/2 -translate-y-1/2 h-1.5 rounded bg-brand-500"
+                style="left: 0%; width: 100%"
+              ></div>
+              <input
+                id="cf-age-min"
+                type="range"
+                min="0"
+                max="100"
+                value="0"
+                class="range-thumb absolute inset-0 w-full m-0"
+              />
+              <input
+                id="cf-age-max"
+                type="range"
+                min="0"
+                max="100"
+                value="100"
+                class="range-thumb absolute inset-0 w-full m-0"
+              />
+            </div>
+          </div>
+
+          <!-- تعداد فاکتور -->
+          <div>
+            <label
+              class="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1"
+              >تعداد فاکتورها</label
+            >
+            <div class="grid grid-cols-2 gap-2">
+              <select
+                id="cf-count-mode"
+                class="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+              >
+                <option value="all">همه</option>
+                <option value="lt">کمتر از</option>
+                <option value="gt">بیشتر از</option>
+                <option value="eq">برابر با</option>
+              </select>
+              <input
+                id="cf-count-value"
+                type="number"
+                min="0"
+                value="0"
+                class="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+          </div>
+
+          <!-- مرتب‌سازی -->
+          <div>
+            <label
+              class="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1"
+              >مرتب‌سازی بر اساس تعداد فاکتور</label
+            >
+            <select
+              id="cf-sort"
+              class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+            >
+              <option value="none">بدون ترتیب خاص</option>
+              <option value="count-asc">صعودی (کم به زیاد)</option>
+              <option value="count-desc">نزولی (زیاد به کم)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex gap-2 mt-6">
+          <button
+            id="btn-apply-customer-filter"
+            class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl text-sm shadow"
+          >
+            ✅ اعمال فیلتر
+          </button>
+          <button
+            id="btn-reset-customer-filter"
+            class="px-4 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl text-sm font-bold"
+          >
+            حذف فیلترها
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- ===================== صفحه لاگین ===================== -->
     <div

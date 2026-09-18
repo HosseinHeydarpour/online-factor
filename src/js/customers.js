@@ -4,13 +4,23 @@ import { autoPushGitHub } from "./github.js";
 
 const el = { list: null, empty: null, search: null, total: null };
 
+function toast(msg) {
+  const t = document.getElementById("toast");
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.remove("hidden");
+  setTimeout(() => t.classList.add("hidden"), 2200);
+}
+
 // 💾 سینک بک‌آپ بعد از هر تغییر مشتریان
 function syncBackup() {
   autoSaveInvoices();
   autoPushGitHub();
 }
 
-/* ========== دیالوگ اطلاعات تکمیلی ========== */
+/* ============================================================
+   دیالوگ اطلاعات تکمیلی مشتری
+============================================================ */
 const detailsEl = {
   modal: null,
   national: null,
@@ -95,7 +105,9 @@ export function hasCustomerExtras(c = {}) {
   );
 }
 
-/* ========== مودال مشتری جدید (بدون فاکتور) ========== */
+/* ============================================================
+   مودال مشتری جدید (بدون فاکتور)
+============================================================ */
 const formEl = {
   modal: null,
   name: null,
@@ -183,14 +195,165 @@ function saveCustomerFromForm() {
   syncBackup();
 }
 
-/* ========== تب مشتریان ========== */
+/* ============================================================
+   فیلتر پیشرفته مشتریان
+============================================================ */
+const DEFAULT_FILTER = {
+  gender: "",
+  ageMin: 0,
+  ageMax: 100,
+  countMode: "all", // all | lt | gt | eq
+  countValue: 0,
+  sort: "none", // none | count-asc | count-desc
+};
+let customerFilter = { ...DEFAULT_FILTER };
+
+const filterEl = {
+  modal: null,
+  gender: null,
+  ageMin: null,
+  ageMax: null,
+  highlight: null,
+  ageMinLabel: null,
+  ageMaxLabel: null,
+  countMode: null,
+  countValue: null,
+  sort: null,
+  badge: null,
+};
+
+function initCustomerFilter() {
+  filterEl.modal = document.getElementById("customer-filter-modal");
+  if (!filterEl.modal || filterEl.modal.dataset.bound) return;
+  filterEl.modal.dataset.bound = "1";
+  filterEl.gender = document.getElementById("cf-gender-filter");
+  filterEl.ageMin = document.getElementById("cf-age-min");
+  filterEl.ageMax = document.getElementById("cf-age-max");
+  filterEl.highlight = document.getElementById("age-range-highlight");
+  filterEl.ageMinLabel = document.getElementById("age-min-label");
+  filterEl.ageMaxLabel = document.getElementById("age-max-label");
+  filterEl.countMode = document.getElementById("cf-count-mode");
+  filterEl.countValue = document.getElementById("cf-count-value");
+  filterEl.sort = document.getElementById("cf-sort");
+  filterEl.badge = document.getElementById("customer-filter-badge");
+
+  document
+    .getElementById("btn-close-customer-filter")
+    .addEventListener("click", closeCustomerFilter);
+  filterEl.modal.addEventListener(
+    "click",
+    (e) => e.target === filterEl.modal && closeCustomerFilter(),
+  );
+
+  document
+    .getElementById("btn-apply-customer-filter")
+    .addEventListener("click", () => {
+      customerFilter = {
+        gender: filterEl.gender?.value || "",
+        ageMin: Number(filterEl.ageMin?.value) || 0,
+        ageMax: Number(filterEl.ageMax?.value) || 100,
+        countMode: filterEl.countMode?.value || "all",
+        countValue: Number(filterEl.countValue?.value) || 0,
+        sort: filterEl.sort?.value || "none",
+      };
+      closeCustomerFilter();
+      updateFilterBadge();
+      renderCustomers(el.search?.value.trim() || "");
+      toast("فیلتر اعمال شد 🔍");
+    });
+
+  document
+    .getElementById("btn-reset-customer-filter")
+    .addEventListener("click", () => {
+      customerFilter = { ...DEFAULT_FILTER };
+      fillFilterForm();
+      updateFilterBadge();
+      renderCustomers(el.search?.value.trim() || "");
+      toast("فیلترها حذف شدند");
+    });
+
+  // اسلایدرها: به‌روزرسانی زنده + جلوگیری از عبور از هم
+  const onSlide = () => {
+    let mn = Number(filterEl.ageMin.value);
+    let mx = Number(filterEl.ageMax.value);
+    if (mn > mx) {
+      if (document.activeElement === filterEl.ageMin) {
+        mn = mx;
+        filterEl.ageMin.value = mn;
+      } else {
+        mx = mn;
+        filterEl.ageMax.value = mx;
+      }
+    }
+    paintAgeSlider(mn, mx);
+  };
+  filterEl.ageMin.addEventListener("input", onSlide);
+  filterEl.ageMax.addEventListener("input", onSlide);
+}
+
+function paintAgeSlider(mn, mx) {
+  const max = 100;
+  if (filterEl.highlight) {
+    filterEl.highlight.style.left = (mn / max) * 100 + "%";
+    filterEl.highlight.style.width = ((mx - mn) / max) * 100 + "%";
+  }
+  if (filterEl.ageMinLabel) filterEl.ageMinLabel.textContent = faNum(mn);
+  if (filterEl.ageMaxLabel) filterEl.ageMaxLabel.textContent = faNum(mx);
+}
+
+function fillFilterForm() {
+  if (!filterEl.modal) initCustomerFilter();
+  if (filterEl.gender) filterEl.gender.value = customerFilter.gender;
+  if (filterEl.ageMin) filterEl.ageMin.value = customerFilter.ageMin;
+  if (filterEl.ageMax) filterEl.ageMax.value = customerFilter.ageMax;
+  if (filterEl.countMode) filterEl.countMode.value = customerFilter.countMode;
+  if (filterEl.countValue)
+    filterEl.countValue.value = customerFilter.countValue;
+  if (filterEl.sort) filterEl.sort.value = customerFilter.sort;
+  paintAgeSlider(customerFilter.ageMin, customerFilter.ageMax);
+}
+
+export function openCustomerFilter() {
+  if (!filterEl.modal) initCustomerFilter();
+  fillFilterForm();
+  filterEl.modal.classList.remove("hidden");
+}
+
+function closeCustomerFilter() {
+  filterEl.modal?.classList.add("hidden");
+}
+
+function countActiveFilters() {
+  let n = 0;
+  if (customerFilter.gender) n++;
+  if (customerFilter.ageMin > 0 || customerFilter.ageMax < 100) n++;
+  if (customerFilter.countMode !== "all") n++;
+  if (customerFilter.sort !== "none") n++;
+  return n;
+}
+
+function updateFilterBadge() {
+  const n = countActiveFilters();
+  if (filterEl.badge) {
+    filterEl.badge.textContent = faNum(n);
+    filterEl.badge.classList.toggle("hidden", n === 0);
+  }
+}
+
+/* ============================================================
+   تب مشتریان
+============================================================ */
 export function initCustomers() {
   el.list = document.getElementById("customers-list");
   el.empty = document.getElementById("customers-empty");
   el.search = document.getElementById("customer-search");
   el.total = document.getElementById("customers-total-count");
+
   initDetailsModal();
   initCustomerForm();
+  initCustomerFilter();
+  updateFilterBadge();
+
   if (el.search && !el.search.dataset.bound) {
     el.search.dataset.bound = "1";
     el.search.addEventListener("input", () =>
@@ -207,6 +370,11 @@ export function initCustomers() {
     addBtn.dataset.bound = "1";
     addBtn.addEventListener("click", openCustomerForm);
   }
+  const filterBtn = document.getElementById("btn-customer-filter");
+  if (filterBtn && !filterBtn.dataset.bound) {
+    filterBtn.dataset.bound = "1";
+    filterBtn.addEventListener("click", openCustomerFilter);
+  }
   renderCustomers();
 }
 
@@ -214,21 +382,8 @@ export function renderCustomers(query = "") {
   if (!el.list) return;
   const customers = store.getCustomers();
   const q = (query || "").toLowerCase();
-  const filtered = customers.filter(
-    (c) =>
-      !q ||
-      (c.name || "").toLowerCase().includes(q) ||
-      (c.phone || "").toLowerCase().includes(q) ||
-      (c.nationalCode || "").toLowerCase().includes(q),
-  );
-  if (el.total) el.total.textContent = faNum(customers.length) + " نفر";
-  if (!filtered.length) {
-    el.list.innerHTML = "";
-    el.empty?.classList.remove("hidden");
-    return;
-  }
-  el.empty?.classList.add("hidden");
 
+  // آمار فاکتورها
   const invoices = store.getInvoices();
   const countByPhone = {};
   const lastByPhone = {};
@@ -239,6 +394,53 @@ export function renderCustomers(query = "") {
     if (!lastByPhone[ph] || (inv.date && inv.date > lastByPhone[ph].date))
       lastByPhone[ph] = inv;
   });
+  const countOf = (c) => countByPhone[c.phone] || 0;
+
+  // جستجوی متنی
+  let filtered = customers.filter(
+    (c) =>
+      !q ||
+      (c.name || "").toLowerCase().includes(q) ||
+      (c.phone || "").toLowerCase().includes(q) ||
+      (c.nationalCode || "").toLowerCase().includes(q),
+  );
+
+  // ===== فیلتر پیشرفته =====
+  const f = customerFilter;
+  if (f.gender)
+    filtered = filtered.filter((c) => (c.gender || "") === f.gender);
+
+  const ageActive = f.ageMin > 0 || f.ageMax < 100;
+  if (ageActive) {
+    filtered = filtered.filter((c) => {
+      const age = Number(c.age);
+      if (!c.age || Number.isNaN(age)) return false;
+      return age >= f.ageMin && age <= f.ageMax;
+    });
+  }
+
+  if (f.countMode !== "all") {
+    filtered = filtered.filter((c) => {
+      const n = countOf(c);
+      if (f.countMode === "lt") return n < f.countValue;
+      if (f.countMode === "gt") return n > f.countValue;
+      if (f.countMode === "eq") return n === f.countValue;
+      return true;
+    });
+  }
+
+  if (f.sort === "count-asc") filtered.sort((a, b) => countOf(a) - countOf(b));
+  else if (f.sort === "count-desc")
+    filtered.sort((a, b) => countOf(b) - countOf(a));
+
+  if (el.total) el.total.textContent = faNum(customers.length) + " نفر";
+
+  if (!filtered.length) {
+    el.list.innerHTML = "";
+    el.empty?.classList.remove("hidden");
+    return;
+  }
+  el.empty?.classList.add("hidden");
 
   el.list.innerHTML = `
     <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden">
@@ -260,7 +462,7 @@ export function renderCustomers(query = "") {
           <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
             ${filtered
               .map((c, idx) => {
-                const count = countByPhone[c.phone] || 0;
+                const count = countOf(c);
                 const lastDate = lastByPhone[c.phone]
                   ? lastByPhone[c.phone].date
                   : "—";
@@ -276,7 +478,7 @@ export function renderCustomers(query = "") {
                   <td class="py-3 px-3">
                     <div class="flex items-center gap-2 min-w-0">
                       <span class="w-6 h-6 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 text-[10px] font-bold grid place-items-center shrink-0">${faNum(idx + 1)}</span>
-                     
+                      <span class="w-9 h-9 rounded-lg bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 font-extrabold grid place-items-center shrink-0">${initial}</span>
                       <span class="font-bold text-slate-800 dark:text-slate-100 truncate">${c.name || "بدون نام"}</span>
                     </div>
                   </td>
@@ -299,8 +501,6 @@ export function renderCustomers(query = "") {
               })
               .join("")}
           </tbody>
-
-          
         </table>
       </div>
     </div>`;
@@ -361,12 +561,14 @@ export function renderCustomers(query = "") {
       store.deleteCustomer(btn.dataset.deleteCustomer);
       renderCustomers(el.search?.value.trim() || "");
       toast("مشتری حذف شد 🗑️");
-      syncBackup(); // ✅ بک‌آپ بلافاصله بعد از حذف
+      syncBackup();
     });
   });
 }
 
-/* ========== خروجی اکسل ========== */
+/* ============================================================
+   خروجی اکسل
+============================================================ */
 export function exportCustomersExcel() {
   const customers = store.getCustomers();
   if (!customers.length) return alert("مشتری‌ای برای خروجی وجود ندارد!");
@@ -437,12 +639,4 @@ export function exportCustomersExcel() {
     URL.revokeObjectURL(url);
   }
   toast("خروجی اکسل دانلود شد ⬇️");
-}
-
-function toast(msg) {
-  const t = document.getElementById("toast");
-  if (!t) return;
-  t.textContent = msg;
-  t.classList.remove("hidden");
-  setTimeout(() => t.classList.add("hidden"), 2200);
 }
