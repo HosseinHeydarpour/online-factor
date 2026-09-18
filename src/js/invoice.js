@@ -11,7 +11,8 @@ const state = {
   items: [],
   discount: 0,
   customer: { name: "", phone: "" },
-  number: null, // شماره فاکتور برای هر پیش‌فاکتور یک بار گرفته می‌شود
+  payment: "نقدی", // ✅ اضافه شد
+  number: null,
 };
 
 const el = {
@@ -44,6 +45,11 @@ export function clearInvoice() {
   state.items = [];
   state.discount = 0;
   state.number = null;
+  state.payment = "نقدی"; // ✅ اضافه شد
+  const defaultRadio = document.querySelector(
+    'input[name="payment-method"][value="نقدی"]',
+  );
+  if (defaultRadio) defaultRadio.checked = true; // ✅ سینک کردن UI
   el.discountInput.value = 0;
   render();
 }
@@ -135,6 +141,8 @@ export async function buildPrintHTML(number, invoiceData = null) {
   const dateStr = invoiceData
     ? `${invoiceData.date} - ${invoiceData.time}`
     : `${todayFa()} - ${nowTimeFa()}`;
+  // ✅ اضافه شد — برای فاکتورهای قدیمی که payment ندارند، پیش‌فرض نقدی
+  const payment = invoiceData ? invoiceData.payment || "نقدی" : state.payment;
 
   return `
 <div dir="rtl" style="font-family:'Vazirmatn',Tahoma,sans-serif;color:#0f172a;background:#ffffff;width:100%;">
@@ -185,7 +193,7 @@ export async function buildPrintHTML(number, invoiceData = null) {
     </div>
     <div style="flex:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 16px;display:flex;align-items:center;gap:10px;">
       <span style="font-size:10.5px;color:#64748b;font-weight:600;">نوع پرداخت:</span>
-      <span style="font-size:13px;font-weight:800;">نقدی / کارت‌خوان</span>
+      <span style="font-size:13px;font-weight:800;">${payment}</span>
     </div>
   </div>
 
@@ -375,6 +383,7 @@ export function saveInvoice() {
     number: state.number,
     date: jalaliDate,
     time: jalaliTime,
+    payment: state.payment, // ✅ اضافه شد
     customer: { ...state.customer },
     items: [...state.items],
     ...t,
@@ -423,6 +432,12 @@ export function initInvoiceEvents() {
   document.getElementById("btn-save").addEventListener("click", saveInvoice);
   document.getElementById("btn-clear-invoice").addEventListener("click", () => {
     if (confirm("فاکتور پاک شود؟")) clearInvoice();
+  });
+
+  document.querySelectorAll('input[name="payment-method"]').forEach((r) => {
+    r.addEventListener("change", () => {
+      if (r.checked) state.payment = r.value;
+    });
   });
 
   render();

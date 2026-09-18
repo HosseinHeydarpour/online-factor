@@ -92,7 +92,7 @@ function renderInvoicesList(query = "") {
           </div>
           <div class="text-left">
             <p class="text-xs text-slate-400">${jDateFull} - ${jTime}</p>
-            <p class="text-sm font-extrabold text-brand-700 mt-1">${faNum(inv.total)} تومان</p>
+         <p class="text-sm font-extrabold text-brand-700 mt-1">${faNum(inv.total)} تومان <span class="text-[10px] font-bold text-slate-400">· ${inv.payment || "نقدی"}</span></p>
           </div>
         </div>
         
@@ -224,7 +224,7 @@ window.viewInvoice = function (invNumber) {
       </div>
       
       <!-- اطلاعات مشتری و تاریخ -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 bg-slate-50 p-4 rounded-xl">
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6 bg-slate-50 p-4 rounded-xl">
         <div>
           <p class="text-xs text-slate-400 mb-1">نام مشتری</p>
           <p class="text-sm font-bold text-slate-700">${customerName}</p>
@@ -240,6 +240,10 @@ window.viewInvoice = function (invNumber) {
         <div>
           <p class="text-xs text-slate-400 mb-1">ساعت صدور</p>
           <p class="text-sm font-bold text-slate-700">${jTime}</p>
+        </div>
+        <div>
+          <p class="text-xs text-slate-400 mb-1">روش پرداخت</p>
+          <p class="text-sm font-bold text-slate-700">${invoice.payment || "نقدی"}</p>
         </div>
       </div>
       

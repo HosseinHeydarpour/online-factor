@@ -16,6 +16,15 @@ function write(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+// ---------- تبدیل ارقام فارسی/عربی به لاتین ----------
+const FA_DIGITS = "۰۱۲۳۴۵۶۷۸۹";
+const AR_DIGITS = "٠١٢٣٤٥٦٧٨٩";
+export const toEnDigits = (input) =>
+  String(input).replace(/[۰-۹٠-٩]/g, (d) => {
+    const i = FA_DIGITS.indexOf(d);
+    return i > -1 ? i : AR_DIGITS.indexOf(d);
+  });
+
 export const store = {
   // ---------- محصولات ----------
   getProducts() {
@@ -74,11 +83,11 @@ export const store = {
   getReportData(startDate, endDate) {
     const invoices = this.getInvoices();
 
-    // اگر تاریخ شروع و پایان داده نشده باشد، از امروز استفاده کن
     let start, end;
     if (startDate && endDate) {
-      const [sy, sm, sd] = startDate.split("/").map(Number);
-      const [ey, em, ed] = endDate.split("/").map(Number);
+      // ✅ نرمال‌سازی ارقام فارسی به لاتین قبل از تجزیه
+      const [sy, sm, sd] = toEnDigits(startDate).split("/").map(Number);
+      const [ey, em, ed] = toEnDigits(endDate).split("/").map(Number);
       start = fromJalali(sy, sm, sd).getTime();
       end = fromJalali(ey, em, ed).setHours(23, 59, 59, 999);
     } else {
@@ -89,24 +98,19 @@ export const store = {
     }
 
     const filtered = invoices.filter((inv) => {
-      // ✅ فاکتورهایی که تاریخ نامعتبر دارند نادیده گرفته شوند
-      if (!/^\d{4}\/\d{2}\/\d{2}$/.test(inv.date || "")) return false;
+      const dateStr = toEnDigits(inv.date || "").trim();
+      if (!/^\d{4}\/\d{2}\/\d{2}$/.test(dateStr)) return false;
 
-      const [iy, im, id] = inv.date.split("/").map(Number);
+      const [iy, im, id] = dateStr.split("/").map(Number);
       const invDate = fromJalali(iy, im, id).getTime();
-
       return invDate >= start && invDate <= end;
     });
 
-    // درآمد روزانه
     const dailyIncome = {};
     filtered.forEach((inv) => {
-      // inv.date خودش تاریخ شمسی است
-      const dateKey = inv.date;
-      dailyIncome[dateKey] = (dailyIncome[dateKey] || 0) + inv.total;
+      dailyIncome[inv.date] = (dailyIncome[inv.date] || 0) + inv.total;
     });
 
-    // درآمد ماهانه
     const monthlyIncome = {};
     filtered.forEach((inv) => {
       const [year, month] = inv.date.split("/");
@@ -114,14 +118,11 @@ export const store = {
       monthlyIncome[monthKey] = (monthlyIncome[monthKey] || 0) + inv.total;
     });
 
-    // خدمات پرفروش
     const serviceCount = {};
     filtered.forEach((inv) => {
       inv.items.forEach((item) => {
         const key = item.title;
-        if (!serviceCount[key]) {
-          serviceCount[key] = { count: 0, revenue: 0 };
-        }
+        if (!serviceCount[key]) serviceCount[key] = { count: 0, revenue: 0 };
         serviceCount[key].count += item.qty;
         serviceCount[key].revenue += item.price * item.qty;
       });

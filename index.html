@@ -395,6 +395,53 @@
               />
             </div>
 
+            <!-- روش پرداخت -->
+            <div class="mb-3">
+              <span
+                class="text-xs text-slate-500 dark:text-slate-400 block mb-1.5"
+                >💳 روش پرداخت</span
+              >
+              <div class="grid grid-cols-3 gap-1.5">
+                <label class="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="payment-method"
+                    value="نقدی"
+                    checked
+                    class="peer hidden"
+                  />
+                  <span
+                    class="block text-center text-[11px] font-bold py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 peer-checked:bg-brand-600 peer-checked:border-brand-600 peer-checked:text-white transition"
+                    >💵 نقدی</span
+                  >
+                </label>
+                <label class="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="payment-method"
+                    value="کارت‌خوان"
+                    class="peer hidden"
+                  />
+                  <span
+                    class="block text-center text-[11px] font-bold py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 peer-checked:bg-brand-600 peer-checked:border-brand-600 peer-checked:text-white transition"
+                    >💳 کارت‌خوان</span
+                  >
+                </label>
+                <label class="cursor-pointer">
+                  <input
+                    type="radio"
+                    name="payment-method"
+                    value="کارت به کارت"
+                    class="peer hidden"
+                  />
+                  <span
+                    class="block text-center text-[11px] font-bold py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 peer-checked:bg-brand-600 peer-checked:border-brand-600 peer-checked:text-white transition"
+                    >🏦 کارت به کارت</span
+                  >
+                </label>
+              </div>
+            </div>
+
             <!-- آیتم‌های فاکتور -->
             <div
               id="invoice-items"
