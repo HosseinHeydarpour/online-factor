@@ -3,6 +3,7 @@ const KEYS = {
   INVOICES: "cafe_invoices",
   COUNTER: "cafe_invoice_counter",
   SHOP: "cafe_shop_info",
+  AUTH: "cafe_auth",
   SETTINGS: "cafe_settings", // ✅ اضافه شد
 };
 
@@ -25,6 +26,19 @@ export const toEnDigits = (input) =>
     const i = FA_DIGITS.indexOf(d);
     return i > -1 ? i : AR_DIGITS.indexOf(d);
   });
+
+// ---------- هش ساده رمز عبور (سمت کلاینت) ----------
+export function hashPassword(str) {
+  let h1 = 5381;
+  for (let i = 0; i < str.length; i++)
+    h1 = ((h1 << 5) + h1 + str.charCodeAt(i)) >>> 0;
+  let h2 = 52711;
+  for (let i = str.length - 1; i >= 0; i--)
+    h2 = ((h2 << 5) + h2 + str.charCodeAt(i)) >>> 0;
+  return h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0");
+}
+
+const SESSION_KEY = "cafe_session";
 
 export const store = {
   // ---------- محصولات ----------
@@ -78,6 +92,39 @@ export const store = {
   saveShopInfo(info) {
     write(KEYS.SHOP, info);
     return info;
+  },
+
+  // ---------- احراز هویت ----------
+  getAuth() {
+    return read(KEYS.AUTH, { user: "admin", passHash: hashPassword("1234") });
+  },
+  saveAuth(auth) {
+    write(KEYS.AUTH, auth);
+    return auth;
+  },
+  login(user, pass) {
+    const auth = this.getAuth();
+    return user.trim() === auth.user && hashPassword(pass) === auth.passHash;
+  },
+  changePassword(current, next) {
+    const auth = this.getAuth();
+    if (hashPassword(current) !== auth.passHash) return false;
+    this.saveAuth({ ...auth, passHash: hashPassword(next) });
+    return true;
+  },
+  setSession(remember) {
+    const val = JSON.stringify({ ts: Date.now() });
+    if (remember) localStorage.setItem(SESSION_KEY, val);
+    else sessionStorage.setItem(SESSION_KEY, val);
+  },
+  isLoggedIn() {
+    return !!(
+      localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY)
+    );
+  },
+  logout() {
+    localStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(SESSION_KEY);
   },
 
   // ---------- تنظیمات عمومی (حالت توسعه) ----------

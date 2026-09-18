@@ -277,6 +277,12 @@
           >
             🌙 حالت تاریک
           </button>
+          <button
+            id="btn-logout"
+            class="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 transition"
+          >
+            🚪 خروج
+          </button>
         </div>
 
         <!-- تب‌ها -->
@@ -864,6 +870,37 @@
               لوگو به صورت خودکار در سمت راست فاکتور قرار می‌گیرد.
             </div>
 
+            <!-- ========== تغییر رمز عبور ========== -->
+            <div
+              class="mt-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 space-y-3"
+            >
+              <h3 class="font-extrabold text-base mb-1">🔑 تغییر رمز عبور</h3>
+              <input
+                id="pass-current"
+                type="password"
+                placeholder="رمز فعلی"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+              />
+              <input
+                id="pass-new"
+                type="password"
+                placeholder="رمز جدید (حداقل ۴ کاراکتر)"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+              />
+              <input
+                id="pass-confirm"
+                type="password"
+                placeholder="تکرار رمز جدید"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+              />
+              <button
+                id="btn-change-pass"
+                class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl text-sm shadow"
+              >
+                💾 ذخیره رمز جدید
+              </button>
+            </div>
+
             <!-- ========== حالت توسعه ========== -->
             <div
               class="mt-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6"
@@ -1021,6 +1058,85 @@
       id="toast"
       class="hidden fixed bottom-5 right-5 z-50 bg-slate-800 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg fade-in"
     ></div>
+
+    <!-- ===================== صفحه لاگین ===================== -->
+    <div
+      id="login-overlay"
+      class="hidden fixed inset-0 z-[70] modal-backdrop grid place-items-center p-4"
+    >
+      <form
+        id="login-form"
+        class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl shadow-2xl p-6 fade-in space-y-4"
+      >
+        <div class="text-center">
+          <div
+            class="w-16 h-16 mx-auto rounded-2xl bg-brand-600 text-white grid place-items-center text-3xl font-bold shadow"
+          >
+            ک
+          </div>
+          <h2 class="font-extrabold text-lg mt-3">ورود مدیر سیستم</h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            برای استفاده از سیستم، وارد حساب ادمین شوید
+          </p>
+        </div>
+
+        <div>
+          <label
+            class="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1"
+            >نام کاربری</label
+          >
+          <input
+            id="login-user"
+            type="text"
+            autocomplete="username"
+            placeholder="admin"
+            class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+          />
+        </div>
+
+        <div>
+          <label
+            class="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1"
+            >رمز عبور</label
+          >
+          <input
+            id="login-pass"
+            type="password"
+            autocomplete="current-password"
+            placeholder="••••••"
+            class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+          />
+        </div>
+
+        <label
+          class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 cursor-pointer"
+        >
+          <input
+            id="login-remember"
+            type="checkbox"
+            class="w-4 h-4 accent-brand-600"
+          />
+          مرا به خاطر بسپار (همین مرورگر)
+        </label>
+
+        <p
+          id="login-error"
+          class="hidden text-xs text-rose-600 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-lg px-3 py-2"
+        ></p>
+
+        <button
+          type="submit"
+          class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl text-sm shadow"
+        >
+          🔓 ورود به سیستم
+        </button>
+
+        <p class="text-[10px] text-center text-slate-400">
+          ورود پیش‌فرض: admin / 1234 — پس از ورود از تب تنظیمات رمز را تغییر
+          دهید.
+        </p>
+      </form>
+    </div>
 
     <!-- Chart.js برای نمودارها -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>

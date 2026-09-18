@@ -3,6 +3,7 @@ import { store, faNum, todayFa } from "./store.js";
 import { addItemToInvoice, initInvoiceEvents } from "./invoice.js";
 import { renderProducts, initProductEvents } from "./products.js";
 import { initInvoicesList } from "./invoices-list.js";
+import { initAuth } from "./auth.js";
 
 const el = {
   tabs: document.querySelectorAll(".view-tab"),
@@ -316,10 +317,27 @@ function initSettings() {
     alert("✅ تمامی اطلاعات حذف شد. برنامه به حالت اولیه برمی‌گردد.");
     location.reload();
   });
+
+  // ---------- تغییر رمز عبور ----------
+  document.getElementById("btn-change-pass").addEventListener("click", () => {
+    const cur = document.getElementById("pass-current").value;
+    const nw = document.getElementById("pass-new").value;
+    const cf = document.getElementById("pass-confirm").value;
+
+    if (nw.length < 4) return alert("رمز جدید باید حداقل ۴ کاراکتر باشد.");
+    if (nw !== cf) return alert("تکرار رمز با رمز جدید یکسان نیست.");
+    if (!store.changePassword(cur, nw)) return alert("رمز فعلی اشتباه است.");
+
+    document.getElementById("pass-current").value = "";
+    document.getElementById("pass-new").value = "";
+    document.getElementById("pass-confirm").value = "";
+    alert("✅ رمز عبور با موفقیت تغییر کرد.");
+  });
 }
 
 // ---------- init ----------
 document.getElementById("today-date").textContent = todayFa();
+initAuth(); // ✅ اول از همه: بررسی نشست / نمایش صفحه لاگین
 initInvoiceEvents();
 initProductEvents();
 initSettings();
