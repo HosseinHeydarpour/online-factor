@@ -186,6 +186,13 @@
             📋 فاکتورهای ثبت شده
           </button>
           <button
+            data-view="invoice-detail"
+            class="view-tab px-4 py-2.5 rounded-t-xl font-bold border-b-2 border-transparent hidden"
+            id="tab-invoice-detail"
+          >
+            👁️ مشاهده فاکتور
+          </button>
+          <button
             data-view="settings"
             class="view-tab px-4 py-2.5 rounded-t-xl font-bold border-b-2 border-transparent"
           >
@@ -449,6 +456,28 @@
             class="hidden bg-white border border-dashed border-slate-300 rounded-2xl p-10 text-center text-slate-400 text-sm"
           >
             هنوز فاکتوری ثبت نشده است.
+          </div>
+        </section>
+
+        <!-- ============ ویو: مشاهده فاکتور ============ -->
+        <section id="view-invoice-detail" class="view hidden">
+          <div class="max-w-4xl mx-auto">
+            <!-- دکمه بازگشت -->
+            <button id="btn-back-to-invoices" class="mb-4 flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-brand-600 transition">
+              ← بازگشت به لیست فاکتورها
+            </button>
+            
+            <!-- محتوای فاکتور -->
+            <div id="invoice-detail-content" class="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+              <!-- محتوا توسط جاوااسکریپت پر می‌شود -->
+            </div>
+            
+            <!-- دکمه‌های عملیات -->
+            <div class="flex justify-end gap-3 mt-5">
+              <button id="btn-print-from-detail" class="bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 px-6 rounded-xl text-sm shadow flex items-center gap-2">
+                🖨️ چاپ فاکتور
+              </button>
+            </div>
           </div>
         </section>
 

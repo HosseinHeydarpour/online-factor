@@ -10,6 +10,7 @@ const el = {
     products: document.getElementById("view-products"),
     reports: document.getElementById("view-reports"),
     invoices: document.getElementById("view-invoices"),
+    "invoice-detail": document.getElementById("view-invoice-detail"),
     settings: document.getElementById("view-settings"),
   },
   srcTabs: document.querySelectorAll(".src-tab"),
@@ -34,6 +35,15 @@ function setView(view) {
     t.classList.toggle("border-brand-600", active);
     t.classList.toggle("text-slate-500", !active);
   });
+  
+  // مدیریت تب مشاهده فاکتور
+  const detailTab = document.getElementById("tab-invoice-detail");
+  if (view === "invoice-detail") {
+    detailTab?.classList.remove("hidden");
+  } else if (view !== "invoices" && view !== "invoice-detail") {
+    detailTab?.classList.add("hidden");
+  }
+  
   if (view === "products") renderProducts();
   if (view === "reports" && window.initReports) window.initReports();
   if (view === "invoices" && window.initInvoicesList) window.initInvoicesList();

@@ -118,6 +118,29 @@ function renderInvoicesList(query = "") {
 }
 
 // قرار دادن توابع در window برای دسترسی از طریق onclick
+let currentViewInvoiceNumber = null;
+
+// ایونت‌های صفحه مشاهده فاکتور
+document.addEventListener('DOMContentLoaded', () => {
+  // دکمه بازگشت به لیست فاکتورها
+  const btnBack = document.getElementById('btn-back-to-invoices');
+  if (btnBack) {
+    btnBack.addEventListener('click', () => {
+      setView('invoices');
+    });
+  }
+  
+  // دکمه چاپ از صفحه مشاهده
+  const btnPrintDetail = document.getElementById('btn-print-from-detail');
+  if (btnPrintDetail) {
+    btnPrintDetail.addEventListener('click', () => {
+      if (currentViewInvoiceNumber) {
+        window.printInvoice(currentViewInvoiceNumber);
+      }
+    });
+  }
+});
+
 window.viewInvoice = function(invNumber) {
   // تبدیل شماره فاکتور به عدد (چون از HTML می‌آید)
   const numericNumber = Number(invNumber);
@@ -130,22 +153,107 @@ window.viewInvoice = function(invNumber) {
   }
   
   console.log(invoice);
-  let itemsHtml = invoice.items.map(item => 
-    `• ${item.title} ${item.meta ? `(${item.meta})` : ''}: ${faNum(item.qty)} × ${faNum(item.price)} = ${faNum(item.price * item.qty)} تومان`
-  ).join('\n');
+  currentViewInvoiceNumber = numericNumber;
   
-  let message = `فاکتور شماره ${faNum(invoice.number)}\n`;
-  message += `مشتری: ${invoice.customer?.name || "بدون نام"}\n`;
-  message += `تاریخ: ${invoice.date} - ساعت: ${invoice.time}\n`;
-  message += `تلفن: ${invoice.customer?.phone || "-"}\n\n`;
-  message += `اقلام:\n${itemsHtml}\n\n`;
-  if (invoice.discount > 0) {
-    message += `تخفیف: ${faNum(invoice.discount)} تومان\n`;
+  // ساخت HTML جزئیات فاکتور
+  let itemsHtml = invoice.items.map(item => `
+    <tr class="border-b border-slate-100 last:border-0">
+      <td class="py-3 px-4 text-sm text-slate-700">${faNum(item.qty)}</td>
+      <td class="py-3 px-4 text-sm text-slate-700">${item.title} ${item.meta ? `<span class="text-slate-400 text-xs">(${item.meta})</span>` : ''}</td>
+      <td class="py-3 px-4 text-sm text-slate-500 text-left">${faNum(item.price)} تومان</td>
+      <td class="py-3 px-4 text-sm font-bold text-brand-700 text-left">${faNum(item.price * item.qty)} تومان</td>
+    </tr>
+  `).join('');
+  
+  const customerName = invoice.customer?.name || "بدون نام";
+  const customerPhone = invoice.customer?.phone || "-";
+  const jDateFull = invoice.date || toJalali().full;
+  const jTime = invoice.time || "00:00";
+  
+  const detailHtml = `
+    <div class="p-6">
+      <!-- سربرگ فاکتور -->
+      <div class="flex items-center justify-between pb-4 border-b-2 border-brand-100 mb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-brand-600 text-white grid place-items-center text-lg font-bold shadow">
+            ک
+          </div>
+          <div>
+            <h2 class="font-extrabold text-lg text-slate-700">کافی‌نت آنلاین</h2>
+            <p class="text-xs text-slate-500">سیستم صدور فاکتور و نرخ‌نامه خدمات</p>
+          </div>
+        </div>
+        <div class="text-left">
+          <p class="text-xs text-slate-400">شماره فاکتور</p>
+          <p class="text-lg font-extrabold text-brand-700">#${faNum(invoice.number)}</p>
+        </div>
+      </div>
+      
+      <!-- اطلاعات مشتری و تاریخ -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 bg-slate-50 p-4 rounded-xl">
+        <div>
+          <p class="text-xs text-slate-400 mb-1">نام مشتری</p>
+          <p class="text-sm font-bold text-slate-700">${customerName}</p>
+        </div>
+        <div>
+          <p class="text-xs text-slate-400 mb-1">تلفن تماس</p>
+          <p class="text-sm font-bold text-slate-700">${customerPhone}</p>
+        </div>
+        <div>
+          <p class="text-xs text-slate-400 mb-1">تاریخ صدور</p>
+          <p class="text-sm font-bold text-slate-700">${jDateFull}</p>
+        </div>
+        <div>
+          <p class="text-xs text-slate-400 mb-1">ساعت صدور</p>
+          <p class="text-sm font-bold text-slate-700">${jTime}</p>
+        </div>
+      </div>
+      
+      <!-- جدول اقلام -->
+      <div class="overflow-x-auto mb-6">
+        <table class="w-full">
+          <thead>
+            <tr class="bg-brand-50 border-y border-brand-100">
+              <th class="py-3 px-4 text-xs font-bold text-brand-700 text-right">تعداد</th>
+              <th class="py-3 px-4 text-xs font-bold text-brand-700 text-right">شرح خدمت / محصول</th>
+              <th class="py-3 px-4 text-xs font-bold text-brand-700 text-left">قیمت واحد</th>
+              <th class="py-3 px-4 text-xs font-bold text-brand-700 text-left">قیمت کل</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemsHtml}
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- جمع‌بندی -->
+      <div class="flex justify-end">
+        <div class="w-full max-w-sm space-y-2">
+          <div class="flex justify-between text-sm text-slate-500">
+            <span>جمع اقلام</span>
+            <span>${faNum(invoice.total + (invoice.discount || 0))} تومان</span>
+          </div>
+          ${invoice.discount > 0 ? `
+          <div class="flex justify-between text-sm text-rose-500">
+            <span>تخفیف</span>
+            <span>-${faNum(invoice.discount)} تومان</span>
+          </div>
+          ` : ''}
+          <div class="flex justify-between text-base font-extrabold text-brand-700 border-t-2 border-brand-100 pt-2">
+            <span>مبلغ قابل پرداخت</span>
+            <span>${faNum(invoice.total)} تومان</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById("invoice-detail-content").innerHTML = detailHtml;
+  
+  // تغییر ویو به مشاهده فاکتور
+  if (typeof setView === 'function') {
+    setView("invoice-detail");
   }
-  message += `جمع کل: ${faNum(invoice.total)} تومان`;
-  
-  console.log("CLICKED!");
-  alert(message);
 };
 
 window.printInvoice = async function(invNumber) {
