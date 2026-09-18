@@ -259,7 +259,7 @@ export function renderCustomers(query = "") {
           </thead>
           <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
             ${filtered
-              .map((c) => {
+              .map((c, idx) => {
                 const count = countByPhone[c.phone] || 0;
                 const lastDate = lastByPhone[c.phone]
                   ? lastByPhone[c.phone].date
@@ -275,7 +275,8 @@ export function renderCustomers(query = "") {
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition">
                   <td class="py-3 px-3">
                     <div class="flex items-center gap-2 min-w-0">
-                      <span class="w-9 h-9 rounded-lg bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 font-extrabold grid place-items-center shrink-0">${initial}</span>
+                      <span class="w-6 h-6 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 text-[10px] font-bold grid place-items-center shrink-0">${faNum(idx + 1)}</span>
+                     
                       <span class="font-bold text-slate-800 dark:text-slate-100 truncate">${c.name || "بدون نام"}</span>
                     </div>
                   </td>
@@ -298,6 +299,8 @@ export function renderCustomers(query = "") {
               })
               .join("")}
           </tbody>
+
+          
         </table>
       </div>
     </div>`;
