@@ -611,6 +611,22 @@
                 کل: <b id="customers-total-count">۰</b>
               </span>
             </div>
+            <div class="flex gap-2 items-center flex-wrap">
+              <input
+                id="customer-search"
+                placeholder="جستجوی نام یا شماره…"
+                class="rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+              />
+              <button
+                id="btn-add-customer"
+                class="shrink-0 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow"
+              >
+                ➕ مشتری جدید
+              </button>
+              <span class="text-xs font-bold text-slate-500 whitespace-nowrap">
+                کل: <b id="customers-total-count">۰</b>
+              </span>
+            </div>
           </div>
           <p class="text-xs text-slate-500 dark:text-slate-400 leading-6">
             💡 هنگام ثبت هر فاکتور، نام و شماره مشتری به‌صورت خودکار در این لیست
@@ -1424,6 +1440,154 @@
       </div>
     </div>
 
+    <!-- ===================== مودال: مشتری جدید (بدون فاکتور) ===================== -->
+    <div
+      id="customer-form-modal"
+      class="hidden fixed inset-0 z-[65] modal-backdrop grid place-items-center p-3 sm:p-4"
+    >
+      <div
+        class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl p-4 sm:p-6 fade-in max-h-[90vh] overflow-auto"
+      >
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="font-extrabold text-sm sm:text-base">
+            ➕ مشتری جدید (بدون فاکتور)
+          </h3>
+          <button
+            id="btn-close-customer-form"
+            class="text-slate-400 hover:text-rose-500 text-xl"
+          >
+            ✕
+          </button>
+        </div>
+        <p
+          class="text-[11px] text-slate-500 dark:text-slate-400 mb-4 leading-5"
+        >
+          می‌توانید مشتری را بدون ثبت فاکتور در لیست ثبت کنید. حداقل
+          <b>نام یا شماره تماس</b> الزامی است؛ بقیه فیلدها اختیاری‌اند.
+        </p>
+
+        <div class="space-y-3 text-sm">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label
+                class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
+                >نام مشتری</label
+              >
+              <input
+                id="cf-name"
+                placeholder="مثلاً سینا محمدی"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+            <div>
+              <label
+                class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
+                >شماره تماس</label
+              >
+              <input
+                id="cf-phone"
+                inputmode="tel"
+                placeholder="09xxxxxxxxx"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label
+                class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
+                >کد ملی</label
+              >
+              <input
+                id="cf-national"
+                inputmode="numeric"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+            <div>
+              <label
+                class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
+                >شماره شناسنامه</label
+              >
+              <input
+                id="cf-birthcert"
+                inputmode="numeric"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label
+                class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
+                >جنسیت</label
+              >
+              <select
+                id="cf-gender"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+              >
+                <option value="">ثبت نشده</option>
+                <option value="مرد">مرد</option>
+                <option value="زن">زن</option>
+              </select>
+            </div>
+            <div>
+              <label
+                class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
+                >سن</label
+              >
+              <input
+                id="cf-age"
+                type="number"
+                min="0"
+                max="120"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
+              >آدرس</label
+            >
+            <input
+              id="cf-address"
+              placeholder="آدرس کامل"
+              class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+            />
+          </div>
+
+          <div>
+            <label class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
+              >توضیحات (اختیاری)</label
+            >
+            <textarea
+              id="cf-notes"
+              rows="2"
+              placeholder="هر اطلاعات دیگری که می‌خواهید ثبت کنید…"
+              class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="flex gap-2 mt-5">
+          <button
+            id="btn-save-customer-form"
+            class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl text-sm shadow"
+          >
+            💾 ذخیره مشتری
+          </button>
+          <button
+            id="btn-cancel-customer-form"
+            class="px-4 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl text-sm font-bold"
+          >
+            انصراف
+          </button>
+        </div>
+      </div>
+    </div>
     <!-- ===================== ناحیه پرینت فاکتور ===================== -->
     <div id="print-area"></div>
 

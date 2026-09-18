@@ -1,7 +1,63 @@
 {
   "version": 2,
-  "exportedAt": "2026-09-18T22:06:33.779Z",
+  "exportedAt": "2026-09-18T22:16:17.315Z",
   "invoices": [
+    {
+      "number": 1004,
+      "date": "1405/06/28",
+      "time": "۰۱:۴۶",
+      "payment": "نقدی",
+      "customer": {
+        "name": "محمد",
+        "phone": "2315651",
+        "nationalCode": "2265454981",
+        "birthCertNo": "123",
+        "address": "یسشریسرسیشر",
+        "gender": "مرد",
+        "age": "30",
+        "notes": "سیرسشیر"
+      },
+      "items": [
+        {
+          "rowId": "18f5ba4d-7a96-4304-a139-57488401791a",
+          "title": "ثبت نام اصلی (ثبت نام + ۲ تیبل)",
+          "price": 254400,
+          "qty": 1,
+          "meta": "🎒 سرویس مدارس شیراز (سفیر مهر)"
+        }
+      ],
+      "subtotal": 254400,
+      "discount": 0,
+      "total": 254400
+    },
+    {
+      "number": 1003,
+      "date": "1405/06/28",
+      "time": "۰۱:۳۹",
+      "payment": "نقدی",
+      "customer": {
+        "name": "یسشرسیشر",
+        "phone": "یسرسیشر",
+        "nationalCode": "",
+        "birthCertNo": "",
+        "address": "",
+        "gender": "",
+        "age": "",
+        "notes": ""
+      },
+      "items": [
+        {
+          "rowId": "c9bf118a-a97a-4462-a088-1b8593f0d32b",
+          "title": "پرینت لیزری سیاه و سفید A4 – متن یک‌رو",
+          "price": 10000,
+          "qty": 1,
+          "meta": "🖨️ نرخ خدمات پرینت"
+        }
+      ],
+      "subtotal": 10000,
+      "discount": 1000,
+      "total": 9000
+    },
     {
       "number": 1002,
       "date": "1405/06/28",
@@ -69,28 +125,28 @@
   "products": [],
   "customers": [
     {
-      "id": "mu7id7jkwse6f",
+      "id": "mu7ippturjf65",
       "lastSeen": "1405/06/28",
-      "name": "محمدی",
-      "phone": "09784545",
-      "nationalCode": "۴۳۲۴۲",
-      "birthCertNo": "۳۲۴۲۳۴",
-      "address": "سیشرسیشر",
+      "name": "محمد",
+      "phone": "2315651",
+      "nationalCode": "2265454981",
+      "birthCertNo": "123",
+      "address": "یسشریسرسیشر",
       "gender": "مرد",
-      "age": "12",
-      "notes": "سیرشس"
+      "age": "30",
+      "notes": "سیرسشیر"
     },
     {
-      "id": "mu7hrqyqjadg7",
+      "id": "mu7iogzu395jm",
       "lastSeen": "1405/06/28",
-      "name": "حسین",
-      "phone": "09339201684",
-      "nationalCode": "",
-      "birthCertNo": "",
-      "address": "",
-      "gender": "",
-      "age": "",
-      "notes": ""
+      "name": "حسین حیدرپور",
+      "phone": "09017054649",
+      "nationalCode": "2282519272",
+      "birthCertNo": "356",
+      "address": "شیراز شهرک گلستان",
+      "gender": "مرد",
+      "age": "28",
+      "notes": "کد شخصی 1234\nرمز سنا 11345"
     }
   ],
   "shop": {

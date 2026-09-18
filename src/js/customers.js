@@ -1,4 +1,6 @@
 import { store, faNum, toJalali } from "./store.js";
+import { autoSaveInvoices } from "./backup.js";
+import { autoPushGitHub } from "./github.js";
 
 const el = {
   list: null,
@@ -117,6 +119,14 @@ export function initCustomers() {
   if (exportBtn && !exportBtn.dataset.bound) {
     exportBtn.dataset.bound = "1";
     exportBtn.addEventListener("click", exportCustomersExcel);
+  }
+
+  initCustomerForm();
+
+  const addBtn = document.getElementById("btn-add-customer");
+  if (addBtn && !addBtn.dataset.bound) {
+    addBtn.dataset.bound = "1";
+    addBtn.addEventListener("click", openCustomerForm);
   }
 
   renderCustomers();
@@ -365,4 +375,102 @@ function toast(msg) {
   t.textContent = msg;
   t.classList.remove("hidden");
   setTimeout(() => t.classList.add("hidden"), 2200);
+}
+
+/* ============================================================
+   مودال ثبت مشتری جدید (بدون فاکتور)
+============================================================ */
+const formEl = {
+  modal: null,
+  name: null,
+  phone: null,
+  national: null,
+  birthcert: null,
+  gender: null,
+  age: null,
+  address: null,
+  notes: null,
+};
+
+function initCustomerForm() {
+  formEl.modal = document.getElementById("customer-form-modal");
+  if (!formEl.modal || formEl.modal.dataset.bound) return;
+  formEl.modal.dataset.bound = "1";
+
+  formEl.name = document.getElementById("cf-name");
+  formEl.phone = document.getElementById("cf-phone");
+  formEl.national = document.getElementById("cf-national");
+  formEl.birthcert = document.getElementById("cf-birthcert");
+  formEl.gender = document.getElementById("cf-gender");
+  formEl.age = document.getElementById("cf-age");
+  formEl.address = document.getElementById("cf-address");
+  formEl.notes = document.getElementById("cf-notes");
+
+  document
+    .getElementById("btn-close-customer-form")
+    .addEventListener("click", closeCustomerForm);
+  document
+    .getElementById("btn-cancel-customer-form")
+    .addEventListener("click", closeCustomerForm);
+  formEl.modal.addEventListener("click", (e) => {
+    if (e.target === formEl.modal) closeCustomerForm();
+  });
+  document
+    .getElementById("btn-save-customer-form")
+    .addEventListener("click", saveCustomerFromForm);
+}
+
+function clearCustomerForm() {
+  ["name", "phone", "national", "birthcert", "age", "address", "notes"].forEach(
+    (k) => formEl[k] && (formEl[k].value = ""),
+  );
+  if (formEl.gender) formEl.gender.value = "";
+}
+
+export function openCustomerForm() {
+  if (!formEl.modal) initCustomerForm();
+  clearCustomerForm();
+  formEl.modal.classList.remove("hidden");
+  setTimeout(() => formEl.name?.focus(), 60);
+}
+
+function closeCustomerForm() {
+  formEl.modal?.classList.add("hidden");
+}
+
+function saveCustomerFromForm() {
+  const name = formEl.name?.value.trim() || "";
+  const phone = formEl.phone?.value.trim() || "";
+  if (!name && !phone) return alert("حداقل نام یا شماره تماس را وارد کنید.");
+
+  // جلوگیری از ثبت تکراری: اگر مشتری با این شماره هست، سؤال کن
+  if (phone) {
+    const dup = store.getCustomers().find((c) => c.phone === phone);
+    if (
+      dup &&
+      !confirm(
+        `مشتری با شماره ${phone} قبلاً ثبت شده (${dup.name || "بدون نام"}).\nاطلاعات همان مشتری به‌روزرسانی شود؟`,
+      )
+    )
+      return;
+  }
+
+  store.saveCustomer({
+    name,
+    phone,
+    nationalCode: formEl.national?.value.trim() || "",
+    birthCertNo: formEl.birthcert?.value.trim() || "",
+    gender: formEl.gender?.value || "",
+    age: formEl.age?.value.trim() || "",
+    address: formEl.address?.value.trim() || "",
+    notes: formEl.notes?.value.trim() || "",
+  });
+
+  closeCustomerForm();
+  renderCustomers(el.search?.value.trim() || "");
+  toast("مشتری ذخیره شد ✅");
+
+  // 💾 بک‌آپ کامل بعد از ثبت مشتری
+  autoSaveInvoices();
+  autoPushGitHub();
 }
