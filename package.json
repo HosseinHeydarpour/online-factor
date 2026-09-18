@@ -1,0 +1,9 @@
+{
+  "name": "cafe-net-invoice",
+  "version": "1.0.0",
+  "description": "سیستم صدور فاکتور کافی‌نت",
+  "type": "module",
+  "scripts": {
+    "dev": "npx serve ."
+  }
+}

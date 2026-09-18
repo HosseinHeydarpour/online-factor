@@ -9,6 +9,7 @@ const el = {
     invoice: document.getElementById("view-invoice"),
     products: document.getElementById("view-products"),
     reports: document.getElementById("view-reports"),
+    invoices: document.getElementById("view-invoices"),
     settings: document.getElementById("view-settings"),
   },
   srcTabs: document.querySelectorAll(".src-tab"),
@@ -35,6 +36,7 @@ function setView(view) {
   });
   if (view === "products") renderProducts();
   if (view === "reports" && window.initReports) window.initReports();
+  if (view === "invoices" && window.initInvoicesList) window.initInvoicesList();
 }
 
 el.tabs.forEach((t) =>

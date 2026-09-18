@@ -37,6 +37,11 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://npmcdn.com/flatpickr/dist/themes/light.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    
+    <!-- jQuery (required for persian-datepicker) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+    <!-- Persian Datepicker -->
     <script src="https://cdn.jsdelivr.net/npm/persian-date@1.1.0/dist/persian-date.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css">
@@ -173,6 +178,12 @@
             class="view-tab px-4 py-2.5 rounded-t-xl font-bold border-b-2 border-transparent"
           >
             📊 گزارش‌گیری درآمد
+          </button>
+          <button
+            data-view="invoices"
+            class="view-tab px-4 py-2.5 rounded-t-xl font-bold border-b-2 border-transparent"
+          >
+            📋 فاکتورهای ثبت شده
           </button>
           <button
             data-view="settings"
@@ -402,6 +413,45 @@
           </div>
         </section>
 
+        <!-- ============ ویو: فاکتورهای ثبت شده ============ -->
+        <section id="view-invoices" class="view hidden space-y-5">
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <h2 class="font-extrabold text-lg">📋 فاکتورهای ثبت شده</h2>
+            <div class="flex gap-2">
+              <input
+                id="invoice-search"
+                placeholder="جستجوی فاکتور (شماره، نام مشتری)…"
+                class="rounded-xl border border-slate-300 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+          </div>
+          
+          <!-- خلاصه آمار -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 border border-emerald-200 rounded-2xl p-5">
+              <p class="text-sm text-emerald-600 font-bold mb-1">💰 کل درآمد</p>
+              <p id="invoices-total-revenue" class="text-2xl font-extrabold text-emerald-800">۰ تومان</p>
+            </div>
+            <div class="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-5">
+              <p class="text-sm text-blue-600 font-bold mb-1">🧾 تعداد فاکتورها</p>
+              <p id="invoices-total-count" class="text-2xl font-extrabold text-blue-800">۰ فاکتور</p>
+            </div>
+            <div class="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-2xl p-5">
+              <p class="text-sm text-purple-600 font-bold mb-1">📅 میانگین روزانه</p>
+              <p id="invoices-avg-daily" class="text-2xl font-extrabold text-purple-800">۰ تومان</p>
+            </div>
+          </div>
+          
+          <!-- لیست فاکتورها -->
+          <div id="invoices-list" class="space-y-3"></div>
+          <div
+            id="invoices-empty"
+            class="hidden bg-white border border-dashed border-slate-300 rounded-2xl p-10 text-center text-slate-400 text-sm"
+          >
+            هنوز فاکتوری ثبت نشده است.
+          </div>
+        </section>
+
         <!-- ============ ویو: تنظیمات ============ -->
         <section id="view-settings" class="view hidden">
           <div class="max-w-2xl mx-auto">
@@ -614,6 +664,9 @@
     <script type="module">
       import { initReports } from './src/js/reports.js';
       window.initReports = initReports;
+      
+      import { initInvoicesList } from './src/js/invoices-list.js';
+      window.initInvoicesList = initInvoicesList;
     </script>
 
     <script type="module" src="./src/js/app.js"></script>
