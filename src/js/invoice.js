@@ -1,4 +1,11 @@
-import { store, faNum, todayFa, nowTimeFa, numberToWordsFa } from "./store.js";
+import {
+  store,
+  faNum,
+  todayFa,
+  nowTimeFa,
+  numberToWordsFa,
+  toJalali,
+} from "./store.js";
 
 const state = {
   items: [],
@@ -86,14 +93,14 @@ function render() {
    ============================================================ */
 export async function buildPrintHTML(number, invoiceData = null) {
   const shop = store.getShopInfo();
-  
+
   // اگر invoiceData داده شده، از آن استفاده کن، در غیر این صورت از state فعلی
   const items = invoiceData ? invoiceData.items : state.items;
   const customer = invoiceData ? invoiceData.customer : state.customer;
   const discount = invoiceData ? invoiceData.discount : state.discount;
   const total = invoiceData ? invoiceData.total : totals().total;
   const subtotal = invoiceData ? invoiceData.subtotal : totals().subtotal;
-  
+
   let qr = "";
   try {
     if (window.QRCode) {
@@ -125,7 +132,9 @@ export async function buildPrintHTML(number, invoiceData = null) {
     .join("");
 
   // تاریخ و ساعت - اگر invoiceData داده شده از آن استفاده کن
-  const dateStr = invoiceData ? `${invoiceData.date} - ${invoiceData.time}` : `${todayFa()} - ${nowTimeFa()}`;
+  const dateStr = invoiceData
+    ? `${invoiceData.date} - ${invoiceData.time}`
+    : `${todayFa()} - ${nowTimeFa()}`;
 
   return `
 <div dir="rtl" style="font-family:'Vazirmatn',Tahoma,sans-serif;color:#0f172a;background:#ffffff;width:100%;">
@@ -354,27 +363,27 @@ export async function printInvoice() {
 export function saveInvoice() {
   if (!state.items.length) return alert("فاکتور خالی است!");
   if (!state.number) state.number = store.nextInvoiceNumber();
+
   const t = totals();
-  
-  // تبدیل تاریخ به شمسی برای ذخیره‌سازی
-  const todayJalali = todayFa().split(' ')[0]; // فقط بخش تاریخ بدون روز هفته
-  const [jy, jm, jd] = todayJalali.split('/').map(Number);
-  const jalaliDate = `${jy}/${String(jm).padStart(2, '0')}/${String(jd).padStart(2, '0')}`;
-  const jalaliTime = nowTimeFa(); // زمان فعلی به شمسی
-  
+
+  // ✅ تاریخ شمسی استاندارد برای ذخیره
+  const today = toJalali();
+  const jalaliDate = today.full; // مثل: 1404/01/15
+  const jalaliTime = nowTimeFa();
+
   const invoice = {
     number: state.number,
-    date: jalaliDate, // تاریخ شمسی مثل "1404/01/15"
-    time: jalaliTime, // زمان شمسی مثل "14:30"
+    date: jalaliDate,
+    time: jalaliTime,
     customer: { ...state.customer },
     items: [...state.items],
     ...t,
   };
+
   store.saveInvoice(invoice);
   alert(`فاکتور شماره ${faNum(invoice.number)} ذخیره شد ✅`);
   clearInvoice();
 }
-
 export function initInvoiceEvents() {
   // بیمه احتیاطی: print-area باید فرزند مستقیم body باشد تا CSS چاپ درست کار کند
   if (el.printArea && el.printArea.parentElement !== document.body) {

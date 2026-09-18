@@ -1,6 +1,10 @@
 import { store, faNum, toJalali, fromJalali, todayFa } from "./store.js";
 import { buildPrintHTML, fitToSinglePage } from "./invoice.js";
 
+function isValidJalaliDate(dateStr) {
+  return typeof dateStr === "string" && /^\d{4}\/\d{2}\/\d{2}$/.test(dateStr);
+}
+
 export function initInvoicesList() {
   const searchInput = document.getElementById("invoice-search");
 
@@ -63,14 +67,9 @@ function renderInvoicesList(query = "") {
 
   container.innerHTML = filtered
     .map((inv) => {
-      // inv.date فرمت شمسی "1404/01/15" دارد
-      let jDateFull = inv.date || toJalali().full;
-      // اطمینان از فرمت صحیح تاریخ
-      if (!jDateFull.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
-        // اگر فرمت درست نیست، از تاریخ امروز استفاده کن
-        jDateFull = toJalali().full;
-      }
-
+      const jDateFull = isValidJalaliDate(inv.date)
+        ? inv.date
+        : toJalali().full;
       // برای نمایش ساعت، اگر زمان ذخیره شده باشد از آن استفاده کن
       let jTime = "00:00";
       if (inv.time) {
@@ -200,7 +199,9 @@ window.viewInvoice = function (invNumber) {
 
   const customerName = invoice.customer?.name || "بدون نام";
   const customerPhone = invoice.customer?.phone || "-";
-  const jDateFull = invoice.date || toJalali().full;
+  const jDateFull = isValidJalaliDate(invoice.date)
+    ? invoice.date
+    : toJalali().full;
   const jTime = invoice.time || "00:00";
 
   const detailHtml = `
