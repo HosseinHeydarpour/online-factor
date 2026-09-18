@@ -84,7 +84,7 @@ function render() {
 /* ============================================================
    ساخت HTML فاکتور — چیدمان افقی (Landscape A4)
    ============================================================ */
-async function buildPrintHTML(number, invoiceData = null) {
+export async function buildPrintHTML(number, invoiceData = null) {
   const shop = store.getShopInfo();
   
   // اگر invoiceData داده شده، از آن استفاده کن، در غیر این صورت از state فعلی
