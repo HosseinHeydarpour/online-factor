@@ -1,4 +1,4 @@
-import { store, faNum, toJalali } from "./store.js";
+import { store, faNum, toJalali, fromJalali } from "./store.js";
 
 export function initInvoicesList() {
   const searchInput = document.getElementById("invoice-search");
@@ -35,8 +35,8 @@ function renderInvoicesList(query = "") {
   
   // محاسبه میانگین روزانه
   const uniqueDays = new Set(filtered.map(inv => {
-    const jDate = toJalali(new Date(inv.date));
-    return `${jDate.year}/${String(jDate.month).padStart(2, '0')}/${String(jDate.day).padStart(2, '0')}`;
+    // inv.date فرمت شمسی "1404/01/15" دارد
+    return inv.date;
   }));
   const avgDaily = uniqueDays.size > 0 ? Math.round(totalRevenue / uniqueDays.size) : 0;
   
@@ -54,8 +54,30 @@ function renderInvoicesList(query = "") {
   emptyEl.classList.add("hidden");
   
   container.innerHTML = filtered.map(inv => {
-    const jDate = toJalali(new Date(inv.date));
-    const jTime = new Intl.DateTimeFormat("fa-IR", { hour: "2-digit", minute: "2-digit" }).format(new Date(inv.date));
+    // inv.date فرمت شمسی "1404/01/15" دارد
+    const jDateParts = inv.date.split('/').map(Number);
+    const jDate = {
+      year: jDateParts[0],
+      month: jDateParts[1],
+      day: jDateParts[2],
+      full: inv.date
+    };
+    // برای نمایش ساعت، اگر زمان ذخیره شده باشد از آن استفاده کن، در غیر این صورت زمان پیش‌فرض بگذار
+    let jTime = "00:00";
+    if (inv.time) {
+      jTime = inv.time;
+    } else {
+      // سعی کن زمان را از تاریخ بسازی (اگر تاریخ معتبر باشد)
+      try {
+        const [iy, im, id] = inv.date.split('/').map(Number);
+        const gDate = fromJalali(iy, im, id);
+        if (!isNaN(gDate.getTime())) {
+          jTime = new Intl.DateTimeFormat("fa-IR", { hour: "2-digit", minute: "2-digit" }).format(gDate);
+        }
+      } catch (e) {
+        jTime = "00:00";
+      }
+    }
     
     return `
       <div class="bg-white border border-slate-200 rounded-xl p-4 hover:border-brand-300 transition fade-in">
