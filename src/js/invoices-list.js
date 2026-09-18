@@ -1,5 +1,5 @@
 import { store, faNum, toJalali, fromJalali, todayFa } from "./store.js";
-import { buildPrintHTML } from "./invoice.js";
+import { buildPrintHTML, fitToSinglePage } from "./invoice.js";
 
 export function initInvoicesList() {
   const searchInput = document.getElementById("invoice-search");
@@ -168,5 +168,12 @@ async function printInvoice(invId) {
   printArea.innerHTML = `<div id="invoice-fit"><div id="invoice-sheet">${html}</div></div>`;
   
   // اعمال استایل‌های لازم برای چاپ
-  setTimeout(() => window.print(), 300);
+  setTimeout(() => {
+    if (typeof fitToSinglePage === 'function') {
+      fitToSinglePage();
+    }
+    window.print();
+  }, 300);
 }
+
+export { printInvoice, viewInvoice };
