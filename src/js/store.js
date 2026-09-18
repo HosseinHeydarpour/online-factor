@@ -191,7 +191,8 @@ export function fromJalali(jy, jm, jd) {
     }
     let gd = days + 1;
     const sal_a = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-    for (let a = 0; a < 13; a++) {
+    let a = 0;
+    for (a = 0; a < 13; a++) {
       const v = sal_a[a];
       if (gd <= v) break;
       gd -= v;
