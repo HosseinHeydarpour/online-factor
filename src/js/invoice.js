@@ -9,11 +9,28 @@ import {
 import { autoSaveInvoices } from "./backup.js";
 import { autoPushGitHub } from "./github.js";
 
+import {
+  openCustomerDetails,
+  setCustomerDetailsFormValues,
+  hasCustomerExtras,
+} from "./customers.js";
+
+const EMPTY_CUSTOMER = {
+  name: "",
+  phone: "",
+  nationalCode: "",
+  birthCertNo: "",
+  address: "",
+  gender: "",
+  age: "",
+  notes: "",
+};
+
 const state = {
   items: [],
   discount: 0,
-  customer: { name: "", phone: "" },
-  payment: "نقدی", // ✅ اضافه شد
+  customer: { ...EMPTY_CUSTOMER },
+  payment: "نقدی",
   number: null,
 };
 
@@ -48,9 +65,11 @@ export function clearInvoice() {
   state.discount = 0;
   state.number = null;
   state.payment = "نقدی";
-  state.customer = { name: "", phone: "" }; // ✅ پاک‌کردن مشتری قبلی
-  el.custName.value = ""; // ✅ خالی‌کردن فیلدها
+  state.customer = { ...EMPTY_CUSTOMER }; // ✅
+  el.custName.value = ""; // ✅
   el.custPhone.value = ""; // ✅
+  setCustomerDetailsFormValues(state.customer); // ✅ سینک دیالوگ
+  updateDetailsBadge(); // ✅
   const defaultRadio = document.querySelector(
     'input[name="payment-method"][value="نقدی"]',
   );
@@ -58,13 +77,16 @@ export function clearInvoice() {
   el.discountInput.value = 0;
   render();
 }
-
 function totals() {
   const subtotal = state.items.reduce((s, i) => s + i.price * i.qty, 0);
   const discount = Math.min(state.discount || 0, subtotal);
   return { subtotal, discount, total: subtotal - discount };
 }
-
+function updateDetailsBadge() {
+  const badge = document.getElementById("customer-details-badge");
+  if (badge)
+    badge.classList.toggle("hidden", !hasCustomerExtras(state.customer));
+}
 function render() {
   const t = totals();
   el.list.innerHTML = state.items.length
@@ -465,6 +487,26 @@ export function initInvoiceEvents() {
     r.addEventListener("change", () => {
       if (r.checked) state.payment = r.value;
     });
+  });
+
+  // ✅ دکمه بازکردن دیالوگ اطلاعات تکمیلی
+  document
+    .getElementById("btn-open-customer-details")
+    ?.addEventListener("click", () => {
+      openCustomerDetails(state.customer, (data) => {
+        state.customer = { ...state.customer, ...data };
+        updateDetailsBadge();
+      });
+    });
+
+  // ✅ وقتی مشتری از تب مشتریان انتخاب می‌شود، فیلدهای تکمیلی هم سینک شوند
+  window.addEventListener("customer-selected", (e) => {
+    const c = e.detail || {};
+    state.customer = { ...EMPTY_CUSTOMER, ...c };
+    el.custName.value = c.name || "";
+    el.custPhone.value = c.phone || "";
+    setCustomerDetailsFormValues(state.customer);
+    updateDetailsBadge();
   });
 
   render();

@@ -1,13 +1,18 @@
 import { RATE_CATEGORIES } from "../data/rates.js";
 import { store, faNum, todayFa } from "./store.js";
 import { addItemToInvoice, initInvoiceEvents } from "./invoice.js";
-import { renderProducts, initProductEvents } from "./products.js";
+import {
+  renderProducts,
+  initProductEvents,
+  addProductToInvoice,
+} from "./products.js";
 import { initInvoicesList } from "./invoices-list.js";
 import { initAuth } from "./auth.js";
 import { initBackup } from "./backup.js";
 import { initGitHubUI } from "./github.js";
 import { initReports } from "./reports.js"; // ✅ اضافه شد
 import { initCustomers, renderCustomers } from "./customers.js";
+
 const el = {
   tabs: document.querySelectorAll(".view-tab"),
   views: {
@@ -210,18 +215,7 @@ el.items.addEventListener("click", (e) => {
   }
 
   if (pId) {
-    const p = store.getProduct(pId);
-    if (vId) {
-      const v = p.variants.find((x) => x.id === vId);
-      addItemToInvoice({
-        title: p.name,
-        price: v.price,
-        meta: `واریانت: ${v.name}`,
-      });
-    } else {
-      addItemToInvoice({ title: p.name, price: p.price });
-    }
-    toast("به فاکتور اضافه شد 🧾");
+    addProductToInvoice(store.getProduct(pId), vId || null);
   }
 });
 

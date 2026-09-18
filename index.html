@@ -452,6 +452,22 @@
               />
             </div>
 
+            <!-- اطلاعات تکمیلی مشتری -->
+            <div class="flex items-center justify-between mb-3">
+              <button
+                id="btn-open-customer-details"
+                type="button"
+                class="text-[11px] font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-slate-700 hover:bg-brand-100 dark:hover:bg-slate-600 px-3 py-1.5 rounded-lg transition"
+              >
+                📋 اطلاعات تکمیلی مشتری
+              </button>
+              <span
+                id="customer-details-badge"
+                class="hidden text-[10px] font-bold text-emerald-600 dark:text-emerald-400"
+                >✅ تکمیل شده</span
+              >
+            </div>
+
             <!-- روش پرداخت -->
             <div class="mb-3">
               <span
@@ -1281,6 +1297,132 @@
               انصراف
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== مودال: اطلاعات تکمیلی مشتری ===================== -->
+    <div
+      id="customer-details-modal"
+      class="hidden fixed inset-0 z-[65] modal-backdrop grid place-items-center p-3 sm:p-4"
+    >
+      <div
+        class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl p-4 sm:p-6 fade-in max-h-[90vh] overflow-auto"
+      >
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="font-extrabold text-sm sm:text-base">
+            📋 اطلاعات تکمیلی مشتری
+          </h3>
+          <button
+            id="btn-close-customer-details"
+            class="text-slate-400 hover:text-rose-500 text-xl"
+          >
+            ✕
+          </button>
+        </div>
+        <p
+          class="text-[11px] text-slate-500 dark:text-slate-400 mb-4 leading-5"
+        >
+          همه فیلدهای این فرم <b>اختیاری</b> هستند و برای ثبت کامل‌تر اطلاعات
+          مشتری استفاده می‌شوند.
+        </p>
+
+        <div class="space-y-3 text-sm">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label
+                class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
+                >کد ملی</label
+              >
+              <input
+                id="cd-national"
+                inputmode="numeric"
+                placeholder="۰۰۱۲۳۴۵۶۷۸"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+            <div>
+              <label
+                class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
+                >شماره شناسنامه</label
+              >
+              <input
+                id="cd-birthcert"
+                inputmode="numeric"
+                placeholder="مثلاً ۱۲۳۴۵۶۷۸۹۰"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label
+                class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
+                >جنسیت</label
+              >
+              <select
+                id="cd-gender"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+              >
+                <option value="">ثبت نشده</option>
+                <option value="مرد">مرد</option>
+                <option value="زن">زن</option>
+              </select>
+            </div>
+            <div>
+              <label
+                class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
+                >سن</label
+              >
+              <input
+                id="cd-age"
+                type="number"
+                min="0"
+                max="120"
+                placeholder="مثلاً ۳۵"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
+              >آدرس</label
+            >
+            <input
+              id="cd-address"
+              placeholder="آدرس کامل"
+              class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+            />
+          </div>
+
+          <div>
+            <label class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
+              >توضیحات (اختیاری)</label
+            >
+            <textarea
+              id="cd-notes"
+              rows="3"
+              placeholder="هر اطلاعات دیگری که می‌خواهید ثبت کنید…"
+              class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="flex gap-2 mt-5">
+          <button
+            id="btn-save-customer-details"
+            class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl text-sm shadow"
+          >
+            💾 ذخیره اطلاعات
+          </button>
+          <button
+            id="btn-clear-customer-details"
+            class="px-4 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl text-sm font-bold"
+          >
+            پاک کردن
+          </button>
         </div>
       </div>
     </div>

@@ -7,11 +7,104 @@ const el = {
   total: null,
 };
 
+/* ============================================================
+   دیالوگ اطلاعات تکمیلی مشتری (کنترل‌کننده مرکزی)
+============================================================ */
+const detailsEl = {
+  modal: null,
+  national: null,
+  birthcert: null,
+  gender: null,
+  age: null,
+  address: null,
+  notes: null,
+};
+let detailsOnSave = null;
+
+function initDetailsModal() {
+  detailsEl.modal = document.getElementById("customer-details-modal");
+  detailsEl.national = document.getElementById("cd-national");
+  detailsEl.birthcert = document.getElementById("cd-birthcert");
+  detailsEl.gender = document.getElementById("cd-gender");
+  detailsEl.age = document.getElementById("cd-age");
+  detailsEl.address = document.getElementById("cd-address");
+  detailsEl.notes = document.getElementById("cd-notes");
+
+  if (!detailsEl.modal || detailsEl.modal.dataset.bound) return;
+  detailsEl.modal.dataset.bound = "1";
+
+  document
+    .getElementById("btn-close-customer-details")
+    .addEventListener("click", closeCustomerDetails);
+  detailsEl.modal.addEventListener("click", (e) => {
+    if (e.target === detailsEl.modal) closeCustomerDetails();
+  });
+  document
+    .getElementById("btn-save-customer-details")
+    .addEventListener("click", () => {
+      const data = readDetailsForm();
+      detailsOnSave?.(data);
+      closeCustomerDetails();
+    });
+  document
+    .getElementById("btn-clear-customer-details")
+    .addEventListener("click", () => setCustomerDetailsFormValues({}));
+}
+
+function readDetailsForm() {
+  return {
+    nationalCode: detailsEl.national?.value.trim() || "",
+    birthCertNo: detailsEl.birthcert?.value.trim() || "",
+    gender: detailsEl.gender?.value || "",
+    age: detailsEl.age?.value.trim() || "",
+    address: detailsEl.address?.value.trim() || "",
+    notes: detailsEl.notes?.value.trim() || "",
+  };
+}
+
+export function setCustomerDetailsFormValues(c = {}) {
+  if (!detailsEl.modal) initDetailsModal();
+  if (detailsEl.national) detailsEl.national.value = c.nationalCode || "";
+  if (detailsEl.birthcert) detailsEl.birthcert.value = c.birthCertNo || "";
+  if (detailsEl.gender) detailsEl.gender.value = c.gender || "";
+  if (detailsEl.age) detailsEl.age.value = c.age || "";
+  if (detailsEl.address) detailsEl.address.value = c.address || "";
+  if (detailsEl.notes) detailsEl.notes.value = c.notes || "";
+}
+
+export function openCustomerDetails(customer = {}, onSave = null) {
+  if (!detailsEl.modal) initDetailsModal();
+  detailsOnSave = onSave;
+  setCustomerDetailsFormValues(customer);
+  detailsEl.modal.classList.remove("hidden");
+}
+
+function closeCustomerDetails() {
+  detailsEl.modal?.classList.add("hidden");
+  detailsOnSave = null;
+}
+
+export function hasCustomerExtras(c = {}) {
+  return !!(
+    c.nationalCode ||
+    c.birthCertNo ||
+    c.address ||
+    c.gender ||
+    c.age ||
+    c.notes
+  );
+}
+
+/* ============================================================
+   تب مشتریان
+============================================================ */
 export function initCustomers() {
   el.list = document.getElementById("customers-list");
   el.empty = document.getElementById("customers-empty");
   el.search = document.getElementById("customer-search");
   el.total = document.getElementById("customers-total-count");
+
+  initDetailsModal();
 
   if (el.search && !el.search.dataset.bound) {
     el.search.dataset.bound = "1";
@@ -37,7 +130,8 @@ export function renderCustomers(query = "") {
     (c) =>
       !q ||
       (c.name || "").toLowerCase().includes(q) ||
-      (c.phone || "").toLowerCase().includes(q),
+      (c.phone || "").toLowerCase().includes(q) ||
+      (c.nationalCode || "").toLowerCase().includes(q),
   );
 
   if (el.total) el.total.textContent = faNum(customers.length) + " نفر";
@@ -62,7 +156,6 @@ export function renderCustomers(query = "") {
     }
   });
 
-  // ✅ نمایش لیستی (ردیفی) به‌جای کارتی
   el.list.innerHTML = `
     <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-700 shadow-sm">
       ${filtered
@@ -71,12 +164,22 @@ export function renderCustomers(query = "") {
           const last = lastByPhone[c.phone];
           const lastDate = last ? last.date : "—";
           const initial = (c.name || "؟").charAt(0);
+          const extrasLine = [
+            c.nationalCode ? `کد ملی: ${c.nationalCode}` : "",
+            c.birthCertNo ? `شناسنامه: ${c.birthCertNo}` : "",
+            c.gender || "",
+            c.age ? `سن ${c.age}` : "",
+            c.address || "",
+          ]
+            .filter(Boolean)
+            .join(" · ");
           return `
           <div class="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition">
             <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 font-extrabold grid place-items-center shrink-0">${initial}</div>
             <div class="min-w-0 flex-1">
               <p class="font-bold text-sm truncate">${c.name || "بدون نام"}</p>
               <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">${c.phone || "بدون شماره"}</p>
+              ${extrasLine ? `<p class="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 truncate">📋 ${extrasLine}</p>` : ""}
             </div>
             <div class="text-left shrink-0 hidden md:block">
               <p class="text-[11px] text-slate-400">آخرین: <span class="font-bold text-slate-600 dark:text-slate-300">${lastDate}</span></p>
@@ -85,6 +188,7 @@ export function renderCustomers(query = "") {
             <span class="md:hidden text-[10px] font-bold text-brand-700 dark:text-brand-400 shrink-0">${faNum(count)} فاکتور</span>
             <div class="flex items-center gap-1.5 shrink-0">
               <button data-use-customer="${c.id}" title="افزودن به فاکتور" class="text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 sm:px-3 py-2 rounded-lg font-bold">➕ فاکتور</button>
+              <button data-details-customer="${c.id}" title="اطلاعات تکمیلی" class="text-xs bg-brand-50 dark:bg-slate-700 hover:bg-brand-100 dark:hover:bg-slate-600 text-brand-700 dark:text-brand-400 px-2.5 py-2 rounded-lg font-bold">📋</button>
               <button data-edit-customer="${c.id}" title="ویرایش" class="text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-2.5 py-2 rounded-lg font-bold">✏️</button>
               <button data-delete-customer="${c.id}" title="حذف" class="text-xs bg-rose-50 dark:bg-rose-900/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 px-2.5 py-2 rounded-lg font-bold">🗑️</button>
             </div>
@@ -106,6 +210,20 @@ export function renderCustomers(query = "") {
       window.dispatchEvent(new CustomEvent("customer-selected", { detail: c }));
       if (typeof setView === "function") setView("invoice");
       toast(`${c.name || "مشتری"} به فاکتور اضافه شد 🧾`);
+    });
+  });
+
+  el.list.querySelectorAll("[data-details-customer]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const c = store
+        .getCustomers()
+        .find((x) => x.id === btn.dataset.detailsCustomer);
+      if (!c) return;
+      openCustomerDetails(c, (data) => {
+        store.saveCustomer({ ...c, ...data });
+        renderCustomers(el.search?.value.trim() || "");
+        toast("اطلاعات تکمیلی مشتری ذخیره شد ✅");
+      });
     });
   });
 
@@ -137,7 +255,9 @@ export function renderCustomers(query = "") {
   });
 }
 
-/* ---------- خروجی اکسل ---------- */
+/* ============================================================
+   خروجی اکسل — با ستون‌های اطلاعات تکمیلی
+============================================================ */
 export function exportCustomersExcel() {
   const customers = store.getCustomers();
   if (!customers.length) return alert("مشتری‌ای برای خروجی وجود ندارد!");
@@ -160,6 +280,12 @@ export function exportCustomersExcel() {
     ردیف: i + 1,
     "نام مشتری": c.name || "",
     "شماره تماس": c.phone || "",
+    "کد ملی": c.nationalCode || "",
+    "شماره شناسنامه": c.birthCertNo || "",
+    جنسیت: c.gender || "",
+    سن: c.age || "",
+    آدرس: c.address || "",
+    توضیحات: c.notes || "",
     "تعداد فاکتورها": countByPhone[c.phone] || 0,
     "مجموع خرید (تومان)": sumByPhone[c.phone] || 0,
     "تاریخ آخرین فاکتور": lastByPhone[c.phone]?.date || "",
@@ -172,18 +298,23 @@ export function exportCustomersExcel() {
     const ws = XLSX.utils.json_to_sheet(rows);
     ws["!cols"] = [
       { wch: 6 },
-      { wch: 25 },
-      { wch: 15 },
+      { wch: 22 },
       { wch: 14 },
-      { wch: 18 },
+      { wch: 12 },
+      { wch: 14 },
+      { wch: 8 },
+      { wch: 6 },
+      { wch: 30 },
+      { wch: 30 },
+      { wch: 12 },
       { wch: 16 },
+      { wch: 14 },
       { wch: 12 },
     ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "مشتریان");
     XLSX.writeFile(wb, `${fileName}.xlsx`);
   } else {
-    // فال‌بک: CSV با BOM (اکسل با فارسی درست باز می‌کند)
     const headers = Object.keys(rows[0]);
     const csv = [
       headers.join(","),

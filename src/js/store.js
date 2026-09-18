@@ -86,18 +86,31 @@ export const store = {
   saveCustomer(customer) {
     const list = this.getCustomers();
     const phone = (customer.phone || "").trim();
-    // تطبیق بر اساس شماره تماس (اگر داشت) در غیر این صورت id
     let idx = -1;
     if (phone) idx = list.findIndex((c) => c.phone === phone);
     else if (customer.id) idx = list.findIndex((c) => c.id === customer.id);
 
     const existing = idx >= 0 ? list[idx] : {};
+    const FIELDS = [
+      "name",
+      "phone",
+      "nationalCode",
+      "birthCertNo",
+      "address",
+      "gender",
+      "age",
+      "notes",
+    ];
     const record = {
       id: existing.id || customer.id || uid(),
-      name: customer.name?.trim() || existing.name || "",
-      phone: phone || existing.phone || "",
       lastSeen: toJalali().full,
     };
+    FIELDS.forEach((f) => {
+      // اگر کلید در آبجکت ورودی هست (حتی خالی) همان را بگیر، وگرنه مقدار قبلی را نگه دار
+      record[f] =
+        f in customer ? String(customer[f] ?? "").trim() : existing[f] || "";
+    });
+
     if (idx >= 0) list[idx] = record;
     else list.unshift(record);
     write(KEYS.CUSTOMERS, list);
