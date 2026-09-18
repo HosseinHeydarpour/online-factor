@@ -84,15 +84,21 @@ function render() {
 /* ============================================================
    ساخت HTML فاکتور — چیدمان افقی (Landscape A4)
    ============================================================ */
-async function buildPrintHTML(number) {
-  const t = totals();
+async function buildPrintHTML(number, invoiceData = null) {
   const shop = store.getShopInfo();
-
+  
+  // اگر invoiceData داده شده، از آن استفاده کن، در غیر این صورت از state فعلی
+  const items = invoiceData ? invoiceData.items : state.items;
+  const customer = invoiceData ? invoiceData.customer : state.customer;
+  const discount = invoiceData ? invoiceData.discount : state.discount;
+  const total = invoiceData ? invoiceData.total : totals().total;
+  const subtotal = invoiceData ? invoiceData.subtotal : totals().subtotal;
+  
   let qr = "";
   try {
     if (window.QRCode) {
       qr = await window.QRCode.toDataURL(
-        `INV:${number}|TOTAL:${t.total}|DATE:${new Date().toISOString().slice(0, 10)}|CUST:${state.customer.name || "-"}`,
+        `INV:${number}|TOTAL:${total}|DATE:${new Date().toISOString().slice(0, 10)}|CUST:${customer.name || "-"}`,
         { width: 120, margin: 1, color: { dark: "#0c4a6e", light: "#ffffff" } },
       );
     }
@@ -100,7 +106,7 @@ async function buildPrintHTML(number) {
     console.error("QR error:", e);
   }
 
-  const rows = state.items
+  const rows = items
     .map(
       (
         i,
@@ -117,6 +123,9 @@ async function buildPrintHTML(number) {
     </tr>`,
     )
     .join("");
+
+  // تاریخ و ساعت - اگر invoiceData داده شده از آن استفاده کن
+  const dateStr = invoiceData ? `${invoiceData.date} - ${invoiceData.time}` : `${todayFa()} - ${nowTimeFa()}`;
 
   return `
 <div dir="rtl" style="font-family:'Vazirmatn',Tahoma,sans-serif;color:#0f172a;background:#ffffff;width:100%;">
@@ -150,7 +159,7 @@ async function buildPrintHTML(number) {
         <div style="font-size:21px;font-weight:900;letter-spacing:.5px;margin-top:1px;">${faNum(number)}</div>
       </div>
       <div style="font-size:10.5px;color:#64748b;margin-top:9px;line-height:1.9;">
-        تاریخ صدور: ${todayFa()}<br/>ساعت صدور: ${nowTimeFa()}
+        تاریخ صدور: ${dateStr}
       </div>
     </div>
   </div>
@@ -159,11 +168,11 @@ async function buildPrintHTML(number) {
   <div style="display:flex;gap:16px;padding:16px 30px 0;">
     <div style="flex:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 16px;display:flex;align-items:center;gap:10px;">
       <span style="font-size:10.5px;color:#64748b;font-weight:600;">تحویل‌گیرنده:</span>
-      <span style="font-size:13px;font-weight:800;">${state.customer.name || "—"}</span>
+      <span style="font-size:13px;font-weight:800;">${customer.name || "—"}</span>
     </div>
     <div style="flex:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 16px;display:flex;align-items:center;gap:10px;">
       <span style="font-size:10.5px;color:#64748b;font-weight:600;">شماره تماس:</span>
-      <span style="font-size:13px;font-weight:800;">${state.customer.phone || "—"}</span>
+      <span style="font-size:13px;font-weight:800;">${customer.phone || "—"}</span>
     </div>
     <div style="flex:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 16px;display:flex;align-items:center;gap:10px;">
       <span style="font-size:10.5px;color:#64748b;font-weight:600;">نوع پرداخت:</span>
@@ -190,23 +199,23 @@ async function buildPrintHTML(number) {
     <!-- باکس جمع -->
     <div class="inv-block" style="width:360px;background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:1px solid #bae6fd;border-radius:12px;padding:13px 18px;">
       <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:#475569;">
-        <span>جمع اقلام:</span><b style="color:#0f172a;">${faNum(t.subtotal)} تومان</b>
+        <span>جمع اقلام:</span><b style="color:#0f172a;">${faNum(subtotal)} تومان</b>
       </div>
       ${
-        t.discount > 0
+        discount > 0
           ? `
       <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:#dc2626;">
-        <span>تخفیف:</span><b>${faNum(t.discount)} تومان</b>
+        <span>تخفیف:</span><b>${faNum(discount)} تومان</b>
       </div>`
           : ""
       }
       <div style="border-top:1.5px solid #7dd3fc;margin:8px 0;"></div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;">
         <span style="font-size:13px;font-weight:800;color:#0c4a6e;">مبلغ قابل پرداخت:</span>
-        <b style="font-size:19px;font-weight:900;color:#0284c7;">${faNum(t.total)} <span style="font-size:10px;font-weight:600;">تومان</span></b>
+        <b style="font-size:19px;font-weight:900;color:#0284c7;">${faNum(total)} <span style="font-size:10px;font-weight:600;">تومان</span></b>
       </div>
       <div style="margin-top:10px;background:#dbeafe;border-radius:8px;padding:7px 10px;font-size:10px;color:#1e40af;text-align:center;line-height:1.8;font-weight:600;">
-        به حروف: ${numberToWordsFa(t.total)} تومان
+        به حروف: ${numberToWordsFa(total)} تومان
       </div>
     </div>
     <div style="flex:1;"></div>
