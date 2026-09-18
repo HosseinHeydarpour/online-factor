@@ -1,4 +1,5 @@
 import { store, faNum, toJalali, fromJalali, todayFa } from "./store.js";
+import { buildPrintHTML } from "./invoice.js";
 
 export function initInvoicesList() {
   const searchInput = document.getElementById("invoice-search");
@@ -137,13 +138,35 @@ function viewInvoice(invId) {
   const invoice = store.getInvoices().find(inv => inv.id === invId);
   if (!invoice) return;
   
-  alert(`فاکتور شماره ${faNum(invoice.number)}\nمشتری: ${invoice.customer?.name || "بدون نام"}\nمبلغ کل: ${faNum(invoice.total)} تومان`);
+  // نمایش مودال یا آلرت با جزئیات فاکتور
+  let itemsHtml = invoice.items.map(item => 
+    `• ${item.title} ${item.meta ? `(${item.meta})` : ''}: ${faNum(item.qty)} × ${faNum(item.price)} = ${faNum(item.price * item.qty)} تومان`
+  ).join('\n');
+  
+  let message = `فاکتور شماره ${faNum(invoice.number)}\n`;
+  message += `مشتری: ${invoice.customer?.name || "بدون نام"}\n`;
+  message += `تاریخ: ${invoice.date} - ساعت: ${invoice.time}\n`;
+  message += `تلفن: ${invoice.customer?.phone || "-"}\n\n`;
+  message += `اقلام:\n${itemsHtml}\n\n`;
+  if (invoice.discount > 0) {
+    message += `تخفیف: ${faNum(invoice.discount)} تومان\n`;
+  }
+  message += `جمع کل: ${faNum(invoice.total)} تومان`;
+  
+  alert(message);
 }
 
-function printInvoice(invId) {
+async function printInvoice(invId) {
   const invoice = store.getInvoices().find(inv => inv.id === invId);
   if (!invoice) return;
   
-  // اینجا می‌توانید منطق چاپ را پیاده‌سازی کنید
-  alert(`چاپ فاکتور شماره ${faNum(invoice.number)}`);
+  // استفاده از تابع buildPrintHTML برای ساخت HTML چاپ
+  const html = await buildPrintHTML(invoice.number, invoice);
+  
+  // قرار دادن HTML در ناحیه چاپ
+  const printArea = document.getElementById("print-area");
+  printArea.innerHTML = `<div id="invoice-fit"><div id="invoice-sheet">${html}</div></div>`;
+  
+  // اعمال استایل‌های لازم برای چاپ
+  setTimeout(() => window.print(), 300);
 }
