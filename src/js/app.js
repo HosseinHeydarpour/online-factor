@@ -37,10 +37,20 @@ function setView(view) {
     t.classList.toggle("text-slate-500", !active);
   });
   
-  // مدیریت تب مشاهده فاکتور
+  // مدیریت تب مشاهده فاکتور - این تب فقط هنگام مشاهده فاکتور نمایش داده می‌شود
   const detailTab = document.getElementById("tab-invoice-detail");
   if (view === "invoice-detail") {
     detailTab?.classList.remove("hidden");
+    // فعال کردن تب مشاهده فاکتور
+    el.tabs.forEach((t) => {
+      if (t.dataset.view === "invoice-detail") {
+        t.classList.add("bg-brand-50", "text-brand-700", "border-brand-600");
+        t.classList.remove("text-slate-500");
+      } else {
+        t.classList.remove("bg-brand-50", "text-brand-700", "border-brand-600");
+        t.classList.add("text-slate-500");
+      }
+    });
   } else if (view !== "invoices" && view !== "invoice-detail") {
     detailTab?.classList.add("hidden");
   }
@@ -283,5 +293,6 @@ document.getElementById("today-date").textContent = todayFa();
 initInvoiceEvents();
 initProductEvents();
 initSettings();
+window.initInvoiceDetailEvents();
 setView("invoice");
 setSource("services");

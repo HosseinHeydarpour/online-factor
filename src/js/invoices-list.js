@@ -121,7 +121,7 @@ function renderInvoicesList(query = "") {
 let currentViewInvoiceNumber = null;
 
 // ایونت‌های صفحه مشاهده فاکتور - باید بعد از رندر شدن DOM اجرا شوند
-function initInvoiceDetailEvents() {
+window.initInvoiceDetailEvents = function() {
   // دکمه بازگشت به لیست فاکتورها
   const btnBack = document.getElementById('btn-back-to-invoices');
   if (btnBack) {
@@ -141,10 +141,10 @@ function initInvoiceDetailEvents() {
       }
     });
   }
-}
+};
 
 // اجرای ایونت‌ها بعد از لود شدن صفحه
-initInvoiceDetailEvents();
+window.initInvoiceDetailEvents();
 
 window.viewInvoice = function(invNumber) {
   // تبدیل شماره فاکتور به عدد (چون از HTML می‌آید)
