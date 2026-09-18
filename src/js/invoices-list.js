@@ -55,13 +55,13 @@ function renderInvoicesList(query = "") {
   
   container.innerHTML = filtered.map(inv => {
     // inv.date فرمت شمسی "1404/01/15" دارد
-    const jDateParts = inv.date.split('/').map(Number);
-    const jDate = {
-      year: jDateParts[0],
-      month: jDateParts[1],
-      day: jDateParts[2],
-      full: inv.date
-    };
+    let jDateFull = inv.date || todayFa().split(' ')[0];
+    // اطمینان از فرمت صحیح تاریخ
+    if (!jDateFull.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+      // اگر فرمت درست نیست، از تاریخ امروز استفاده کن
+      jDateFull = todayFa().split(' ')[0];
+    }
+    
     // برای نمایش ساعت، اگر زمان ذخیره شده باشد از آن استفاده کن
     let jTime = "00:00";
     if (inv.time) {
@@ -83,7 +83,7 @@ function renderInvoicesList(query = "") {
             </div>
           </div>
           <div class="text-left">
-            <p class="text-xs text-slate-400">${jDate.full} - ${jTime}</p>
+            <p class="text-xs text-slate-400">${jDateFull} - ${jTime}</p>
             <p class="text-sm font-extrabold text-brand-700 mt-1">${faNum(inv.total)} تومان</p>
           </div>
         </div>
