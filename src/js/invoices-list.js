@@ -117,7 +117,8 @@ function renderInvoicesList(query = "") {
   }).join("");
 }
 
-function viewInvoice(invId) {
+// قرار دادن توابع در window برای دسترسی از طریق onclick
+window.viewInvoice = function(invId) {
   const invoice = store.getInvoices().find(inv => inv.id === invId);
   if (!invoice) return;
   
@@ -136,10 +137,11 @@ function viewInvoice(invId) {
   }
   message += `جمع کل: ${faNum(invoice.total)} تومان`;
   
+  console.log("CLICKED!");
   alert(message);
-}
+};
 
-async function printInvoice(invId) {
+window.printInvoice = async function(invId) {
   const invoice = store.getInvoices().find(inv => inv.id === invId);
   if (!invoice) return;
   
@@ -157,10 +159,6 @@ async function printInvoice(invId) {
     }
     window.print();
   }, 300);
-}
+};
 
-// قرار دادن توابع در window برای دسترسی از طریق onclick
-window.viewInvoice = viewInvoice;
-window.printInvoice = printInvoice;
-
-export { printInvoice, viewInvoice };
+export { printInvoice: window.printInvoice, viewInvoice: window.viewInvoice };
