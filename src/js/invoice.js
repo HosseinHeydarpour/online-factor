@@ -106,15 +106,15 @@ async function buildPrintHTML(number) {
         i,
         idx,
       ) => `<tr style="background:${idx % 2 === 0 ? "#f8fafc" : "#ffffff"};border-bottom:1px solid #e2e8f0;">
-        <td style="padding:10px 8px;text-align:center;font-size:12px;font-weight:700;color:#475569;">${faNum(idx + 1)}</td>
-        <td style="padding:10px 14px;text-align:right;">
-          <div style="font-size:12.5px;font-weight:700;color:#0f172a;line-height:1.8;">${i.title}</div>
-          ${i.meta ? `<div style="font-size:10px;color:#64748b;margin-top:3px;line-height:1.6;">${i.meta}</div>` : ""}
-        </td>
-        <td style="padding:10px 8px;text-align:center;font-size:12.5px;font-weight:700;">${faNum(i.qty)}</td>
-        <td style="padding:10px 10px;text-align:right;font-size:12px;color:#475569;">${faNum(i.price)}</td>
-        <td style="padding:10px 10px;text-align:right;font-size:12.5px;font-weight:800;color:#0369a1;">${faNum(i.price * i.qty)}</td>
-      </tr>`,
+      <td style="padding:10px 8px;text-align:center;font-size:12px;font-weight:700;color:#475569;">${faNum(idx + 1)}</td>
+      <td style="padding:10px 14px;text-align:right;">
+        <div style="font-size:12.5px;font-weight:700;color:#0f172a;line-height:1.8;">${i.title}</div>
+        ${i.meta ? `<div style="font-size:10px;color:#64748b;margin-top:3px;line-height:1.6;">${i.meta}</div>` : ""}
+      </td>
+      <td style="padding:10px 8px;text-align:center;font-size:12.5px;font-weight:700;">${faNum(i.qty)}</td>
+      <td style="padding:10px 10px;text-align:center;font-size:12px;color:#475569;">${faNum(i.price)}</td>
+      <td style="padding:10px 10px;text-align:center;font-size:12.5px;font-weight:800;color:#0369a1;">${faNum(i.price * i.qty)}</td>
+    </tr>`,
     )
     .join("");
 
@@ -173,15 +173,15 @@ async function buildPrintHTML(number) {
 
   <!-- ===== جدول اقلام ===== -->
   <table style="width:100%;border-collapse:collapse;margin-top:16px;">
-    <thead>
-      <tr style="background:#0c4a6e;color:#ffffff;">
-        <th style="padding:11px 8px;width:48px;font-size:11px;font-weight:800;">ردیف</th>
-        <th style="padding:11px 14px;font-size:11px;font-weight:800;text-align:right;">شرح خدمت / کالا</th>
-        <th style="padding:11px 8px;width:66px;font-size:11px;font-weight:800;">تعداد</th>
-        <th style="padding:11px 10px;width:125px;font-size:11px;font-weight:800;">فی (تومان)</th>
-        <th style="padding:11px 10px;width:135px;font-size:11px;font-weight:800;">جمع (تومان)</th>
-      </tr>
-    </thead>
+   <thead>
+  <tr style="background:#0c4a6e;color:#ffffff;">
+    <th style="padding:11px 8px;width:48px;font-size:11px;font-weight:800;text-align:center;">ردیف</th>
+    <th style="padding:11px 14px;font-size:11px;font-weight:800;text-align:right;">شرح خدمت / کالا</th>
+    <th style="padding:11px 8px;width:66px;font-size:11px;font-weight:800;text-align:center;">تعداد</th>
+    <th style="padding:11px 10px;width:125px;font-size:11px;font-weight:800;text-align:center;">فی (تومان)</th>
+    <th style="padding:11px 10px;width:135px;font-size:11px;font-weight:800;text-align:center;">جمع (تومان)</th>
+  </tr>
+</thead>
     <tbody>${rows}</tbody>
   </table>
 
