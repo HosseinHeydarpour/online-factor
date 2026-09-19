@@ -7,39 +7,66 @@ let portalProductCategories = [];
 let portalAnnouncements = [];
 let selectedCustomerCatId = "all";
 
-const READ_NEWS_KEY = "cafe_customer_read_news";
+const STORAGE_KEY_READ_NEWS = "cp_read_announcements";
 
 /* ============================================================
-   مدیریت وضعیت خوانده‌شده / خوانده‌نشده اخبار
+   مدیریت وضعیت اعلان‌های خوانده‌شده در پورتال مشتری
    ============================================================ */
-function getReadNewsIds() {
+
+/**
+ * دریافت آرایه آیدی‌های خوانده‌شده از LocalStorage
+ */
+export function getReadAnnouncementIds() {
   try {
-    return JSON.parse(localStorage.getItem(READ_NEWS_KEY)) || [];
-  } catch {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY_READ_NEWS) || "[]");
+  } catch (e) {
     return [];
   }
 }
 
-function markNewsAsRead(id) {
-  if (!id) return;
-  const readIds = new Set(getReadNewsIds());
-  if (!readIds.has(id)) {
-    readIds.add(id);
-    localStorage.setItem(READ_NEWS_KEY, JSON.stringify([...readIds]));
-    updateNewsUnreadBadge();
+/**
+ * ثبت یک اعلان به عنوان خوانده‌شده
+ */
+export function markAnnouncementAsRead(announcementId) {
+  if (!announcementId) return;
+  const readIds = getReadAnnouncementIds();
+  if (!readIds.includes(announcementId)) {
+    readIds.push(announcementId);
+    localStorage.setItem(STORAGE_KEY_READ_NEWS, JSON.stringify(readIds));
   }
+  // به‌روزرسانی آنی شمارنده تب
+  updateCustomerNewsBadge();
 }
 
-function updateNewsUnreadBadge() {
-  const badge = document.getElementById("cp-news-unread-badge");
-  if (!badge) return;
-  const readIds = new Set(getReadNewsIds());
-  const unreadCount = portalAnnouncements.filter(
-    (a) => !readIds.has(a.id),
-  ).length;
+/**
+ * محاسبه تعداد اعلانات منتشرشده و خوانده‌نشده
+ */
+export function getUnreadNewsCount(announcements = []) {
+  const readIds = getReadAnnouncementIds();
+  const list = announcements.length ? announcements : portalAnnouncements;
+  const published = list.filter((a) => a.status === "published");
+  const unread = published.filter((a) => !readIds.includes(a.id));
+  return unread.length;
+}
 
-  if (unreadCount > 0) {
-    badge.textContent = faNum(unreadCount);
+/**
+ * رندر و به‌روزرسانی بج قرمز در تب اخبار (data-cp-tab="news")
+ */
+export function updateCustomerNewsBadge(announcements) {
+  const badge = document.getElementById("cp-news-tab-badge");
+  if (!badge) return;
+
+  const list =
+    announcements ||
+    (portalAnnouncements.length
+      ? portalAnnouncements
+      : store.getAnnouncements
+        ? store.getAnnouncements()
+        : []);
+  const count = getUnreadNewsCount(list);
+
+  if (count > 0) {
+    badge.textContent = count > 99 ? "+۹۹" : count.toLocaleString("fa-IR");
     badge.classList.remove("hidden");
   } else {
     badge.classList.add("hidden");
@@ -86,137 +113,165 @@ async function loadPortalData() {
 /* ============================================================
    رندر بخش اخبار و اعلانات در پورتال مشتری
    ============================================================ */
-function renderCustomerNews(q = "") {
-  const listEl = document.getElementById("cp-news-list");
+export function renderCustomerNews(searchQuery = "") {
+  const container = document.getElementById("cp-news-list");
   const emptyEl = document.getElementById("cp-news-empty");
-  if (!listEl) return;
+  if (!container) return;
 
-  const query = q.trim().toLowerCase();
-  let list = portalAnnouncements.slice().sort((a, b) => {
-    if (a.pin === b.pin)
-      return (b.date + b.time).localeCompare(a.date + a.time);
-    return a.pin ? -1 : 1;
-  });
+  const q = searchQuery.trim().toLowerCase();
+  let published = portalAnnouncements.filter((a) => a.status === "published");
 
-  if (query) {
-    list = list.filter(
+  if (q) {
+    published = published.filter(
       (a) =>
-        a.title.toLowerCase().includes(query) ||
-        (a.summary || "").toLowerCase().includes(query) ||
-        (a.category || "").toLowerCase().includes(query),
+        (a.title || "").toLowerCase().includes(q) ||
+        (a.summary || "").toLowerCase().includes(q),
     );
   }
 
-  emptyEl?.classList.toggle("hidden", list.length > 0);
+  const readIds = getReadAnnouncementIds();
 
-  if (!list.length) {
-    listEl.innerHTML = "";
+  if (published.length === 0) {
+    container.innerHTML = "";
+    if (emptyEl) emptyEl.classList.remove("hidden");
     return;
   }
+  if (emptyEl) emptyEl.classList.add("hidden");
 
-  const readIds = new Set(getReadNewsIds());
-
-  listEl.innerHTML = list
-    .map((ann) => {
-      const isRead = readIds.has(ann.id);
+  container.innerHTML = published
+    .map((item) => {
+      const isRead = readIds.includes(item.id);
       return `
-    <div data-news-card="${ann.id}"
-      class="bg-white dark:bg-slate-800 rounded-2xl border ${
-        ann.pin
-          ? "border-amber-400 dark:border-amber-500/80 shadow-md ring-1 ring-amber-400/20"
-          : "border-slate-200 dark:border-slate-700 shadow-sm"
-      } p-4 transition fade-in space-y-2 cursor-pointer hover:border-brand-500 dark:hover:border-brand-400">
-      <div class="flex items-center justify-between gap-2 flex-wrap">
-        <div class="flex items-center gap-1.5 flex-wrap">
-          ${
-            !isRead
-              ? `<span class="bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
-                   ✨ جدید
-                 </span>`
-              : ""
-          }
-          ${
-            ann.pin
-              ? `<span class="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
-                   📌 سنجاق‌شده
-                 </span>`
-              : ""
-          }
-          <span class="bg-brand-50 dark:bg-slate-700 text-brand-700 dark:text-brand-300 text-[10px] font-bold px-2 py-0.5 rounded-md border border-brand-100 dark:border-slate-600">
-            ${ann.category || "عمومی"}
+      <div 
+        data-news-id="${item.id}"
+        class="cp-news-card cursor-pointer bg-white dark:bg-slate-800 p-4 rounded-2xl border ${
+          isRead
+            ? "border-slate-200 dark:border-slate-700"
+            : "border-brand-300 dark:border-brand-500/50 shadow-sm ring-1 ring-brand-500/20"
+        } hover:shadow-md transition space-y-2 relative"
+      >
+        <div class="flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2 min-w-0">
+            ${
+              !isRead
+                ? `<span class="unread-dot w-2 h-2 rounded-full bg-brand-500 shrink-0" title="خوانده نشده"></span>`
+                : ""
+            }
+            <h4 class="font-extrabold text-sm sm:text-base text-slate-800 dark:text-slate-100 truncate">
+              ${item.pin ? "📌 " : ""}${item.title}
+            </h4>
+          </div>
+          <span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-lg shrink-0">
+            ${item.category || "عمومی"}
           </span>
         </div>
-        <span class="text-[10px] text-slate-400 font-mono">
-          🕒 ${ann.date}
-        </span>
+
+        <p class="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+          ${item.summary || "برای مشاهده جزئیات کلیک کنید..."}
+        </p>
+
+        <div class="flex items-center justify-between text-[11px] text-slate-400 pt-1 border-t border-slate-50 dark:border-slate-700/50">
+          <span>📅 ${item.date || ""} ${item.time ? `ساعت ${item.time}` : ""}</span>
+          <span class="text-brand-600 dark:text-brand-400 font-bold hover:underline">مشاهده کامل متن ←</span>
+        </div>
       </div>
-
-      <h3 class="font-black text-sm sm:text-base text-slate-800 dark:text-slate-100 leading-6">
-        ${ann.title}
-      </h3>
-
-      ${
-        ann.summary
-          ? `<p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-5">${ann.summary}</p>`
-          : ""
-      }
-
-      <div class="pt-1 flex items-center justify-end text-brand-600 dark:text-brand-400 font-bold text-xs gap-1">
-        <span>مشاهده متن کامل</span>
-        <span>←</span>
-      </div>
-    </div>`;
+    `;
     })
     .join("");
 
-  updateNewsUnreadBadge();
+  // اتصال رویداد کلیک جهت باز کردن مودال و خوانده‌شدن
+  attachNewsCardEvents(published);
 }
 
-/* ============================================================
-   دیالوگ نمایش متن کامل خبر
-   ============================================================ */
-function openNewsDetailModal(ann) {
+/**
+ * اتصال ایونت باز کردن مودال و خوانده‌شدن خبر
+ */
+function attachNewsCardEvents(announcements) {
+  const cards = document.querySelectorAll(".cp-news-card");
+  cards.forEach((card) => {
+    card.addEventListener("click", () => {
+      const newsId = card.getAttribute("data-news-id");
+      const newsItem = announcements.find((n) => n.id === newsId);
+      if (!newsItem) return;
+
+      // ۱. باز کردن مودال نمایش متن خبر
+      openCustomerNewsModal(newsItem);
+
+      // ۲. ثبت به عنوان خوانده‌شده و به‌روزرسانی کارت و بج
+      markAnnouncementAsRead(newsId);
+      const dot = card.querySelector(".unread-dot");
+      if (dot) dot.remove();
+      card.classList.remove(
+        "border-brand-300",
+        "dark:border-brand-500/50",
+        "shadow-sm",
+        "ring-1",
+        "ring-brand-500/20",
+      );
+      card.classList.add("border-slate-200", "dark:border-slate-700");
+    });
+  });
+}
+
+/**
+ * تابع باز کردن مودال نمایش متن کامل خبر
+ */
+export function openCustomerNewsModal(newsItem) {
   const modal = document.getElementById("cp-news-modal");
   const titleEl = document.getElementById("cp-modal-news-title");
   const metaEl = document.getElementById("cp-modal-news-meta");
   const contentEl = document.getElementById("cp-modal-news-content");
-  if (!modal || !titleEl || !contentEl) return;
 
-  // ۱. علامت‌گذاری به عنوان خوانده‌شده
-  markNewsAsRead(ann.id);
+  if (!modal) return;
 
-  // ۲. به‌روزرسانی کارت‌ها جهت حذف برچسب «جدید»
-  renderCustomerNews(document.getElementById("cp-news-search")?.value || "");
+  if (titleEl)
+    titleEl.textContent = (newsItem.pin ? "📌 " : "") + newsItem.title;
 
-  // ۳. نمایش محتوای خبر در مودال
-  titleEl.textContent = ann.title;
+  if (metaEl) {
+    metaEl.innerHTML = `
+      ${
+        newsItem.pin
+          ? `<span class="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-[10px] font-black px-2 py-0.5 rounded-full">
+               📌 سنجاق‌شده
+             </span>`
+          : ""
+      }
+      <span class="text-[11px] font-bold bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 px-2.5 py-1 rounded-lg">
+        ${newsItem.category || "عمومی"}
+      </span>
+      <span class="text-[11px] text-slate-400 font-mono">
+        📅 ${newsItem.date || ""} ${newsItem.time ? `ساعت ${newsItem.time}` : ""}
+      </span>
+    `;
+  }
 
-  metaEl.innerHTML = `
-    ${
-      ann.pin
-        ? `<span class="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-[10px] font-black px-2 py-0.5 rounded-full">
-             📌 سنجاق‌شده
-           </span>`
-        : ""
-    }
-    <span class="bg-brand-50 dark:bg-slate-700 text-brand-700 dark:text-brand-300 text-[10px] font-bold px-2 py-0.5 rounded-md border border-brand-100 dark:border-slate-600">
-      ${ann.category || "عمومی"}
-    </span>
-    <span class="text-[10px] text-slate-400 font-mono">
-      تاریخ: ${ann.date} ساعت ${ann.time}
-    </span>
-  `;
-
-  contentEl.innerHTML =
-    ann.content && ann.content !== "<p><br></p>"
-      ? ann.content
-      : `<p>${ann.summary || "متن تکمیلی برای این خبر درج نشده است."}</p>`;
+  if (contentEl) {
+    contentEl.innerHTML =
+      newsItem.content && newsItem.content !== "<p><br></p>"
+        ? newsItem.content
+        : `<p>${newsItem.summary || "متنی برای این خبر درج نشده است."}</p>`;
+  }
 
   modal.classList.remove("hidden");
 }
 
-function closeNewsDetailModal() {
-  document.getElementById("cp-news-modal")?.classList.add("hidden");
+function initNewsModalCloseHandlers() {
+  const modal = document.getElementById("cp-news-modal");
+  const btnClose = document.getElementById("btn-close-cp-news-modal");
+  const btnDismiss = document.getElementById("btn-dismiss-cp-news-modal");
+
+  const closeModal = () => {
+    if (modal) modal.classList.add("hidden");
+  };
+
+  if (btnClose) btnClose.onclick = closeModal;
+  if (btnDismiss) btnDismiss.onclick = closeModal;
+
+  if (modal) {
+    modal.onclick = (e) => {
+      if (e.target === modal) closeModal();
+    };
+  }
 }
 
 /* ============================================================
@@ -469,25 +524,8 @@ export function initCustomerPortal() {
     renderCustomerNews(newsSearch.value),
   );
 
-  // کلیک روی کارت خبر جهت باز کردن دیالوگ
-  document.getElementById("cp-news-list")?.addEventListener("click", (e) => {
-    const card = e.target.closest("[data-news-card]");
-    if (!card) return;
-    const annId = card.dataset.newsCard;
-    const ann = portalAnnouncements.find((a) => a.id === annId);
-    if (ann) openNewsDetailModal(ann);
-  });
-
-  // رویدادهای بستن دیالوگ خبر
-  document
-    .getElementById("btn-close-cp-news-modal")
-    ?.addEventListener("click", closeNewsDetailModal);
-  document
-    .getElementById("btn-dismiss-cp-news-modal")
-    ?.addEventListener("click", closeNewsDetailModal);
-  document.getElementById("cp-news-modal")?.addEventListener("click", (e) => {
-    if (e.target.id === "cp-news-modal") closeNewsDetailModal();
-  });
+  // هندلرهای بستن مودال خبر
+  initNewsModalCloseHandlers();
 
   // بارگذاری داده‌ها و رندر اولیه
   loadPortalData().then(() => {
@@ -495,7 +533,7 @@ export function initCustomerPortal() {
     renderCustomerProductChips();
     renderCustomerProducts();
     renderCustomerNews();
-    updateNewsUnreadBadge();
+    updateCustomerNewsBadge();
   });
 
   initPortalTabs();
