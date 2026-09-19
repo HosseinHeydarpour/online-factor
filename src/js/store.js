@@ -159,6 +159,7 @@ export const store = {
       phone: "",
       address: "",
       logo: "",
+      bankAccounts: [], // ✅ لیست کارت‌های بانکی
     });
   },
   saveShopInfo(info) {

@@ -1,5 +1,5 @@
 import { RATE_CATEGORIES } from "../data/rates.js";
-import { store, faNum, todayFa } from "./store.js";
+import { store, faNum, todayFa, toEnDigits } from "./store.js";
 import { addItemToInvoice, initInvoiceEvents } from "./invoice.js";
 import {
   renderProducts,
@@ -245,9 +245,98 @@ function updateNavLogo() {
   }
 }
 
+// ---------- حساب‌های بانکی (چند کارتی) ----------
+let bankAccounts = [];
+
+function renderBankAccounts() {
+  const list = document.getElementById("bank-accounts-list");
+  const empty = document.getElementById("bank-empty");
+  if (!list) return;
+  empty?.classList.toggle("hidden", bankAccounts.length > 0);
+  list.innerHTML = bankAccounts
+    .map(
+      (b, i) => `
+      <div class="border border-slate-200 dark:border-slate-600 rounded-xl p-3 space-y-2 bg-slate-50 dark:bg-slate-700/40 fade-in">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-600 dark:text-slate-300">💳 کارت ${faNum(i + 1)}</span>
+          <button type="button" data-bank-del="${i}" class="text-xs text-rose-600 dark:text-rose-400 font-bold hover:bg-rose-50 dark:hover:bg-slate-700 px-2 py-1 rounded-lg">🗑️ حذف</button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <input data-bank-field="bank" data-bank-i="${i}" value="${b.bank || ""}" placeholder="نام بانک (مثلاً ملت)"
+            class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500" />
+          <input data-bank-field="holder" data-bank-i="${i}" value="${b.holder || ""}" placeholder="نام صاحب حساب"
+            class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500" />
+          <input data-bank-field="card" data-bank-i="${i}" value="${b.card || ""}" inputmode="numeric" dir="ltr" placeholder="6037 9912 3456 7890"
+            class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs text-left outline-none focus:ring-2 focus:ring-brand-500" />
+          <input data-bank-field="sheba" data-bank-i="${i}" value="${b.sheba || ""}" dir="ltr" placeholder="IR000000000000000000000000"
+            class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs text-left outline-none focus:ring-2 focus:ring-brand-500" />
+        </div>
+      </div>`,
+    )
+    .join("");
+}
+
+function initBankAccounts() {
+  bankAccounts = (store.getShopInfo().bankAccounts || []).map((b) => ({
+    ...b,
+  }));
+  renderBankAccounts();
+
+  document.getElementById("btn-add-bank")?.addEventListener("click", () => {
+    bankAccounts.push({ bank: "", card: "", holder: "", sheba: "" });
+    renderBankAccounts();
+  });
+
+  const list = document.getElementById("bank-accounts-list");
+  list?.addEventListener("input", (e) => {
+    const i = e.target.dataset.bankI;
+    const field = e.target.dataset.bankField;
+    if (i === undefined || !field) return;
+    bankAccounts[Number(i)][field] = e.target.value;
+  });
+
+  list?.addEventListener("click", (e) => {
+    const del = e.target.dataset.bankDel;
+    if (del === undefined) return;
+    if (!confirm("این کارت بانکی حذف شود؟")) return;
+    bankAccounts.splice(Number(del), 1);
+    renderBankAccounts();
+  });
+}
+
+// جمع‌آوری + اعتبارسنجی کارت‌ها هنگام ذخیره
+function collectBankAccounts() {
+  const banks = bankAccounts
+    .map((b) => ({
+      bank: (b.bank || "").trim(),
+      holder: (b.holder || "").trim(),
+      card: toEnDigits(b.card || "").replace(/[\s\-./]/g, ""),
+      sheba: toEnDigits(b.sheba || "")
+        .replace(/\s/g, "")
+        .toUpperCase(),
+    }))
+    .filter((b) => b.bank || b.card || b.holder || b.sheba);
+
+  for (const b of banks) {
+    if (b.card && !/^\d{16}$/.test(b.card)) {
+      alert(
+        `❌ شماره کارت بانک «${b.bank || "نامشخص"}» باید دقیقاً ۱۶ رقم باشد.`,
+      );
+      return null;
+    }
+    if (b.sheba && !/^IR\d{24}$/.test(b.sheba)) {
+      alert("❌ شبا باید با IR شروع شود و در مجموع ۲۶ کاراکتر باشد.");
+      return null;
+    }
+  }
+  return banks;
+}
+
 // ---------- تنظیمات کسب‌وکار ----------
 function initSettings() {
   const shop = store.getShopInfo();
+
+  initBankAccounts(); // ✅ بارگذاری کارت‌های ذخیره‌شده
   document.getElementById("shop-name").value = shop.name || "";
   document.getElementById("shop-slogan").value = shop.slogan || "";
   document.getElementById("shop-phone").value = shop.phone || "";
@@ -275,9 +364,9 @@ function initSettings() {
   document.getElementById("btn-remove-logo").addEventListener("click", () => {
     tempLogo = "";
     logoPreview.innerHTML = '<span id="logo-placeholder">🖼️</span>';
+    store.saveShopInfo({ ...store.getShopInfo(), logo: "" });
     document.getElementById("shop-logo").value = "";
   });
-
   document.getElementById("btn-save-shop").addEventListener("click", () => {
     const info = {
       name:
@@ -287,11 +376,21 @@ function initSettings() {
       address: document.getElementById("shop-address").value.trim(),
       logo: tempLogo,
     };
-    store.saveShopInfo(info);
-    updateNavLogo(); // ✅ لوگوی نوبار هم فوراً عوض شود
 
-    autoSaveInvoices(); // ✅ بک‌آپ روی فایل محلی متصل‌شده
-    autoPushGitHub(); // ✅ push خودکار به گیت‌هاب
+    // ✅ کارت‌های بانکی (اگر بخش بانک را اضافه کرده‌باشی)
+    if (typeof collectBankAccounts === "function") {
+      const banks = collectBankAccounts();
+      if (banks === null) return; // اعتبارسنجی رد شد → ذخیره نشود
+      info.bankAccounts = banks;
+    }
+
+    store.saveShopInfo(info);
+
+    // ✅ لوگوی نوبار + بک‌آپ کامل
+    if (typeof updateNavLogo === "function") updateNavLogo();
+    autoSaveInvoices(); // 💾 نوشتن روی فایل محلی متصل‌شده
+    autoPushGitHub(); // ☁️ push به گیت‌هاب (با تأخیر ۱.۵ ثانیه‌ای)
+
     const toast = document.getElementById("toast");
     toast.textContent = "✅ تنظیمات ذخیره شد + بک‌آپ گرفته شد";
     toast.classList.remove("hidden");
