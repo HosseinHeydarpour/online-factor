@@ -163,12 +163,53 @@ function collectPublicFiles() {
   ];
 }
 /* ---------- push کامل با یک کامیت (Git Data API) به ریپوی خصوصی ---------- */
+/* ---------- push کامل با یک کامیت (Git Data API) به ریپوی خصوصی ---------- */
 export async function pushBackupToGitHub({ silent = false } = {}) {
   const cfg = getGitHubConfig();
   if (!cfg.owner || !cfg.repo || !cfg.token) {
     if (!silent)
-      alert("ابتدا تنظیمات گیت‌هاب (مالک / ریپو / توکن) را کامل کن.");
+      alert("ابتدا تنظیمات گیت‌هاب (مالک / ریپو / توکن) را کامل کنید.");
     return { ok: false };
+  }
+
+  const invs = store.getInvoices();
+  const custs = store.getCustomers();
+  const prods = store.getProducts();
+  const customSrv = store.getCustomServices();
+
+  // 🛡️ سد امنیتی ۱: جلوگیری قطعی از پاک شدن بک‌آپ با دیتای خالی
+  if (invs.length === 0 && custs.length === 0 && prods.length === 0) {
+    if (!silent) {
+      alert(
+        "⛔ عملیات متوقف شد (سد امنیتی ضد تخریب)!\n\n" +
+          "حافظه این مرورگر در حال حاضر خالی است (۰ فاکتور، ۰ مشتری، ۰ محصول).\n" +
+          "اگر اکنون پوش انجام شود، بک‌آپ قبلی شما در گیت‌هاب با یک فایل خالی بازنویسی و پاک خواهد شد!\n\n" +
+          "💡 اگر قصد دارید اطلاعات قبلی‌تان از گیت‌هاب بازگردد، باید روی دکمه «⬇️ بازیابی از گیت‌هاب» کلیک کنید.",
+      );
+    }
+    return { ok: false, message: "داده‌های محلی خالی است؛ عملیات لغو شد." };
+  }
+
+  // 🛡️ سد امنیتی ۲: درخواست تأییدیه از کاربر با نمایش آمار قبل از ارسال دستی
+  if (!silent) {
+    const srvCount =
+      (customSrv?.newCategories?.length || 0) +
+      Object.keys(customSrv?.categoryOverrides || {}).length;
+
+    const confirmMsg =
+      "☁️ تأیید ارسال پشتیبان به گیت‌هاب:\n\n" +
+      `آیا مطمئن هستید که می‌خواهید نسخه فعلی سیستم روی مخزن «${cfg.repo}» ذخیره شود؟\n\n` +
+      `📊 اطلاعاتی که ارسال خواهند شد:\n` +
+      `• فاکتورها: ${invs.length} عدد\n` +
+      `• مشتریان: ${custs.length} نفر\n` +
+      `• محصولات: ${prods.length} مورد\n` +
+      `• دسته‌ها و خدمات سفارشی: ${srvCount} مورد\n\n` +
+      "⚠️ توجه: این اطلاعات جایگزین آخرین بک‌آپ گیت‌هاب می‌شود.\n" +
+      "برای تأیید و ارسال، OK را بزنید.";
+
+    if (!confirm(confirmMsg)) {
+      return { ok: false, message: "لغو توسط کاربر" };
+    }
   }
 
   try {
@@ -309,6 +350,15 @@ export async function pushToPublicRepo({ silent = false } = {}) {
       alert("ابتدا تنظیمات ریپوی پابلیک (مالک / ریپو / توکن) را کامل کنید.");
     }
     return { ok: false, message: "تنظیمات ریپوی پابلیک ناقص است" };
+  }
+
+  // 🛡️ تاییدیه قبل از ارسال به پابلیک
+  if (!silent) {
+    const ok = confirm(
+      "🌐 تأیید ارسال اطلاعات به ریپوی پابلیک (سایت مشتری):\n\n" +
+        "آیا مایلید اطلاعات عمومی فروشگاه، خدمات و محصولات روی سایت مشتری به‌روزرسانی شوند؟",
+    );
+    if (!ok) return { ok: false, message: "لغو توسط کاربر" };
   }
 
   if (!cfg.enabled) {
