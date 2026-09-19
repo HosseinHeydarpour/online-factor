@@ -351,6 +351,17 @@ function renderCustomerProducts(q = "") {
     list = list.filter((p) => (p.name || "").toLowerCase().includes(query));
   }
 
+  // فیلتر محصولاتی که موجودی ندارند (هم پایه هم واریانت‌ها) - فقط برای پرتال مشتری
+  list = list.filter((p) => {
+    const baseQty = p.quantity ?? 0;
+    // اگر واریانت دارد، حداقل یکی باید موجودی داشته باشد
+    if (p.variants?.length) {
+      const hasVariantStock = p.variants.some((v) => (v.quantity ?? 0) > 0);
+      return baseQty > 0 || hasVariantStock;
+    }
+    return baseQty > 0;
+  });
+
   emptyEl?.classList.toggle("hidden", list.length > 0);
 
   if (!list.length) {
@@ -389,6 +400,7 @@ function renderCustomerProducts(q = "") {
                   <p class="text-[10px] font-bold text-slate-400 mb-1">مدل‌ها و واریانت‌ها:</p>
                   <div class="flex flex-wrap gap-1">
                     ${p.variants
+                      .filter((v) => (v.quantity ?? 0) > 0)
                       .map(
                         (v) => `
                       <span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 px-2 py-0.5 rounded-full font-bold">

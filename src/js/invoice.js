@@ -175,18 +175,22 @@ function initTimePicker() {
     closePicker();
   });
 }
-export function addItemToInvoice({ title, price, meta = "" }) {
+export function addItemToInvoice({ title, price, meta = "", productId = null, variantId = null }) {
   if (!state.number) state.number = store.nextInvoiceNumber();
-  const found = state.items.find((i) => i.title === title && i.price === price);
-  if (found) found.qty += 1;
-  else
+  const found = state.items.find((i) => i.title === title && i.price === price && i.variantId === variantId);
+  if (found) {
+    found.qty += 1;
+  } else {
     state.items.push({
       rowId: crypto.randomUUID(),
       title,
       price,
       qty: 1,
       meta,
+      productId,
+      variantId,
     });
+  }
   render();
 }
 
@@ -552,6 +556,35 @@ export function saveInvoice() {
   const jalaliTime = rawTime
     ? toEnDigits(rawTime).trim()
     : state.time || "12:00";
+
+  // کسر موجودی محصولات و واریانت‌ها قبل از ذخیره فاکتور
+  state.items.forEach((item) => {
+    if (item.productId) {
+      const product = store.getProduct(item.productId);
+      if (product) {
+        let updated = false;
+        
+        if (item.variantId && product.variants?.length) {
+          // کسر از واریانت
+          const variantIdx = product.variants.findIndex(v => v.id === item.variantId);
+          if (variantIdx >= 0) {
+            const currentQty = product.variants[variantIdx].quantity ?? 0;
+            product.variants[variantIdx].quantity = Math.max(0, currentQty - item.qty);
+            updated = true;
+          }
+        } else if (!item.variantId) {
+          // کسر از موجودی پایه
+          const currentQty = product.quantity ?? 0;
+          product.quantity = Math.max(0, currentQty - item.qty);
+          updated = true;
+        }
+        
+        if (updated) {
+          store.saveProduct(product);
+        }
+      }
+    }
+  });
 
   const invoice = {
     number: state.number,

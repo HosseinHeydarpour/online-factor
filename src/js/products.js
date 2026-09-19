@@ -105,6 +105,17 @@ export function renderProducts(filter = "") {
     list = list.filter((p) => (p.name || "").includes(filter));
   }
 
+  // فیلتر محصولاتی که موجودی ندارند (هم پایه هم واریانت‌ها)
+  list = list.filter((p) => {
+    const baseQty = p.quantity ?? 0;
+    // اگر واریانت دارد، حداقل یکی باید موجودی داشته باشد
+    if (p.variants?.length) {
+      const hasVariantStock = p.variants.some((v) => (v.quantity ?? 0) > 0);
+      return baseQty > 0 || hasVariantStock;
+    }
+    return baseQty > 0;
+  });
+
   el.empty?.classList.toggle("hidden", list.length > 0);
   el.grid.innerHTML = list
     .map((p) => {
@@ -141,6 +152,7 @@ export function renderProducts(filter = "") {
           p.variants?.length
             ? `<div class="flex flex-wrap gap-1">
                 ${p.variants
+                  .filter((v) => (v.quantity ?? 0) > 0)
                   .map(
                     (v) => `
                   <button data-add-variant="${p.id}" data-variant-id="${v.id}"
@@ -224,19 +236,41 @@ export function addProductToInvoice(product, preselectVariantId = null) {
   if (!product) return;
 
   const confirmAdd = (variantId) => {
+    // بررسی موجودی محصول
+    const baseQty = product.quantity ?? 0;
+    
     if (variantId) {
       const v = product.variants.find((x) => x.id === variantId);
       if (v) {
+        const variantQty = v.quantity ?? 0;
+        if (variantQty <= 0) {
+          toast(`❌ موجودی واریانت «${v.name}» تمام شده است`);
+          return;
+        }
         addItemToInvoice({
           title: product.name,
           price: v.price,
           meta: `واریانت: ${v.name}`,
+          productId: product.id,
+          variantId: v.id,
         });
         toast(`«${v.name}» به فاکتور اضافه شد 🧾`);
         return;
       }
     }
-    addItemToInvoice({ title: product.name, price: product.price });
+    
+    // بررسی موجودی پایه
+    if (baseQty <= 0) {
+      toast(`❌ موجودی محصول «${product.name}» تمام شده است`);
+      return;
+    }
+    
+    addItemToInvoice({ 
+      title: product.name, 
+      price: product.price,
+      productId: product.id,
+      variantId: null,
+    });
     toast("به فاکتور اضافه شد 🧾");
   };
 
@@ -259,6 +293,8 @@ function renderVariantsForm() {
             class="flex-1 rounded-lg border border-slate-300 dark:border-slate-600 px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-brand-500" />
           <input data-vprice="${i}" type="number" min="0" value="${v.price || ""}" placeholder="قیمت"
             class="w-28 rounded-lg border border-slate-300 dark:border-slate-600 px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-brand-500 text-left font-mono" />
+          <input data-vqty="${i}" type="number" min="0" value="${v.quantity ?? ""}" placeholder="موجودی"
+            class="w-20 rounded-lg border border-slate-300 dark:border-slate-600 px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-brand-500 text-left font-mono" />
           <button type="button" data-vdel="${i}" class="text-rose-500 hover:bg-rose-50 dark:hover:bg-slate-600 w-7 h-7 rounded-lg font-bold">✕</button>
         </div>
         <div data-vpreview="${i}">
@@ -467,13 +503,14 @@ export function initProductEvents() {
   });
 
   document.getElementById("btn-add-variant")?.addEventListener("click", () => {
-    tempVariants.push({ id: uid(), name: "", price: 0 });
+    tempVariants.push({ id: uid(), name: "", price: 0, quantity: 0 });
     renderVariantsForm();
   });
 
   el.variants?.addEventListener("input", (e) => {
     const ni = e.target.dataset.vname;
     const pi = e.target.dataset.vprice;
+    const qi = e.target.dataset.vqty;
     if (ni !== undefined) tempVariants[Number(ni)].name = e.target.value;
     if (pi !== undefined) {
       const idx = Number(pi);
@@ -482,6 +519,10 @@ export function initProductEvents() {
       if (previewBox) {
         previewBox.innerHTML = createPricePreviewHTML(e.target.value);
       }
+    }
+    if (qi !== undefined) {
+      const idx = Number(qi);
+      tempVariants[idx].quantity = Number(e.target.value) || 0;
     }
   });
 
