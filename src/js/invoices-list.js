@@ -21,6 +21,18 @@ const DEFAULT_INVOICE_FILTER = {
   payment: "all",
 };
 
+// دسترسی سراسری برای تغییر دوره زمانی پس از ثبت فاکتور
+window.setInvoiceFilterPeriod = function (period) {
+  invoiceFilter.period = period;
+  invoiceFilter.startDate = "";
+  invoiceFilter.endDate = "";
+  updatePeriodButtonsUI();
+  updateFilterBadge();
+  renderInvoicesList(
+    document.getElementById("invoice-search")?.value.trim() || "",
+  );
+};
+
 let invoiceFilter = { ...DEFAULT_INVOICE_FILTER };
 
 /* ---------- محاسبه بازه تاریخ شمسی دوره‌ها ---------- */
@@ -221,7 +233,6 @@ function getFilteredInvoices(query = "") {
   const { start, end } = getDateRangeForPeriod(invoiceFilter.period);
 
   let filtered = invoices.filter((inv) => {
-    // جستجو بر اساس شماره، نام، یا تلفن
     if (q) {
       const matchNum = inv.number.toString().includes(q);
       const matchName = (inv.customer?.name || "").toLowerCase().includes(q);
@@ -229,12 +240,13 @@ function getFilteredInvoices(query = "") {
       if (!matchNum && !matchName && !matchPhone) return false;
     }
 
-    // فیلتر تاریخ
-    const invDate = toEnDigits(inv.date || "").trim();
+    // مقایسه مطمئن تاریخ‌ها
+    const invDate = toEnDigits(inv.date || "")
+      .replace(/[-._]/g, "/")
+      .trim();
     if (start && invDate < start) return false;
     if (end && invDate > end) return false;
 
-    // فیلتر روش پرداخت
     if (invoiceFilter.payment !== "all") {
       const pMethod = inv.payment || "نقدی";
       if (pMethod !== invoiceFilter.payment) return false;

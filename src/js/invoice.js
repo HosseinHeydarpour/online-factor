@@ -26,13 +26,14 @@ const EMPTY_CUSTOMER = {
   age: "",
   notes: "",
 };
-
 const state = {
   items: [],
   discount: 0,
   customer: { ...EMPTY_CUSTOMER },
   payment: "نقدی",
   number: null,
+  date: "", // تاریخ فاکتور
+  time: "", // ساعت فاکتور
 };
 
 const el = {
@@ -43,9 +44,137 @@ const el = {
   discountInput: document.getElementById("invoice-discount"),
   custName: document.getElementById("cust-name"),
   custPhone: document.getElementById("cust-phone"),
+  customDate: document.getElementById("invoice-custom-date"),
+  customTime: document.getElementById("invoice-custom-time"),
   printArea: document.getElementById("print-area"),
 };
+// تابع نرمال‌سازی تاریخ به صورت استاندارد 1405/06/28
+export function normalizeJalaliDate(str) {
+  if (!str) return toJalali().full;
+  const clean = toEnDigits(str).replace(/[-._]/g, "/").trim();
+  const parts = clean.split("/").map((p) => p.trim());
+  if (parts.length === 3) {
+    const y = parts[0];
+    const m = parts[1].padStart(2, "0");
+    const d = parts[2].padStart(2, "0");
+    if (y.length === 4) {
+      return `${y}/${m}/${d}`;
+    }
+  }
+  return clean;
+}
 
+/* ============================================================
+   راه‌اندازی دیالوگ انتخاب ساعت (TimePicker)
+============================================================ */
+let selectedHour = "12";
+let selectedMinute = "00";
+
+function initTimePicker() {
+  const modal = document.getElementById("time-picker-modal");
+  const timeInput = document.getElementById("invoice-custom-time");
+  if (!modal || !timeInput || modal.dataset.bound) return;
+  modal.dataset.bound = "1";
+
+  const hoursList = document.getElementById("tp-hours-list");
+  const minutesList = document.getElementById("tp-minutes-list");
+  const prevH = document.getElementById("tp-preview-hour");
+  const prevM = document.getElementById("tp-preview-minute");
+
+  const btnClose = document.getElementById("btn-close-time-picker");
+  const btnCancel = document.getElementById("btn-tp-cancel");
+  const btnConfirm = document.getElementById("btn-tp-confirm");
+  const btnNow = document.getElementById("btn-tp-now");
+
+  // ساخت لیست ساعت‌ها (00 تا 23)
+  let hHtml = "";
+  for (let i = 0; i < 24; i++) {
+    const val = String(i).padStart(2, "0");
+    hHtml += `<div data-tp-h="${val}" class="cursor-pointer py-1 rounded-lg hover:bg-brand-50 dark:hover:bg-slate-600 transition font-mono">${val}</div>`;
+  }
+  hoursList.innerHTML = hHtml;
+
+  // ساخت لیست دقیقه‌ها (00 تا 59)
+  let mHtml = "";
+  for (let i = 0; i < 60; i += 1) {
+    const val = String(i).padStart(2, "0");
+    mHtml += `<div data-tp-m="${val}" class="cursor-pointer py-1 rounded-lg hover:bg-brand-50 dark:hover:bg-slate-600 transition font-mono">${val}</div>`;
+  }
+  minutesList.innerHTML = mHtml;
+
+  function updateActiveStyles() {
+    if (prevH) prevH.textContent = selectedHour;
+    if (prevM) prevM.textContent = selectedMinute;
+
+    hoursList.querySelectorAll("[data-tp-h]").forEach((item) => {
+      const isSel = item.dataset.tpH === selectedHour;
+      item.className = isSel
+        ? "cursor-pointer py-1 rounded-lg bg-brand-600 text-white font-bold font-mono shadow-sm"
+        : "cursor-pointer py-1 rounded-lg hover:bg-brand-50 dark:hover:bg-slate-600 font-mono text-slate-700 dark:text-slate-200";
+      if (isSel) item.scrollIntoView({ block: "nearest" });
+    });
+
+    minutesList.querySelectorAll("[data-tp-m]").forEach((item) => {
+      const isSel = item.dataset.tpM === selectedMinute;
+      item.className = isSel
+        ? "cursor-pointer py-1 rounded-lg bg-brand-600 text-white font-bold font-mono shadow-sm"
+        : "cursor-pointer py-1 rounded-lg hover:bg-brand-50 dark:hover:bg-slate-600 font-mono text-slate-700 dark:text-slate-200";
+      if (isSel) item.scrollIntoView({ block: "nearest" });
+    });
+  }
+
+  function openPicker() {
+    const curVal = timeInput.value.trim();
+    if (curVal.includes(":")) {
+      const parts = toEnDigits(curVal).split(":");
+      selectedHour = String(Number(parts[0]) || 0).padStart(2, "0");
+      selectedMinute = String(Number(parts[1]) || 0).padStart(2, "0");
+    } else {
+      const now = new Date();
+      selectedHour = String(now.getHours()).padStart(2, "0");
+      selectedMinute = String(now.getMinutes()).padStart(2, "0");
+    }
+    updateActiveStyles();
+    modal.classList.remove("hidden");
+  }
+
+  function closePicker() {
+    modal.classList.add("hidden");
+  }
+
+  timeInput.addEventListener("click", openPicker);
+  btnClose?.addEventListener("click", closePicker);
+  btnCancel?.addEventListener("click", closePicker);
+  modal.addEventListener("click", (e) => e.target === modal && closePicker());
+
+  hoursList.addEventListener("click", (e) => {
+    const target = e.target.closest("[data-tp-h]");
+    if (!target) return;
+    selectedHour = target.dataset.tpH;
+    updateActiveStyles();
+  });
+
+  minutesList.addEventListener("click", (e) => {
+    const target = e.target.closest("[data-tp-m]");
+    if (!target) return;
+    selectedMinute = target.dataset.tpM;
+    updateActiveStyles();
+  });
+
+  btnNow?.addEventListener("click", () => {
+    const now = new Date();
+    selectedHour = String(now.getHours()).padStart(2, "0");
+    selectedMinute = String(now.getMinutes()).padStart(2, "0");
+    updateActiveStyles();
+  });
+
+  btnConfirm?.addEventListener("click", () => {
+    const finalTime = `${selectedHour}:${selectedMinute}`;
+    timeInput.value = finalTime;
+    state.time = finalTime;
+    closePicker();
+  });
+}
 export function addItemToInvoice({ title, price, meta = "" }) {
   if (!state.number) state.number = store.nextInvoiceNumber();
   const found = state.items.find((i) => i.title === title && i.price === price);
@@ -67,6 +196,14 @@ export function clearInvoice() {
   state.number = null;
   state.payment = "نقدی";
   state.customer = { ...EMPTY_CUSTOMER };
+
+  // ریست تاریخ و زمان به الان
+  const today = toJalali();
+  state.date = today.full;
+  state.time = nowTimeFa();
+  if (el.customDate) el.customDate.value = state.date;
+  if (el.customTime) el.customTime.value = state.time;
+
   el.custName.value = "";
   el.custPhone.value = "";
   setCustomerDetailsFormValues(state.customer);
@@ -133,11 +270,24 @@ export async function buildPrintHTML(number, invoiceData = null) {
   const total = invoiceData ? invoiceData.total : totals().total;
   const subtotal = invoiceData ? invoiceData.subtotal : totals().subtotal;
 
+  // محاسبه تاریخ و ساعت چاپی (از ورودی فاکتور یا زمان حال)
+  const dateVal = invoiceData
+    ? invoiceData.date
+    : el.customDate?.value
+      ? normalizeJalaliDate(el.customDate.value)
+      : state.date || toJalali().full;
+  const timeVal = invoiceData
+    ? invoiceData.time
+    : el.customTime?.value
+      ? toEnDigits(el.customTime.value).trim()
+      : state.time || nowTimeFa();
+  const dateStr = `${dateVal} - ${timeVal}`;
+
   let qr = "";
   try {
     if (window.QRCode) {
       qr = await window.QRCode.toDataURL(
-        `INV:${number}|TOTAL:${total}|DATE:${new Date().toISOString().slice(0, 10)}|CUST:${customer.name || "-"}`,
+        `INV:${number}|TOTAL:${total}|DATE:${dateVal}|CUST:${customer.name || "-"}`,
         { width: 120, margin: 1, color: { dark: "#0c4a6e", light: "#ffffff" } },
       );
     }
@@ -163,11 +313,6 @@ export async function buildPrintHTML(number, invoiceData = null) {
     )
     .join("");
 
-  // تاریخ و ساعت - اگر invoiceData داده شده از آن استفاده کن
-  const dateStr = invoiceData
-    ? `${invoiceData.date} - ${invoiceData.time}`
-    : `${todayFa()} - ${nowTimeFa()}`;
-  // ✅ اضافه شد — برای فاکتورهای قدیمی که payment ندارند، پیش‌فرض نقدی
   const payment = invoiceData ? invoiceData.payment || "نقدی" : state.payment;
 
   return `
@@ -238,7 +383,7 @@ export async function buildPrintHTML(number, invoiceData = null) {
     <tbody>${rows}</tbody>
   </table>
 
-  <!-- ===== جمع‌ها + QR + مهر (در یک ردیف افقی) ===== -->
+  <!-- ===== جمع‌ها + QR + مهر ===== -->
   <div style="display:flex;gap:24px;align-items:center;padding:18px 30px 0;">
     <!-- باکس جمع -->
     <div class="inv-block" style="width:360px;background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:1px solid #bae6fd;border-radius:12px;padding:13px 18px;">
@@ -289,7 +434,6 @@ export async function buildPrintHTML(number, invoiceData = null) {
   <div style="height:6px;background:linear-gradient(90deg,#0369a1,#0284c7,#0ea5e9);border-radius:8px 8px 0 0;"></div>
 </div>`;
 }
-
 /* ============================================================
    جاگذاری خودکار فاکتور در یک صفحه (Auto-Fit)
    روش: transform:scale (پشتیبانی کامل در چاپ همه مرورگرها)
@@ -401,21 +545,24 @@ export function saveInvoice() {
 
   const t = totals();
 
-  // ✅ تاریخ شمسی استاندارد برای ذخیره
-  const today = toJalali();
-  const jalaliDate = today.full; // مثل: 1404/01/15
-  const jalaliTime = nowTimeFa();
+  const rawDate = el.customDate ? el.customDate.value : "";
+  const rawTime = el.customTime ? el.customTime.value : "";
+
+  const jalaliDate = normalizeJalaliDate(rawDate || state.date);
+  const jalaliTime = rawTime
+    ? toEnDigits(rawTime).trim()
+    : state.time || "12:00";
 
   const invoice = {
     number: state.number,
     date: jalaliDate,
     time: jalaliTime,
-    payment: state.payment, // ✅ اضافه شد
+    payment: state.payment,
     customer: { ...state.customer },
     items: [...state.items],
     ...t,
   };
-  // ✅ ذخیره خودکار مشتری
+
   if (
     (state.customer.name || "").trim() ||
     (state.customer.phone || "").trim()
@@ -423,12 +570,28 @@ export function saveInvoice() {
     store.saveCustomer({ ...state.customer });
   }
 
+  // ۱) ذخیره در دیتابیس
   store.saveInvoice(invoice);
-  autoSaveInvoices(); // 💾 ذخیره خودکار روی فایل JSON متصل‌شده
+  autoSaveInvoices();
+  autoPushGitHub();
 
-  autoPushGitHub(); // ☁️ push خودکار به گیت‌هاب (با debounce)
+  // ۲) حل مشکل عدم نمایش در لیست:
+  // اگر تاریخ فاکتور امروز نیست، فیلتر لیست را خودکار روی «همه» می‌گذاریم تا فاکتور مخفی نماند
+  const todayStr = toJalali().full;
+  if (jalaliDate !== todayStr) {
+    if (typeof window.setInvoiceFilterPeriod === "function") {
+      window.setInvoiceFilterPeriod("all");
+    }
+  }
 
-  alert(`فاکتور شماره ${faNum(invoice.number)} ذخیره شد ✅`);
+  // ۳) تازه‌سازی آنی جدول فاکتورها
+  if (typeof window.renderInvoicesList === "function") {
+    window.renderInvoicesList();
+  }
+
+  alert(
+    `فاکتور شماره ${faNum(invoice.number)} با تاریخ ${jalaliDate} و ساعت ${jalaliTime} ثبت شد ✅`,
+  );
   clearInvoice();
 }
 function updateDetailsBadge() {
@@ -598,6 +761,49 @@ export function initInvoiceEvents() {
       }, 350);
     });
   }
+
+  // مقداردهی اولیه تاریخ و زمان به زمان حال
+  const initToday = toJalali();
+  state.date = initToday.full;
+  state.time = nowTimeFa();
+  if (el.customDate && !el.customDate.value) el.customDate.value = state.date;
+  if (el.customTime && !el.customTime.value) el.customTime.value = state.time;
+
+  // فعال‌سازی تقویم بازشونده فارسی
+  if (window.$ && $.fn && $.fn.persianDatepicker) {
+    $("#invoice-custom-date").persianDatepicker({
+      format: "YYYY/MM/DD",
+      initialValue: false,
+      autoClose: true,
+      calendar: { locale: "fa" },
+      onSelect: function () {
+        if (el.customDate) {
+          state.date = normalizeJalaliDate(el.customDate.value);
+        }
+      },
+    });
+  }
+
+  // دکمه بازنشانی سریع به زمان جاری (الان)
+  document
+    .getElementById("btn-reset-invoice-datetime")
+    ?.addEventListener("click", () => {
+      const cur = toJalali();
+      state.date = cur.full;
+      state.time = nowTimeFa();
+      if (el.customDate) el.customDate.value = state.date;
+      if (el.customTime) el.customTime.value = state.time;
+      custToast("📅 تاریخ و زمان فاکتور به الان بازنشانی شد");
+    });
+
+  el.customDate?.addEventListener("input", () => {
+    state.date = el.customDate.value;
+  });
+  el.customTime?.addEventListener("input", () => {
+    state.time = el.customTime.value;
+  });
+
+  initTimePicker();
 
   render();
 }
