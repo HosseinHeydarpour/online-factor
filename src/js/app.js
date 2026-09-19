@@ -13,6 +13,7 @@ import { initGitHubUI, autoPushGitHub } from "./github.js";
 import { initReports } from "./reports.js"; // ✅ اضافه شد
 import { initCustomers, renderCustomers } from "./customers.js";
 import { initCustomerPortal } from "./customer-portal.js";
+import { autoPushPublicRepo } from "./github.js";
 
 const el = {
   tabs: document.querySelectorAll(".view-tab"),
@@ -301,6 +302,15 @@ function initBankAccounts() {
     if (!confirm("این کارت بانکی حذف شود؟")) return;
     bankAccounts.splice(Number(del), 1);
     renderBankAccounts();
+
+    // ذخیره آنی تغییر کارت‌ها و push به پابلیک
+    const banks = collectBankAccounts();
+    if (banks !== null) {
+      store.saveShopInfo({ ...store.getShopInfo(), bankAccounts: banks });
+      autoSaveInvoices();
+      autoPushGitHub();
+      autoPushPublicRepo(); // 🌐 push خودکار به ریپوی پابلیک
+    }
   });
 }
 
@@ -366,6 +376,9 @@ function initSettings() {
     logoPreview.innerHTML = '<span id="logo-placeholder">🖼️</span>';
     store.saveShopInfo({ ...store.getShopInfo(), logo: "" });
     document.getElementById("shop-logo").value = "";
+    autoSaveInvoices();
+    autoPushGitHub();
+    autoPushPublicRepo(); // 🌐 push خودکار به ریپوی پابلیک
   });
   document.getElementById("btn-save-shop").addEventListener("click", () => {
     const info = {
@@ -377,7 +390,6 @@ function initSettings() {
       logo: tempLogo,
     };
 
-    // ✅ کارت‌های بانکی (اگر بخش بانک را اضافه کرده‌باشی)
     if (typeof collectBankAccounts === "function") {
       const banks = collectBankAccounts();
       if (banks === null) return; // اعتبارسنجی رد شد → ذخیره نشود
@@ -386,13 +398,13 @@ function initSettings() {
 
     store.saveShopInfo(info);
 
-    // ✅ لوگوی نوبار + بک‌آپ کامل
     if (typeof updateNavLogo === "function") updateNavLogo();
-    autoSaveInvoices(); // 💾 نوشتن روی فایل محلی متصل‌شده
-    autoPushGitHub(); // ☁️ push به گیت‌هاب (با تأخیر ۱.۵ ثانیه‌ای)
+    autoSaveInvoices();
+    autoPushGitHub();
+    autoPushPublicRepo(); // 🌐 push خودکار به ریپوی پابلیک
 
     const toast = document.getElementById("toast");
-    toast.textContent = "✅ تنظیمات ذخیره شد + بک‌آپ گرفته شد";
+    toast.textContent = "✅ تنظیمات ذخیره شد + روی ریپوی پابلیک بروزرسانی شد";
     toast.classList.remove("hidden");
     setTimeout(() => toast.classList.add("hidden"), 2200);
   });

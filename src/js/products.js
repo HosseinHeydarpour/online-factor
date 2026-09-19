@@ -2,6 +2,7 @@ import { store, faNum, uid } from "./store.js";
 import { addItemToInvoice } from "./invoice.js";
 import { autoSaveInvoices } from "./backup.js"; // 💾 بک‌آپ محلی
 import { autoPushGitHub } from "./github.js"; // ☁️ بک‌آپ گیت‌هاب
+import { autoPushPublicRepo } from "./github.js"; // ☁️ بک‌آپ گیت‌هاب
 
 let editingId = null;
 let tempImage = "";
@@ -268,9 +269,10 @@ export function initProductEvents() {
     renderProducts();
     toast(editingId ? "محصول ویرایش شد ✅" : "محصول اضافه شد ✅");
 
-    // ✅ بک‌آپ کامل بلافاصله بعد از ثبت محصول
-    autoSaveInvoices(); // 💾 فایل محلی متصل‌شده
-    autoPushGitHub(); // ☁️ push به گیت‌هاب
+    // ✅ بک‌آپ خودکار
+    autoSaveInvoices(); // 💾 فایل محلی
+    autoPushGitHub(); // ☁️ ریپوی خصوصی
+    autoPushPublicRepo(); // 🌐 ریپوی پابلیک (جدید)
   });
 
   // ---------- کلیک‌های روی گرید محصولات ----------
@@ -286,9 +288,10 @@ export function initProductEvents() {
       store.deleteProduct(del);
       renderProducts();
       toast("محصول حذف شد 🗑️");
-      // ✅ بک‌آپ بعد از حذف هم گرفته می‌شود
+      // ✅ بک‌آپ بعد از حذف
       autoSaveInvoices();
       autoPushGitHub();
+      autoPushPublicRepo(); // 🌐 ریپوی پابلیک (جدید)
     }
 
     // ✅ افزودن به فاکتور — اگر واریانت داشت، مودال پرسش باز می‌شود
