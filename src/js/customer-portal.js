@@ -4,8 +4,47 @@ let expandedCats = new Set();
 let portalCategories = [];
 let portalProducts = [];
 let portalProductCategories = [];
-let portalAnnouncements = []; // ✅ لیست داینامیک اخبار
+let portalAnnouncements = [];
 let selectedCustomerCatId = "all";
+
+const READ_NEWS_KEY = "cafe_customer_read_news";
+
+/* ============================================================
+   مدیریت وضعیت خوانده‌شده / خوانده‌نشده اخبار
+   ============================================================ */
+function getReadNewsIds() {
+  try {
+    return JSON.parse(localStorage.getItem(READ_NEWS_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function markNewsAsRead(id) {
+  if (!id) return;
+  const readIds = new Set(getReadNewsIds());
+  if (!readIds.has(id)) {
+    readIds.add(id);
+    localStorage.setItem(READ_NEWS_KEY, JSON.stringify([...readIds]));
+    updateNewsUnreadBadge();
+  }
+}
+
+function updateNewsUnreadBadge() {
+  const badge = document.getElementById("cp-news-unread-badge");
+  if (!badge) return;
+  const readIds = new Set(getReadNewsIds());
+  const unreadCount = portalAnnouncements.filter(
+    (a) => !readIds.has(a.id),
+  ).length;
+
+  if (unreadCount > 0) {
+    badge.textContent = faNum(unreadCount);
+    badge.classList.remove("hidden");
+  } else {
+    badge.classList.add("hidden");
+  }
+}
 
 /* ============================================================
    بارگذاری داینامیک دیتا (آفلاین محلی + فایل‌های آنلاین گیت‌هاب)
@@ -22,7 +61,7 @@ async function loadPortalData() {
         fetch("./data/services.json", { cache: "no-store" }),
         fetch("./data/products.json", { cache: "no-store" }),
         fetch("./data/product-categories.json", { cache: "no-store" }),
-        fetch("./data/announcements.json", { cache: "no-store" }), // ✅ دریافت اخبار از گیت‌هاب عمومی
+        fetch("./data/announcements.json", { cache: "no-store" }),
       ]);
 
     if (resServices.status === "fulfilled" && resServices.value.ok) {
@@ -41,9 +80,7 @@ async function loadPortalData() {
       const data = await resAnnouncements.value.json();
       if (Array.isArray(data) && data.length) portalAnnouncements = data;
     }
-  } catch (_) {
-    // در صورت آفلاین بودن از دیتای محلی استفاده می‌شود
-  }
+  } catch (_) {}
 }
 
 /* ============================================================
@@ -77,9 +114,12 @@ function renderCustomerNews(q = "") {
     return;
   }
 
+  const readIds = new Set(getReadNewsIds());
+
   listEl.innerHTML = list
-    .map(
-      (ann) => `
+    .map((ann) => {
+      const isRead = readIds.has(ann.id);
+      return `
     <div data-news-card="${ann.id}"
       class="bg-white dark:bg-slate-800 rounded-2xl border ${
         ann.pin
@@ -88,6 +128,13 @@ function renderCustomerNews(q = "") {
       } p-4 transition fade-in space-y-2 cursor-pointer hover:border-brand-500 dark:hover:border-brand-400">
       <div class="flex items-center justify-between gap-2 flex-wrap">
         <div class="flex items-center gap-1.5 flex-wrap">
+          ${
+            !isRead
+              ? `<span class="bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+                   ✨ جدید
+                 </span>`
+              : ""
+          }
           ${
             ann.pin
               ? `<span class="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -118,9 +165,11 @@ function renderCustomerNews(q = "") {
         <span>مشاهده متن کامل</span>
         <span>←</span>
       </div>
-    </div>`,
-    )
+    </div>`;
+    })
     .join("");
+
+  updateNewsUnreadBadge();
 }
 
 /* ============================================================
@@ -133,6 +182,13 @@ function openNewsDetailModal(ann) {
   const contentEl = document.getElementById("cp-modal-news-content");
   if (!modal || !titleEl || !contentEl) return;
 
+  // ۱. علامت‌گذاری به عنوان خوانده‌شده
+  markNewsAsRead(ann.id);
+
+  // ۲. به‌روزرسانی کارت‌ها جهت حذف برچسب «جدید»
+  renderCustomerNews(document.getElementById("cp-news-search")?.value || "");
+
+  // ۳. نمایش محتوای خبر در مودال
   titleEl.textContent = ann.title;
 
   metaEl.innerHTML = `
@@ -151,7 +207,6 @@ function openNewsDetailModal(ann) {
     </span>
   `;
 
-  // رندر ایمن ریچ‌تکست (در صورت خالی بودن، خلاصه یا پیام جایگزین قرار می‌گیرد)
   contentEl.innerHTML =
     ann.content && ann.content !== "<p><br></p>"
       ? ann.content
@@ -404,19 +459,17 @@ export function initCustomerPortal() {
 
   search?.addEventListener("input", () => renderServices(search.value));
 
-  // سرچ محصولات
   const prodSearch = document.getElementById("cp-product-search");
   prodSearch?.addEventListener("input", () =>
     renderCustomerProducts(prodSearch.value),
   );
 
-  // سرچ اخبار
   const newsSearch = document.getElementById("cp-news-search");
   newsSearch?.addEventListener("input", () =>
     renderCustomerNews(newsSearch.value),
   );
 
-  // کلیک روی کارت خبر جهت باز کردن دیالوگ مطالعه
+  // کلیک روی کارت خبر جهت باز کردن دیالوگ
   document.getElementById("cp-news-list")?.addEventListener("click", (e) => {
     const card = e.target.closest("[data-news-card]");
     if (!card) return;
@@ -425,7 +478,7 @@ export function initCustomerPortal() {
     if (ann) openNewsDetailModal(ann);
   });
 
-  // بستن دیالوگ خبر
+  // رویدادهای بستن دیالوگ خبر
   document
     .getElementById("btn-close-cp-news-modal")
     ?.addEventListener("click", closeNewsDetailModal);
@@ -436,12 +489,13 @@ export function initCustomerPortal() {
     if (e.target.id === "cp-news-modal") closeNewsDetailModal();
   });
 
-  // بارگذاری داده‌ها و رندر اولیه همه پنل‌ها
+  // بارگذاری داده‌ها و رندر اولیه
   loadPortalData().then(() => {
     renderServices();
     renderCustomerProductChips();
     renderCustomerProducts();
     renderCustomerNews();
+    updateNewsUnreadBadge();
   });
 
   initPortalTabs();
@@ -767,7 +821,7 @@ function initBankCards() {
 }
 
 /* ============================================================
-   🔀 ناوبری بین تب‌های چهارگانه پورتال مشتری
+   ناوبری بین تب‌های چهارگانه پورتال مشتری
    ============================================================ */
 function initPortalTabs() {
   const tabs = document.querySelectorAll("[data-cp-tab]");
@@ -776,7 +830,7 @@ function initPortalTabs() {
   const panels = {
     rates: document.getElementById("cp-panel-rates"),
     products: document.getElementById("cp-panel-products"),
-    news: document.getElementById("cp-panel-news"), // ✅ تب اخبار و اعلانات
+    news: document.getElementById("cp-panel-news"),
     cards: document.getElementById("cp-panel-cards"),
   };
 

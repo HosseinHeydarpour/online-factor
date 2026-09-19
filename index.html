@@ -586,6 +586,13 @@
             class="view-tab px-3 sm:px-4 py-2 sm:py-2.5 rounded-t-xl font-bold border-b-2 border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
           >
             📢 اعلانات و اخبار
+
+            <!-- بج تعداد پیام‌های خوانده‌نشده -->
+            <span
+              id="cp-news-unread-badge"
+              class="hidden bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center shadow-sm"
+              >0</span
+            >
           </button>
           <button
             data-view="settings"
@@ -1815,6 +1822,59 @@
         </div>
       </div>
     </div>
+
+    <!-- ===================== مودال نمایش کامل خبر پورتال مشتری ===================== -->
+    <div
+      id="cp-news-modal"
+      class="hidden fixed inset-0 z-[75] modal-backdrop grid place-items-center p-3 sm:p-4"
+    >
+      <div
+        class="bg-white dark:bg-slate-800 w-full max-w-xl rounded-2xl shadow-2xl p-4 sm:p-6 fade-in max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-700 flex flex-col justify-between space-y-4"
+      >
+        <!-- سربرگ مودال -->
+        <div
+          class="flex justify-between items-start gap-3 border-b border-slate-100 dark:border-slate-700 pb-3"
+        >
+          <div class="min-w-0">
+            <h3
+              id="cp-modal-news-title"
+              class="font-black text-base sm:text-lg text-slate-800 dark:text-slate-100 leading-7"
+            ></h3>
+            <div
+              id="cp-modal-news-meta"
+              class="flex items-center gap-2 flex-wrap mt-2"
+            ></div>
+          </div>
+          <button
+            id="btn-close-cp-news-modal"
+            type="button"
+            class="text-slate-400 hover:text-rose-500 text-xl font-bold p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- متن فرمت‌بندی شده خبر -->
+        <div
+          id="cp-modal-news-content"
+          class="cp-rich-text text-sm leading-7 text-slate-700 dark:text-slate-200 overflow-y-auto max-h-[55vh] pl-1"
+        ></div>
+
+        <!-- فوتر مودال با دکمه بستن -->
+        <div
+          class="pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-end"
+        >
+          <button
+            id="btn-dismiss-cp-news-modal"
+            type="button"
+            class="bg-brand-600 hover:bg-brand-700 text-white font-bold py-2 px-6 rounded-xl text-xs sm:text-sm shadow transition"
+          >
+            متوجه شدم / بستن
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- ===================== مودال: مدیریت دسته‌بندی محصولات ===================== -->
     <div
       id="product-categories-modal"
