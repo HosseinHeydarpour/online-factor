@@ -818,17 +818,7 @@ const APP_ROLE = getAppRole();
 
 if (APP_ROLE === "customer") {
   initCustomerPortal();
-  initNajvaClient(); // ✅ بارگذاری خودکار اسکریپت نجوا برای مشتری
 } else {
-  const najvaCfg = getNajvaConfig();
-  const scriptIdInput = document.getElementById("najva-script-id");
-  const apiTokenInput = document.getElementById("najva-api-token");
-  const enabledInput = document.getElementById("najva-enabled");
-
-  if (scriptIdInput) scriptIdInput.value = najvaCfg.scriptId || "";
-  if (apiTokenInput) apiTokenInput.value = najvaCfg.apiToken || "";
-  if (enabledInput) enabledInput.checked = Boolean(najvaCfg.enabled);
-
   document.getElementById("btn-save-najva")?.addEventListener("click", () => {
     saveNajvaConfig({
       scriptId: scriptIdInput?.value.trim() || "",

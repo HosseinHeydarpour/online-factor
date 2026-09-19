@@ -1415,81 +1415,7 @@
                 هنوز کارتی ثبت نشده است.
               </div>
             </div>
-            <!-- تنظیمات وب‌پوش نجوا -->
-            <div
-              class="mt-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 space-y-3"
-            >
-              <div class="flex items-center justify-between flex-wrap gap-2">
-                <h3 class="font-extrabold text-base mb-1">
-                  🔔 تنظیمات پوش نوتیفیکیشن نجوا (Najva)
-                </h3>
-                <span
-                  class="text-[10px] bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 font-bold px-2 py-0.5 rounded-full"
-                >
-                  سازگار با ایران
-                </span>
-              </div>
-              <p class="text-xs text-slate-500 dark:text-slate-400 leading-6">
-                برای ارسال نوتیفیکیشن به گوشی مشتریان، در سایت
-                <a
-                  href="https://najva.com"
-                  target="_blank"
-                  class="text-brand-600 dark:text-brand-400 underline font-bold"
-                  >نجوا (Najva.com)</a
-                >
-                یک پنل رایگان ثبت کنید و اطلاعات زیر را وارد نمایید:
-              </p>
-              <div class="space-y-3">
-                <div>
-                  <label
-                    class="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1"
-                  >
-                    شناسه اسکریپت نجوا (Website ID / Script ID)
-                  </label>
-                  <input
-                    id="najva-script-id"
-                    placeholder="مثلاً: 12345678-abcd-ef01-2345-6789abcdef01"
-                    dir="ltr"
-                    class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs font-mono outline-none focus:ring-2 focus:ring-brand-500"
-                  />
-                  <span class="text-[10px] text-slate-400"
-                    >کدی که در پنل نجوا در انتهای آدرس اسکریپت js شما قرار
-                    دارد.</span
-                  >
-                </div>
-                <div>
-                  <label
-                    class="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1"
-                  >
-                    توکن API نجوا (اختیاری - برای ارسال مستقیم از فرم خبر)
-                  </label>
-                  <input
-                    id="najva-api-token"
-                    type="password"
-                    placeholder="Token xxxxxxxxxxxxxxxxxxxxxxxx"
-                    dir="ltr"
-                    class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs font-mono outline-none focus:ring-2 focus:ring-brand-500"
-                  />
-                </div>
-                <label
-                  class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 cursor-pointer pt-1"
-                >
-                  <input
-                    id="najva-enabled"
-                    type="checkbox"
-                    class="w-4 h-4 accent-brand-600"
-                  />
-                  فعال‌سازی نمایش درخواست عضویت نوتیفیکیشن برای مشتریان
-                </label>
-                <button
-                  id="btn-save-najva"
-                  type="button"
-                  class="bg-brand-600 hover:bg-brand-700 text-white font-bold py-2 px-4 rounded-xl text-xs shadow transition"
-                >
-                  💾 ذخیره تنظیمات نجوا
-                </button>
-              </div>
-            </div>
+
             <!-- تغییر رمز عبور -->
             <div
               class="mt-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 space-y-3"
@@ -3040,22 +2966,6 @@
             </label>
           </div>
 
-          <div
-            class="flex items-center gap-2 pt-1 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/60 p-2.5 rounded-xl"
-          >
-            <input
-              id="ann-send-push"
-              type="checkbox"
-              class="w-4 h-4 accent-brand-600 rounded cursor-pointer"
-            />
-            <label
-              for="ann-send-push"
-              class="text-xs font-bold text-amber-800 dark:text-amber-300 cursor-pointer"
-            >
-              🔔 ارسال نوتیفیکیشن فوری به گوشی اعضای کافی‌نت (پوش نجوا)
-            </label>
-          </div>
-
           <!-- دکمه‌ها -->
           <div
             class="flex gap-2 pt-3 border-t border-slate-200 dark:border-slate-700"
@@ -3277,30 +3187,6 @@
         hideInstallButtons();
         console.log("✅ برنامه با موفقیت نصب شد");
       });
-    </script>
-
-    <!-- اسکریپت وب‌پوش نجوا (فقط در حالت پورتال مشتری) -->
-    <script type="text/javascript">
-      (function () {
-        var isCustomer =
-          new URLSearchParams(window.location.search)
-            .get("role")
-            ?.toLowerCase() === "customer" ||
-          window.location.hash === "#customer" ||
-          localStorage.getItem("cafe_app_role") === "customer";
-
-        // اگر ادمین باشد، پوش فعال نمی‌شود
-        if (!isCustomer) return;
-
-        // بارگذاری اسکریپت رسمی نجوا
-        window.NAJVA = {};
-        var s = document.createElement("script");
-        s.src = "https://van.najva.com/static/js/main-script.js";
-        s.defer = true;
-        s.id = "najva-mini-script";
-        s.setAttribute("data-najva-id", "9dfe837b-270c-4667-8967-651b1e372e22");
-        document.head.appendChild(s);
-      })();
     </script>
   </body>
 </html>

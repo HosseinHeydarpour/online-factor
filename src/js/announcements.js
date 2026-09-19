@@ -1,12 +1,10 @@
 import { store, faNum, toJalali, nowTimeFa } from "./store.js";
 import { syncAllStorages } from "./github.js";
-import { sendNajvaPushNotification } from "./najva.js";
 
 let quillInstance = null;
 let editingAnnId = null;
 let isInitialized = false;
 
-// ارجاع به المان‌های صفحه به شکل امن
 const el = {
   list: null,
   empty: null,
@@ -18,7 +16,6 @@ const el = {
   categorySelect: null,
   summaryInput: null,
   pinInput: null,
-  sendPushInput: null,
   btnSubmit: null,
   btnClose: null,
   btnCancel: null,
@@ -35,7 +32,6 @@ function queryElements() {
   el.categorySelect = document.getElementById("ann-category");
   el.summaryInput = document.getElementById("ann-summary");
   el.pinInput = document.getElementById("ann-pin");
-  el.sendPushInput = document.getElementById("ann-send-push");
   el.btnSubmit = document.getElementById("btn-save-announcement");
   el.btnClose = document.getElementById("btn-close-ann-modal");
   el.btnCancel = document.getElementById("btn-cancel-ann-modal");
@@ -62,9 +58,6 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
-/* ============================================================
-   راه‌اندازی ریچ‌تکست ادیتور Quill.js
-   ============================================================ */
 function initQuillEditor() {
   if (quillInstance || !window.Quill) return;
 
@@ -93,9 +86,6 @@ function initQuillEditor() {
   }
 }
 
-/* ============================================================
-   رندر لیست اخبار در پنل ادمین
-   ============================================================ */
 export function renderAnnouncements(filter = "") {
   queryElements();
   if (!el.list) return;
@@ -178,9 +168,6 @@ export function renderAnnouncements(filter = "") {
     .join("");
 }
 
-/* ============================================================
-   باز و بسته کردن مودال
-   ============================================================ */
 export function openAnnouncementModal(ann = null) {
   queryElements();
   initQuillEditor();
@@ -193,11 +180,6 @@ export function openAnnouncementModal(ann = null) {
   if (el.categorySelect) el.categorySelect.value = ann?.category || "عمومی";
   if (el.summaryInput) el.summaryInput.value = ann?.summary || "";
   if (el.pinInput) el.pinInput.checked = Boolean(ann?.pin);
-
-  // ارسال پوش به طور پیش‌فرض برای خبر جدید فعال، برای ویرایش غیرفعال
-  if (el.sendPushInput) {
-    el.sendPushInput.checked = !ann;
-  }
 
   if (quillInstance) {
     quillInstance.root.innerHTML = ann?.content || "";
@@ -218,9 +200,6 @@ export function closeAnnouncementModal() {
   }
 }
 
-/* ============================================================
-   راه‌اندازی و اتصال رویدادها
-   ============================================================ */
 export function initAnnouncements() {
   queryElements();
 
@@ -245,7 +224,6 @@ export function initAnnouncements() {
     renderAnnouncements(el.search.value),
   );
 
-  // ثبت فرم
   el.form?.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -263,16 +241,13 @@ export function initAnnouncements() {
     }
 
     let summary = el.summaryInput?.value.trim() || "";
-    // اگر خلاصه خالی بود، ۱۰۰ کاراکتر اول متن به عنوان خلاصه استفاده شود
     if (!summary && rawText) {
       summary = rawText.slice(0, 120) + (rawText.length > 120 ? "..." : "");
     }
 
     const category = el.categorySelect?.value || "عمومی";
     const pin = Boolean(el.pinInput?.checked);
-    const sendPush = Boolean(el.sendPushInput?.checked);
 
-    // حالت لودینگ دکمه
     if (el.btnSubmit) {
       el.btnSubmit.disabled = true;
       el.btnSubmit.innerHTML = "⏳ در حال ذخیره و همگام‌سازی…";
@@ -298,26 +273,7 @@ export function initAnnouncements() {
       renderAnnouncements(el.search?.value || "");
       toast(editingAnnId ? "اعلان ویرایش شد ✅" : "اعلان منتشر شد 📢");
 
-      // ۱. همگام‌سازی ابری و محلی
       await syncAllStorages({ showToast: true });
-
-      // ۲. ارسال وب‌پوش نجوا به مشترکین در صورت تیک خوردن
-      if (sendPush) {
-        toast("🔔 در حال ارسال نوتیفیکیشن نجوا به مشترکین…");
-        const pushRes = await sendNajvaPushNotification({
-          title: title,
-          body: summary || "اطلاعیه جدیدی در کافی‌نت آنلاین منتشر شد.",
-        });
-
-        if (pushRes.ok) {
-          toast("🔔 نوتیفیکیشن نجوا با موفقیت به گوشی مشترکین ارسال شد ✅");
-        } else {
-          toast(
-            `⚠️ اعلان ذخیره شد اما ارسال پوش نجوا ناموفق بود: ${pushRes.message}`,
-            true,
-          );
-        }
-      }
     } catch (err) {
       console.error("خطا در ذخیره اعلان:", err);
       toast("❌ خطا در فرآیند ذخیره اعلان", true);
@@ -329,7 +285,6 @@ export function initAnnouncements() {
     }
   });
 
-  // رویدادهای کلیک روی کارت‌ها (ویرایش، حذف، پین)
   el.list?.addEventListener("click", async (e) => {
     const editBtn = e.target.closest("[data-ann-edit]");
     const delBtn = e.target.closest("[data-ann-del]");
