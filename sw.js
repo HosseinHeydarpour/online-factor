@@ -48,6 +48,13 @@ self.addEventListener("activate", (event) => {
 
 // مرحله ۳: رویداد Fetch (استراتژی Network First: اولویت اینترنت، در صورت آفلاین بودن خواندن از کش)
 self.addEventListener("fetch", (event) => {
+  if (
+    event.request.url.includes("api.github.com") ||
+    event.request.url.includes("goftino.com")
+  ) {
+    return;
+  }
+
   // عدم کش کردن درخواست‌های مستقیم به API گیت‌هاب
   if (event.request.url.includes("api.github.com")) {
     return;
