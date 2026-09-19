@@ -126,7 +126,7 @@ function renderItems() {
             <div class="flex items-center gap-2 min-w-0">
               <span class="text-lg">${isExpanded ? "🔽" : "▶️"}</span>
               <p class="text-sm font-bold truncate text-slate-800 dark:text-slate-100">${c.title}</p>
-              ${c.custom ? `<span class="text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded-md">سفارشی</span>` : ""}
+            
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
               <span class="text-xs text-slate-400 shrink-0 ml-1">${faNum(c.items.length)} خدمت</span>
