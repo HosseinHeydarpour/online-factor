@@ -1,30 +1,5 @@
 [
   {
-    "id": "cat-mu8ajpeagtl4o",
-    "title": "فیلم و سریال",
-    "items": [
-      {
-        "id": "srv-mu8ajpea7mzly",
-        "title": "سریال به ازای هر قسمت",
-        "price": 7000,
-        "custom": true
-      },
-      {
-        "id": "srv-mu8ajpeaumz76",
-        "title": "فیلم سینمایی",
-        "price": 10000,
-        "custom": true
-      },
-      {
-        "id": "srv-mu8am782fdbl0",
-        "title": "فیلم جنایی",
-        "price": 200000,
-        "custom": true
-      }
-    ],
-    "custom": true
-  },
-  {
     "id": "amlak-maskan",
     "title": "🏠 سامانه املاک و اسکان",
     "items": [
