@@ -1916,12 +1916,23 @@
               نرخ‌نامه خدمات
             </p>
           </div>
-          <button
-            id="cp-theme"
-            class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition"
-          >
-            🌙
-          </button>
+          <!-- هدر پورتال مشتری -->
+          <div class="flex items-center gap-2">
+            <!-- ✅ دکمه نصب مخصوص مشتری -->
+            <button
+              id="cp-btn-install"
+              class="hidden px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center gap-1 shadow-sm shrink-0"
+            >
+              <span>📲</span>
+              <span>نصب برنامه</span>
+            </button>
+            <button
+              id="cp-theme"
+              class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition"
+            >
+              🌙
+            </button>
+          </div>
         </div>
       </header>
 
@@ -2616,60 +2627,61 @@
     <script type="module" src="./src/js/app.js"></script>
 
     <script>
-      // ثبت استاندارد Service Worker با مسیر نسبی
+      // ثبت سرویس ورکر
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
           navigator.serviceWorker
             .register("./sw.js")
-            .then((reg) =>
-              console.log("✅ Service Worker با موفقیت ثبت شد:", reg.scope),
-            )
-            .catch((err) =>
-              console.error("❌ خطا در ثبت Service Worker:", err),
-            );
+            .then((reg) => console.log("✅ Service Worker ثبت شد:", reg.scope))
+            .catch((err) => console.error("❌ خطا در ثبت SW:", err));
         });
       }
 
-      // تشخیص نقش مشتری از آدرس
-      function isCustomerRole() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const role =
-          urlParams.get("role") ||
-          (window.location.hash === "#customer" ? "customer" : "");
-        return role.toLowerCase() === "customer";
+      let deferredPrompt = null;
+
+      // نمایش دکمه نصب (هم در پنل ادمین و هم در پنل مشتری)
+      function showInstallButtons() {
+        const adminBtn = document.getElementById("btn-install-app");
+        const customerBtn = document.getElementById("cp-btn-install");
+        if (adminBtn) adminBtn.classList.remove("hidden");
+        if (customerBtn) customerBtn.classList.remove("hidden");
       }
 
-      // مدیریت دکمه و پیشنهاد نصب اپلیکیشن
-      let deferredPrompt = null;
-      window.addEventListener("beforeinstallprompt", (e) => {
-        // ⛔ اگر نقش کاربر «مشتری» باشد، پیشنهاد نصب خودکار مرورگر و دکمه نصب کاملاً مسدود می‌شود
-        if (isCustomerRole()) {
-          e.preventDefault(); // جلوگیری از نمایش بنر خودکار مرورگر
-          deferredPrompt = null;
-          const btn = document.getElementById("btn-install-app");
-          if (btn) btn.classList.add("hidden");
-          return;
-        }
+      function hideInstallButtons() {
+        const adminBtn = document.getElementById("btn-install-app");
+        const customerBtn = document.getElementById("cp-btn-install");
+        if (adminBtn) adminBtn.classList.add("hidden");
+        if (customerBtn) customerBtn.classList.add("hidden");
+      }
 
-        // ✅ برای مدیر، پیشنهاد و دکمه نصب فعال می‌ماند
+      // به محض اینکه مرورگر تشخیص دهد سایت شرایط نصب PWA را دارد:
+      window.addEventListener("beforeinstallprompt", (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        const btn = document.getElementById("btn-install-app");
-        if (btn) btn.classList.remove("hidden");
+        // ✅ فعال‌سازی دکمه نصب هم برای ادمین و هم برای مشتری
+        showInstallButtons();
       });
 
+      // کلیک روی دکمه نصب (چه دکمه ادمین باشد چه دکمه مشتری)
       document.addEventListener("click", async (e) => {
-        if (isCustomerRole()) return;
+        const installBtn =
+          e.target?.closest("#btn-install-app") ||
+          e.target?.closest("#cp-btn-install");
 
-        if (e.target?.id === "btn-install-app" && deferredPrompt) {
+        if (installBtn && deferredPrompt) {
           deferredPrompt.prompt();
           const { outcome } = await deferredPrompt.userChoice;
           if (outcome === "accepted") {
-            const btn = document.getElementById("btn-install-app");
-            if (btn) btn.classList.add("hidden");
+            hideInstallButtons();
           }
           deferredPrompt = null;
         }
+      });
+
+      // در صورت نصب موفق، دکمه‌ها مخفی می‌شوند
+      window.addEventListener("appinstalled", () => {
+        hideInstallButtons();
+        console.log("✅ برنامه با موفقیت نصب شد");
       });
     </script>
   </body>
