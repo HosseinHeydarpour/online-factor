@@ -2,10 +2,11 @@ import { store } from "./store.js";
 
 const API = "https://api.github.com";
 
-export function getGitHubConfig() {
+// تنظیمات ریپوی بک‌آپ (خصوصی)
+export function getBackupRepoConfig() {
   const s = store.getSettings();
   return (
-    s.github || {
+    s.backupRepo || {
       owner: "",
       repo: "",
       branch: "main",
@@ -14,8 +15,35 @@ export function getGitHubConfig() {
     }
   );
 }
+
+// تنظیمات ریپوی پابلیک (سایت مشتری)
+export function getPublicRepoConfig() {
+  const s = store.getSettings();
+  return (
+    s.publicRepo || {
+      owner: "",
+      repo: "",
+      branch: "main",
+      token: "",
+      enabled: false,
+    }
+  );
+}
+
+export function saveBackupRepoConfig(cfg) {
+  store.saveSettings({ ...store.getSettings(), backupRepo: cfg });
+}
+
+export function savePublicRepoConfig(cfg) {
+  store.saveSettings({ ...store.getSettings(), publicRepo: cfg });
+}
+
+// برای سازگاری با کدهای قدیمی
+export function getGitHubConfig() {
+  return getBackupRepoConfig();
+}
 export function saveGitHubConfig(cfg) {
-  store.saveSettings({ ...store.getSettings(), github: cfg });
+  saveBackupRepoConfig(cfg);
 }
 
 function headers(cfg) {
@@ -210,10 +238,143 @@ export async function pushBackupToGitHub({ silent = false } = {}) {
 /* ---------- push خودکار با debounce ---------- */
 let pushTimer = null;
 export function autoPushGitHub() {
-  const cfg = getGitHubConfig();
+  const cfg = getBackupRepoConfig();
   if (!cfg.autoPush || !cfg.token || !cfg.owner || !cfg.repo) return;
   clearTimeout(pushTimer);
   pushTimer = setTimeout(() => pushBackupToGitHub({ silent: true }), 1500);
+}
+
+/* ---------- push به ریپوی پابلیک (سایت مشتری) ---------- */
+export async function pushToPublicRepo({ silent = false } = {}) {
+  const cfg = getPublicRepoConfig();
+  if (!cfg.enabled || !cfg.owner || !cfg.repo || !cfg.token) {
+    if (!silent) return { ok: false, message: "ریپوی پابلیک فعال نیست" };
+    return { ok: false };
+  }
+
+  try {
+    const files = collectBackupFiles();
+    const branch = cfg.branch || "main";
+
+    // ۱) آخرین کامیت شاخه
+    let latestSha = null;
+    let baseTree = null;
+    try {
+      const ref = await gh(
+        `/repos/${cfg.owner}/${cfg.repo}/git/ref/heads/${branch}`,
+        cfg,
+      );
+      latestSha = ref.object.sha;
+      const lastCommit = await gh(
+        `/repos/${cfg.owner}/${cfg.repo}/git/commits/${latestSha}`,
+        cfg,
+      );
+      baseTree = lastCommit.tree.sha;
+    } catch {
+      // ⚠️ ریپو یا شاخه کاملاً خالی است → ساخت اولین کامیت با Contents API
+      await gh(
+        `/repos/${cfg.owner}/${cfg.repo}/contents/data/init.json`,
+        cfg,
+        {
+          method: "PUT",
+          body: JSON.stringify({
+            message: "🌱 راه‌اندازی پوشه دیتا",
+            content: toBase64(
+              JSON.stringify(
+                { initializedAt: new Date().toISOString() },
+                null,
+                2,
+              ),
+            ),
+            branch,
+          }),
+        },
+      );
+      // حالا شاخه وجود دارد؛ ادامه جریان عادی
+      const ref = await gh(
+        `/repos/${cfg.owner}/${cfg.repo}/git/ref/heads/${branch}`,
+        cfg,
+      );
+      latestSha = ref.object.sha;
+      const lastCommit = await gh(
+        `/repos/${cfg.owner}/${cfg.repo}/git/commits/${latestSha}`,
+        cfg,
+      );
+      baseTree = lastCommit.tree.sha;
+    }
+
+    // ۲) ساخت blob برای هر فایل (در پوشه data/)
+    const treeItems = [];
+    for (const f of files) {
+      const publicPath = f.path.replace("backup/", "data/");
+      const blob = await gh(`/repos/${cfg.owner}/${cfg.repo}/git/blobs`, cfg, {
+        method: "POST",
+        body: JSON.stringify({ content: f.content, encoding: "utf8" }),
+      });
+      treeItems.push({
+        path: publicPath,
+        mode: "100644",
+        type: "blob",
+        sha: blob.sha,
+      });
+    }
+
+    // ۳) ساخت tree جدید
+    const tree = await gh(`/repos/${cfg.owner}/${cfg.repo}/git/trees`, cfg, {
+      method: "POST",
+      body: JSON.stringify(
+        baseTree
+          ? { base_tree: baseTree, tree: treeItems }
+          : { tree: treeItems },
+      ),
+    });
+
+    // ۴) ساخت کامیت
+    const message = `📤 بروزرسانی دیتا: ${store.getInvoices().length} فاکتور — ${new Date().toLocaleString("fa-IR")}`;
+    const commit = await gh(
+      `/repos/${cfg.owner}/${cfg.repo}/git/commits`,
+      cfg,
+      {
+        method: "POST",
+        body: JSON.stringify(
+          latestSha
+            ? { message, tree: tree.sha, parents: [latestSha] }
+            : { message, tree: tree.sha },
+        ),
+      },
+    );
+
+    // ۵) جابه‌جایی ref یا ساخت آن
+    if (latestSha) {
+      await gh(
+        `/repos/${cfg.owner}/${cfg.repo}/git/refs/heads/${branch}`,
+        cfg,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ sha: commit.sha }),
+        },
+      );
+    } else {
+      await gh(`/repos/${cfg.owner}/${cfg.repo}/git/refs`, cfg, {
+        method: "POST",
+        body: JSON.stringify({ ref: `refs/heads/${branch}`, sha: commit.sha }),
+      });
+    }
+
+    store.saveSettings({
+      ...store.getSettings(),
+      lastPublicPush: { at: Date.now(), ok: true },
+    });
+    if (!silent) alert("دیتا با موفقیت روی ریپوی پابلیک push شد ✅");
+    return { ok: true, sha: commit.sha };
+  } catch (err) {
+    store.saveSettings({
+      ...store.getSettings(),
+      lastPublicPush: { at: Date.now(), ok: false, error: err.message },
+    });
+    if (!silent) alert("push به ریپوی پابلیک ناموفق بود ❌\\n" + err.message);
+    return { ok: false, message: err.message };
+  }
 }
 
 /* ---------- تست اتصال ---------- */
@@ -351,12 +512,27 @@ export function initGitHubUI() {
   const $ = (id) => document.getElementById(id);
   if (!$("gh-owner")) return;
 
-  const cfg = getGitHubConfig();
-  $("gh-owner").value = cfg.owner || "";
-  $("gh-repo").value = cfg.repo || "";
-  $("gh-branch").value = cfg.branch || "main";
-  $("gh-token").value = cfg.token || "";
-  $("gh-autopush").checked = cfg.autoPush !== false;
+  // بارگذاری تنظیمات ریپوی بک‌آپ
+  const backupCfg = getBackupRepoConfig();
+  $("gh-owner").value = backupCfg.owner || "";
+  $("gh-repo").value = backupCfg.repo || "";
+  $("gh-branch").value = backupCfg.branch || "main";
+  $("gh-token").value = backupCfg.token || "";
+  $("gh-autopush").checked = backupCfg.autoPush !== false;
+
+  // بارگذاری تنظیمات ریپوی پابلیک
+  const publicCfg = getPublicRepoConfig();
+  const pubOwnerEl = $("pub-gh-owner");
+  const pubRepoEl = $("pub-gh-repo");
+  const pubBranchEl = $("pub-gh-branch");
+  const pubTokenEl = $("pub-gh-token");
+  const pubEnabledEl = $("pub-gh-enabled");
+  
+  if (pubOwnerEl) pubOwnerEl.value = publicCfg.owner || "";
+  if (pubRepoEl) pubRepoEl.value = publicCfg.repo || "";
+  if (pubBranchEl) pubBranchEl.value = publicCfg.branch || "main";
+  if (pubTokenEl) pubTokenEl.value = publicCfg.token || "";
+  if (pubEnabledEl) pubEnabledEl.checked = publicCfg.enabled === true;
 
   const updateStatus = () => {
     const s = store.getSettings().lastPush;
@@ -374,8 +550,26 @@ export function initGitHubUI() {
       : "text-xs text-rose-500 dark:text-rose-400 font-bold";
   };
 
+  const updatePublicStatus = () => {
+    const s = store.getSettings().lastPublicPush;
+    const el = $("pub-gh-status");
+    if (!el) return;
+    if (!s) {
+      el.textContent = "هنوز هیچ دیتایی به ریپوی پابلیک push نشده است.";
+      el.className = "text-xs text-slate-400";
+      return;
+    }
+    el.textContent = s.ok
+      ? `✅ آخرین push موفق: ${new Date(s.at).toLocaleString("fa-IR")}`
+      : `❌ آخرین push ناموفق: ${s.error || "خطای ناشناخته"}`;
+    el.className = s.ok
+      ? "text-xs text-emerald-500 dark:text-emerald-400 font-bold"
+      : "text-xs text-rose-500 dark:text-rose-400 font-bold";
+  };
+
+  // دکمه ذخیره تنظیمات بک‌آپ
   $("btn-gh-save").addEventListener("click", () => {
-    saveGitHubConfig({
+    saveBackupRepoConfig({
       owner: $("gh-owner").value.trim(),
       repo: $("gh-repo").value.trim(),
       branch: $("gh-branch").value.trim() || "main",
@@ -383,9 +577,10 @@ export function initGitHubUI() {
       autoPush: $("gh-autopush").checked,
     });
     updateStatus();
-    alert("تنظیمات گیت‌هاب ذخیره شد ✅");
+    alert("تنظیمات گیت‌هاب (بک‌آپ) ذخیره شد ✅");
   });
-  const readFormConfig = () => ({
+
+  const readBackupFormConfig = () => ({
     owner: $("gh-owner").value.trim(),
     repo: $("gh-repo").value.trim(),
     branch: $("gh-branch").value.trim() || "main",
@@ -393,18 +588,48 @@ export function initGitHubUI() {
     autoPush: $("gh-autopush").checked,
   });
 
+  const readPublicFormConfig = () => ({
+    owner: pubOwnerEl ? pubOwnerEl.value.trim() : "",
+    repo: pubRepoEl ? pubRepoEl.value.trim() : "",
+    branch: pubBranchEl ? pubBranchEl.value.trim() || "main" : "main",
+    token: pubTokenEl ? pubTokenEl.value.trim() : "",
+    enabled: pubEnabledEl ? pubEnabledEl.checked : false,
+  });
+
   $("btn-gh-test").addEventListener("click", async () => {
-    saveGitHubConfig(readFormConfig());
+    saveBackupRepoConfig(readBackupFormConfig());
     await testGitHubConnection();
   });
   $("btn-gh-push").addEventListener("click", async () => {
-    saveGitHubConfig(readFormConfig());
+    saveBackupRepoConfig(readBackupFormConfig());
     await pushBackupToGitHub();
     updateStatus();
   });
   $("btn-gh-restore").addEventListener("click", async () => {
-    saveGitHubConfig(readFormConfig());
+    saveBackupRepoConfig(readBackupFormConfig());
     await restoreFromGitHub({ replace: $("gh-restore-replace").checked });
   });
+
+  // دکمه‌های ریپوی پابلیک
+  const btnPubSave = $("btn-pub-gh-save");
+  const btnPubPush = $("btn-pub-gh-push");
+  
+  if (btnPubSave) {
+    btnPubSave.addEventListener("click", () => {
+      savePublicRepoConfig(readPublicFormConfig());
+      updatePublicStatus();
+      alert("تنظیمات ریپوی پابلیک ذخیره شد ✅");
+    });
+  }
+  
+  if (btnPubPush) {
+    btnPubPush.addEventListener("click", async () => {
+      savePublicRepoConfig(readPublicFormConfig());
+      await pushToPublicRepo();
+      updatePublicStatus();
+    });
+  }
+
   updateStatus();
+  updatePublicStatus();
 }
