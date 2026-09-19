@@ -1199,7 +1199,7 @@
               class="mt-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 space-y-3"
             >
               <h3 class="font-extrabold text-base mb-1">
-                ☁️ بک‌آپ ابری روی گیت‌هاب
+                ☁️ بک‌آپ ابری روی گیت‌هاب (ریپوی خصوصی)
               </h3>
               <p class="text-xs text-slate-500 dark:text-slate-400 leading-6">
                 با یک توکن شخصی (Fine-grained با دسترسی Contents روی یک ریپوی
@@ -1281,6 +1281,68 @@
                 ادغام)
               </label>
               <p id="gh-status" class="text-xs text-slate-400"></p>
+            </div>
+
+            <!-- بخش دوم: ریپوی پابلیک (سایت مشتری) -->
+            <div
+              class="mt-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 space-y-3"
+            >
+              <h3 class="font-extrabold text-base mb-1">
+                🌐 بروزرسانی دیتا برای سایت مشتری (ریپوی پابلیک)
+              </h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 leading-6">
+                با وارد کردن اطلاعات یک ریپوی پابلیک، می‌توانید داده‌های
+                بک‌آپ‌گرفته‌شده (فاکتورها، محصولات، مشتریان و...) را روی این
+                ریپو push کنید تا برای مشتری قابل مشاهده باشد.
+              </p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input
+                  id="pub-gh-owner"
+                  placeholder="نام کاربری مالک ریپو"
+                  class="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+                />
+                <input
+                  id="pub-gh-repo"
+                  placeholder="نام ریپازیتوری پابلیک"
+                  class="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+                />
+                <input
+                  id="pub-gh-branch"
+                  placeholder="شاخه (main)"
+                  class="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+                />
+                <input
+                  id="pub-gh-token"
+                  type="password"
+                  placeholder="توکن شخصی (متفاوت از توکن بک‌آپ)"
+                  class="rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
+              <label
+                class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 cursor-pointer"
+              >
+                <input
+                  id="pub-gh-enabled"
+                  type="checkbox"
+                  class="w-4 h-4 accent-brand-600"
+                />
+                فعال‌سازی push به ریپوی پابلیک
+              </label>
+              <div class="grid grid-cols-2 gap-2">
+                <button
+                  id="btn-pub-gh-save"
+                  class="bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl text-xs sm:text-sm shadow"
+                >
+                  💾 ذخیره تنظیمات پابلیک
+                </button>
+                <button
+                  id="btn-pub-gh-push"
+                  class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs sm:text-sm shadow"
+                >
+                  ⬆️ push دیتا به ریپوی پابلیک
+                </button>
+              </div>
+              <p id="pub-gh-status" class="text-xs text-slate-400"></p>
             </div>
 
             <!-- حالت توسعه -->
