@@ -894,13 +894,67 @@
             <h2 class="font-extrabold text-base sm:text-lg">
               📋 فاکتورهای ثبت شده
             </h2>
-            <input
-              id="invoice-search"
-              placeholder="جستجوی فاکتور (شماره، نام مشتری)…"
-              class="flex-1 sm:flex-initial sm:w-64 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
-            />
+            <div class="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+              <input
+                id="invoice-search"
+                placeholder="جستجوی فاکتور (شماره، نام، تلفن)…"
+                class="flex-1 sm:w-60 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+              />
+              <button
+                id="btn-invoice-advanced-filter"
+                class="relative shrink-0 bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow flex items-center gap-1.5 transition"
+              >
+                <span>🔍 فیلتر پیشرفته</span>
+                <span
+                  id="invoice-filter-badge"
+                  class="hidden w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-bold grid place-items-center"
+                  >۰</span
+                >
+              </button>
+            </div>
           </div>
 
+          <!-- دکمه‌های فیلتر سریع بازه زمانی (پیش‌فرض: امروز) -->
+          <div
+            class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1"
+          >
+            <span
+              class="text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0 ml-1"
+              >دوره زمانی:</span
+            >
+            <button
+              data-inv-period="today"
+              class="inv-period-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition"
+            >
+              امروز
+            </button>
+            <button
+              data-inv-period="yesterday"
+              class="inv-period-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition"
+            >
+              دیروز
+            </button>
+            <button
+              data-inv-period="week"
+              class="inv-period-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition"
+            >
+              این هفته
+            </button>
+            <button
+              data-inv-period="month"
+              class="inv-period-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition"
+            >
+              این ماه
+            </button>
+            <button
+              data-inv-period="all"
+              class="inv-period-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition"
+            >
+              همه
+            </button>
+          </div>
+
+          <!-- کارت‌های آمار فیلترشده -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
             <div
               class="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-slate-700 dark:to-slate-800 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-4 sm:p-5"
@@ -908,7 +962,7 @@
               <p
                 class="text-sm text-emerald-600 dark:text-emerald-400 font-bold mb-1"
               >
-                💰 کل درآمد
+                💰 درآمد دوره انتخابی
               </p>
               <p
                 id="invoices-total-revenue"
@@ -938,7 +992,7 @@
               <p
                 class="text-sm text-purple-600 dark:text-purple-400 font-bold mb-1"
               >
-                📅 میانگین روزانه
+                📅 میانگین روزانه دوره
               </p>
               <p
                 id="invoices-avg-daily"
@@ -949,12 +1003,13 @@
             </div>
           </div>
 
-          <div id="invoices-list" class="space-y-3"></div>
+          <!-- لیست فاکتورها (جدول) -->
+          <div id="invoices-list"></div>
           <div
             id="invoices-empty"
             class="hidden bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 rounded-2xl p-8 sm:p-10 text-center text-slate-400 dark:text-slate-300 text-sm"
           >
-            هنوز فاکتوری ثبت نشده است.
+            هیچ فاکتوری با فیلتر انتخابی یافت نشد.
           </div>
         </section>
 
@@ -2061,6 +2116,116 @@
           </button>
           <button
             id="btn-reset-customer-filter"
+            class="px-4 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl text-sm font-bold"
+          >
+            حذف فیلترها
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== مودال: فیلتر پیشرفته فاکتورها ===================== -->
+    <div
+      id="invoice-filter-modal"
+      class="hidden fixed inset-0 z-[65] modal-backdrop grid place-items-center p-3 sm:p-4"
+    >
+      <div
+        class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl p-4 sm:p-6 fade-in max-h-[90vh] overflow-auto"
+      >
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-extrabold text-sm sm:text-base">
+            🔍 فیلتر پیشرفته فاکتورها
+          </h3>
+          <button
+            id="btn-close-invoice-filter"
+            class="text-slate-400 hover:text-rose-500 text-xl"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="space-y-4 text-sm">
+          <!-- مرتب‌سازی بر اساس مبلغ -->
+          <div>
+            <label
+              class="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1"
+            >
+              مرتب‌سازی بر اساس مبلغ فاکتور
+            </label>
+            <select
+              id="if-sort-amount"
+              class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+            >
+              <option value="none">پیش‌فرض (بر اساس شماره فاکتور)</option>
+              <option value="amount-desc">
+                مبلغ: نزولی (بیشترین به کمترین)
+              </option>
+              <option value="amount-asc">
+                مبلغ: صعودی (کمترین به بیشترین)
+              </option>
+            </select>
+          </div>
+
+          <!-- بازه تاریخ اختصاصی -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label
+                class="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1"
+              >
+                از تاریخ
+              </label>
+              <input
+                id="if-date-from"
+                type="text"
+                placeholder="1405/01/01"
+                dir="ltr"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs text-left outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+            <div>
+              <label
+                class="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1"
+              >
+                تا تاریخ
+              </label>
+              <input
+                id="if-date-to"
+                type="text"
+                placeholder="1405/12/29"
+                dir="ltr"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs text-left outline-none focus:ring-2 focus:ring-brand-500"
+              />
+            </div>
+          </div>
+
+          <!-- روش پرداخت -->
+          <div>
+            <label
+              class="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1"
+            >
+              روش پرداخت
+            </label>
+            <select
+              id="if-payment"
+              class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+            >
+              <option value="all">همه روش‌ها</option>
+              <option value="نقدی">💵 نقدی</option>
+              <option value="کارت‌خوان">💳 کارت‌خوان</option>
+              <option value="کارت به کارت">🏦 کارت به کارت</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex gap-2 mt-6">
+          <button
+            id="btn-apply-invoice-filter"
+            class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl text-sm shadow"
+          >
+            ✅ اعمال فیلتر
+          </button>
+          <button
+            id="btn-reset-invoice-filter"
             class="px-4 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl text-sm font-bold"
           >
             حذف فیلترها
