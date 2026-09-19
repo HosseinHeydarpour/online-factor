@@ -7,7 +7,21 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
     <meta name="theme-color" content="#0284c7" />
-    <link rel="manifest" href="./manifest.json" />
+    <!-- انتخاب هوشمند مانیفست بر اساس نقش ادمین یا مشتری -->
+    <link id="manifest-link" rel="manifest" href="./manifest.json" />
+    <script>
+      (function () {
+        var isCustomer =
+          new URLSearchParams(window.location.search)
+            .get("role")
+            ?.toLowerCase() === "customer" ||
+          window.location.hash === "#customer";
+        if (isCustomer) {
+          var m = document.getElementById("manifest-link");
+          if (m) m.setAttribute("href", "./manifest-customer.json");
+        }
+      })();
+    </script>
     <link
       rel="apple-touch-icon"
       href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect width='180' height='180' rx='36' fill='%230284c7'/><text x='50%25' y='58%25' text-anchor='middle' font-family='Tahoma,sans-serif' font-size='112' font-weight='900' fill='white'>ک</text></svg>"

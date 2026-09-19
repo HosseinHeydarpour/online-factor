@@ -768,10 +768,42 @@ function initSettings() {
 // ---------- تشخیص نقش از آدرس ----------
 // ?role=customer  → پورتال مشتری (فقط نرخ‌نامه)
 // ?role=admin یا بدون پارامتر → مدیریت کامل
-const APP_ROLE = (
-  new URLSearchParams(window.location.search).get("role") ||
-  (window.location.hash === "#customer" ? "customer" : "admin")
-).toLowerCase();
+// تشخیص هوشمند نقش برنامه با پشتیبانی از PWA نصب‌شده روی گوشی مشتری
+function getAppRole() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const roleParam = urlParams.get("role")?.toLowerCase();
+
+  // ۱. اگر در آدرس صراحتاً نقش مشخص شده باشد
+  if (roleParam === "customer" || window.location.hash === "#customer") {
+    localStorage.setItem("cafe_app_role", "customer");
+    return "customer";
+  }
+  if (roleParam === "admin" || window.location.hash === "#admin") {
+    localStorage.setItem("cafe_app_role", "admin");
+    return "admin";
+  }
+
+  // ۲. بررسی حالت اپلیکیشن نصب‌شده (PWA Standalone)
+  const isStandalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    navigator.standalone === true;
+
+  const savedRole = localStorage.getItem("cafe_app_role");
+
+  // اگر اپلیکیشن به صورت PWA از صفحه اصلی گوشی باز شده و قبلاً مشتری بوده
+  if (isStandalone && savedRole === "customer") {
+    return "customer";
+  }
+
+  // اگر قبلاً در این مرورگر لینک مشتری باز شده باشد
+  if (savedRole === "customer") {
+    return "customer";
+  }
+
+  return "admin";
+}
+
+const APP_ROLE = getAppRole();
 
 if (APP_ROLE === "customer") {
   initCustomerPortal();
