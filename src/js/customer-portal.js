@@ -238,22 +238,22 @@ function cardTemplate(b, i) {
   const off = (v) => (v ? "" : "pointer-events-none opacity-40");
 
   return `
-  <div class="shrink-0 w-full px-1.5 sm:px-3" dir="rtl">
-    <div class="cp-bank-card text-white" style="background:${bg};">
-      <div class="absolute -top-12 -left-10 w-44 h-44 rounded-full bg-white/15 blur-2xl"></div>
-      <div class="absolute -bottom-20 -right-10 w-56 h-56 rounded-full bg-black/25 blur-3xl"></div>
-      <div class="absolute inset-0 opacity-[.08]" style="background-image:repeating-linear-gradient(115deg,#fff 0 1px,transparent 1px 14px);"></div>
+  <div class="shrink-0 w-full px-1" dir="rtl">
+    <div class="cp-bank-card text-white flex flex-col justify-between" style="background:${bg};">
+      <div class="absolute -top-12 -left-10 w-44 h-44 rounded-full bg-white/15 blur-2xl pointer-events-none"></div>
+      <div class="absolute -bottom-20 -right-10 w-56 h-56 rounded-full bg-black/25 blur-3xl pointer-events-none"></div>
+      <div class="absolute inset-0 opacity-[.08] pointer-events-none" style="background-image:repeating-linear-gradient(115deg,#fff 0 1px,transparent 1px 14px);"></div>
 
-      <div class="relative h-full flex flex-col justify-between gap-2 py-4 px-4 sm:p-12">
+      <div class="relative h-full flex flex-col justify-between p-4 sm:p-6 gap-2">
         <!-- ردیف ۱: بانک + چیپ -->
-        <div class="flex items-start justify-between gap-3">
+        <div class="flex items-start justify-between gap-2">
           <div class="min-w-0">
             <p class="text-[10px] sm:text-xs opacity-75 font-bold">بانک</p>
-            <p class="text-lg sm:text-2xl font-black truncate">${bank}</p>
+            <p class="text-base sm:text-2xl font-black truncate">${bank}</p>
           </div>
           <div class="shrink-0 flex items-center gap-1.5">
             <span class="text-[9px] sm:text-[10px] font-black opacity-80 tracking-widest">شتاب</span>
-            <span class="relative w-11 h-8 sm:w-12 sm:h-9 rounded-md overflow-hidden shadow-inner bg-gradient-to-br from-amber-200 via-yellow-300 to-amber-500">
+            <span class="relative w-9 h-6 sm:w-11 sm:h-8 rounded-md overflow-hidden shadow-inner bg-gradient-to-br from-amber-200 via-yellow-300 to-amber-500">
               <span class="absolute inset-y-0 left-1/3 w-px bg-amber-700/40"></span>
               <span class="absolute inset-y-0 left-2/3 w-px bg-amber-700/40"></span>
               <span class="absolute inset-x-0 top-1/2 h-px bg-amber-700/40"></span>
@@ -263,25 +263,25 @@ function cardTemplate(b, i) {
 
         <!-- ردیف ۲: شماره کارت (کلیک = کپی) -->
         <button type="button" data-copy="${card}" data-label="شماره کارت"
-          class="cp-copy-btn self-start text-right -mx-2 px-2 pr-8 sm:pr-2 sm:px-2 py-1 rounded-lg hover:bg-white/10 ${off(card)}">
+          class="cp-copy-btn w-full text-right px-2 py-1 rounded-xl hover:bg-white/10 active:bg-white/20 transition ${off(card)}">
           <p class="text-[10px] sm:text-xs opacity-75 font-bold mb-0.5">شماره کارت 📋</p>
-          <p class="font-mono text-[21px] leading-8 sm:text-3xl sm:leading-9 font-extrabold tracking-[.06em] sm:tracking-[.12em]" dir="ltr">${fmtCard(card)}</p>
+          <p class="font-mono text-[17px] sm:text-2xl md:text-3xl font-extrabold tracking-[0.06em] sm:tracking-[0.1em] text-center sm:text-right" dir="ltr">${fmtCard(card)}</p>
         </button>
 
         <!-- ردیف ۳: شماره شبا (کلیک = کپی) -->
         <button type="button" data-copy="${sheba}" data-label="شماره شبا"
-          class="cp-copy-btn self-start text-right -mx-2 px-2 pr-8 sm:pr-2 sm:px-2 py-0.5 rounded-lg hover:bg-white/10 ${off(sheba)}">
+          class="cp-copy-btn w-full text-right px-2 py-0.5 rounded-xl hover:bg-white/10 active:bg-white/20 transition ${off(sheba)}">
           <p class="text-[10px] sm:text-xs opacity-75 font-bold mb-0.5">شماره شبا 📋</p>
-          <p class="font-mono text-xs sm:text-base font-bold tracking-[.04em] sm:tracking-[.08em] truncate" dir="ltr">${fmtSheba(sheba)}</p>
+          <p class="font-mono text-[11px] sm:text-sm md:text-base font-bold tracking-[0.03em] sm:tracking-[0.06em] truncate" dir="ltr">${fmtSheba(sheba)}</p>
         </button>
 
         <!-- ردیف ۴: دارنده کارت -->
-        <div class="flex items-end justify-between gap-2 px-2 pr-8 sm:pr-0 sm:px-0  border-t border-white/20 pt-2">
+        <div class="flex items-end justify-between gap-2 px-2 border-t border-white/20 pt-2">
           <div class="min-w-0">
             <p class="text-[10px] sm:text-xs opacity-75 font-bold">به نام</p>
-            <p class="text-sm sm:text-lg font-extrabold truncate">${holder}</p>
+            <p class="text-xs sm:text-base font-extrabold truncate">${holder}</p>
           </div>
-          <span class="shrink-0 text-[9px] sm:text-[10px] font-black opacity-70 truncate max-w-[45%]">${shopName}</span>
+          <span class="shrink-0 text-[9px] sm:text-xs font-bold opacity-75 truncate max-w-[50%]">${shopName}</span>
         </div>
       </div>
     </div>
@@ -327,6 +327,9 @@ function initBankCards() {
   if (total < 2) {
     btnPrev?.classList.add("hidden");
     btnNext?.classList.add("hidden");
+  } else {
+    btnPrev?.classList.remove("hidden");
+    btnNext?.classList.remove("hidden");
   }
 
   let index = 0;
