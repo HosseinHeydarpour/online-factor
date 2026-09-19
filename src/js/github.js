@@ -526,6 +526,7 @@ function fromBase64(b64) {
 }
 
 /* ---------- بازیابی (Pull) از گیت‌هاب ---------- */
+/* ---------- بازیابی (Pull) از گیت‌هاب شامل خدمات جدید ---------- */
 export async function restoreFromGitHub({ replace = false } = {}) {
   const cfg = getGitHubConfig();
   if (!cfg.owner || !cfg.repo || !cfg.token) {
@@ -547,11 +548,75 @@ export async function restoreFromGitHub({ replace = false } = {}) {
       }
     };
 
+    // ۱) خواندن فایل‌های بک‌آپ از گیت‌هاب
     const invoices = await readJson("backup/invoices.json");
     const products = await readJson("backup/products.json");
     const shop = await readJson("backup/shop-info.json");
     const customers = await readJson("backup/customers.json");
+    const customServices = await readJson("backup/custom-services.json");
+    const services = await readJson("backup/services.json");
 
+    if (!invoices && !products && !shop && !customServices && !services) {
+      return alert("هیچ فایل پشتیبانی در پوشه backup/ مخزن پیدا نشد!");
+    }
+
+    const invCount = Array.isArray(invoices) ? invoices.length : 0;
+    const prdCount = Array.isArray(products) ? products.length : 0;
+    const cstCount = Array.isArray(customers) ? customers.length : 0;
+    const srvCount =
+      (customServices?.newCategories?.length || 0) +
+      Object.keys(customServices?.categoryOverrides || {}).length;
+
+    if (
+      !confirm(
+        `📥 بازیابی از گیت‌هاب:\n` +
+          `• ${invCount} فاکتور\n` +
+          `• ${prdCount} محصول\n` +
+          `• ${cstCount} مشتری\n` +
+          `• ${srvCount} دسته‌بندی و خدمات سفارشی\n\n` +
+          `حالت بازیابی: ${replace ? "⚠️ جایگزینی کامل" : "➕ ادغام بدون تکراری"}\n` +
+          `ادامه می‌دهید؟`,
+      )
+    )
+      return;
+
+    // ۲) بازیابی خدمات جدید و سفارشی (حل مشکل شما)
+    if (customServices && typeof customServices === "object") {
+      if (replace) {
+        store.saveCustomServices(customServices);
+      } else {
+        const current = store.getCustomServices();
+        const currentNewCatIds = new Set(
+          (current.newCategories || []).map((c) => c.id),
+        );
+        const addedNewCats = (customServices.newCategories || []).filter(
+          (c) => c && !currentNewCatIds.has(c.id),
+        );
+        const mergedNewCategories = [
+          ...(current.newCategories || []),
+          ...addedNewCats,
+        ];
+        const mergedOverrides = {
+          ...(current.categoryOverrides || {}),
+          ...(customServices.categoryOverrides || {}),
+        };
+        store.saveCustomServices({
+          newCategories: mergedNewCategories,
+          categoryOverrides: mergedOverrides,
+        });
+      }
+    } else if (Array.isArray(services)) {
+      // سازگاری با حالت‌هایی که کل آرایه ذخیره شده بود
+      const customCats = services.filter((c) => c && c.custom);
+      if (customCats.length) {
+        store.saveCustomServices({
+          newCategories: customCats,
+          categoryOverrides: {},
+        });
+      }
+    }
+
+    // ۳) بازیابی مشتریان
     if (Array.isArray(customers)) {
       if (replace) {
         store.saveCustomers(customers);
@@ -565,24 +630,7 @@ export async function restoreFromGitHub({ replace = false } = {}) {
       }
     }
 
-    if (!invoices && !products && !shop) {
-      return alert("هیچ فایل پشتیبانی در پوشه backup/ مخزن پیدا نشد!");
-    }
-
-    const invCount = Array.isArray(invoices) ? invoices.length : 0;
-    const prdCount = Array.isArray(products) ? products.length : 0;
-    const cstCount = Array.isArray(customers) ? customers.length : 0;
-
-    if (
-      !confirm(
-        `📥 بازیابی از گیت‌هاب:\n` +
-          `${invCount} فاکتور، ${prdCount} محصول و ${cstCount} مشتری در مخزن یافت شد.\n\n` +
-          `حالت بازیابی: ${replace ? "⚠️ جایگزینی کامل" : "➕ ادغام بدون تکراری"}\n` +
-          `ادامه می‌دهید؟`,
-      )
-    )
-      return;
-
+    // ۴) بازیابی فاکتورها
     if (Array.isArray(invoices)) {
       if (replace) {
         store.setInvoices(invoices);
@@ -596,6 +644,7 @@ export async function restoreFromGitHub({ replace = false } = {}) {
       }
     }
 
+    // ۵) بازیابی محصولات
     if (Array.isArray(products)) {
       if (replace) {
         store.setProducts(products);
@@ -609,16 +658,20 @@ export async function restoreFromGitHub({ replace = false } = {}) {
       }
     }
 
+    // ۶) اطلاعات فروشگاه
     if (shop && typeof shop === "object") {
       store.saveShopInfo({ ...store.getShopInfo(), ...shop });
     }
 
+    // همگام‌سازی شمارنده فاکتور
     const maxNum = store
       .getInvoices()
       .reduce((m, i) => Math.max(m, i.number || 0), 0);
     if (maxNum > store.getCounter()) store.setCounter(maxNum);
 
-    alert("✅ بازیابی با موفقیت انجام شد. برنامه تازه‌سازی می‌شود…");
+    alert(
+      "✅ بازیابی تمام اطلاعات و خدمات جدید با موفقیت انجام شد. برنامه تازه می‌شود…",
+    );
     location.reload();
   } catch (err) {
     alert("بازیابی از گیت‌هاب ناموفق بود ❌\n" + err.message);

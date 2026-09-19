@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "exportedAt": "2026-09-19T10:27:15.406Z",
+  "exportedAt": "2026-09-19T11:17:21.604Z",
   "invoices": [
     {
       "number": 1006,
@@ -292,56 +292,86 @@
   "customServices": {
     "newCategories": [
       {
-        "id": "cat-mu88trmymxefy",
-        "title": "بازی و گیم",
+        "id": "cat-mu8ajpeagtl4o",
+        "title": "فیلم و سریال",
         "items": [
           {
-            "id": "srv-mu88trmyn18x8",
-            "title": "بازی کالاف",
-            "price": 5000000,
+            "id": "srv-mu8ajpea7mzly",
+            "title": "سریال به ازای هر قسمت",
+            "price": 7000,
             "custom": true
-          }
-        ],
-        "custom": true
-      },
-      {
-        "id": "cat-mu88h52qf7yr0",
-        "title": "دسته تست جدید",
-        "items": [
+          },
           {
-            "id": "srv-mu88h52qscl1g",
-            "title": "پرینت",
-            "price": 500000,
+            "id": "srv-mu8ajpeaumz76",
+            "title": "فیلم سینمایی",
+            "price": 10000,
+            "custom": true
+          },
+          {
+            "id": "srv-mu8am782fdbl0",
+            "title": "فیلم جنایی",
+            "price": 200000,
             "custom": true
           }
         ],
         "custom": true
       }
     ],
-    "addedItems": []
+    "addedItems": [],
+    "categoryOverrides": {
+      "amlak-maskan": {
+        "title": "🏠 سامانه املاک و اسکان",
+        "items": [
+          {
+            "id": "aml-01",
+            "title": "ثبت محل سکونت – به ازای هر ملک (ورود + ثبت نام + ۶ تیبل اضافه)",
+            "price": 445200
+          },
+          {
+            "id": "aml-02",
+            "title": "ثبت ملک تحت مالکیت – به ازای هر ملک (ورود + ثبت نام + ۷ تیبل اضافه)",
+            "price": 480400
+          },
+          {
+            "id": "aml-03",
+            "title": "استعلام و پرینت وضعیت محل سکونت یا مالکیت",
+            "price": 71000
+          },
+          {
+            "id": "aml-04",
+            "title": "پرینت نهایی",
+            "price": 21000
+          },
+          {
+            "id": "aml-05",
+            "title": "هزینه پرینت اضافه (به ازای هر برگ)",
+            "price": 11000
+          }
+        ]
+      }
+    }
   },
   "services": [
     {
-      "id": "cat-mu88trmymxefy",
-      "title": "بازی و گیم",
+      "id": "cat-mu8ajpeagtl4o",
+      "title": "فیلم و سریال",
       "items": [
         {
-          "id": "srv-mu88trmyn18x8",
-          "title": "بازی کالاف",
-          "price": 5000000,
+          "id": "srv-mu8ajpea7mzly",
+          "title": "سریال به ازای هر قسمت",
+          "price": 7000,
           "custom": true
-        }
-      ],
-      "custom": true
-    },
-    {
-      "id": "cat-mu88h52qf7yr0",
-      "title": "دسته تست جدید",
-      "items": [
+        },
         {
-          "id": "srv-mu88h52qscl1g",
-          "title": "پرینت",
-          "price": 500000,
+          "id": "srv-mu8ajpeaumz76",
+          "title": "فیلم سینمایی",
+          "price": 10000,
+          "custom": true
+        },
+        {
+          "id": "srv-mu8am782fdbl0",
+          "title": "فیلم جنایی",
+          "price": 200000,
           "custom": true
         }
       ],

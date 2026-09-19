@@ -57,7 +57,7 @@ async function ensurePermission(handle) {
   }
 }
 
-/* ---------- نوشتن کل فاکتورها داخل فایل ---------- */
+/* ---------- نوشتن کل فاکتورها و خدمات داخل فایل لوکال ---------- */
 async function writeInvoicesToFile(handle) {
   const writable = await handle.createWritable();
   const payload = {
@@ -66,13 +66,13 @@ async function writeInvoicesToFile(handle) {
     invoices: store.getInvoices(),
     products: store.getProducts(),
     customers: store.getCustomers(),
-    customServices: store.getCustomServices(), // ✅ دیتای مجزای خدمات جدید
-    services: store.getServices(), // ✅ دیتای کل ادغام‌شده
+    customServices: store.getCustomServices(), // ✅ ذخیره خدمات جدید
     shop: store.getShopInfo(),
   };
   await writable.write(JSON.stringify(payload, null, 2));
   await writable.close();
 }
+
 /* ---------- وضعیت UI ---------- */
 async function refreshStatus() {
   const status = document.getElementById("backup-status");
@@ -154,8 +154,7 @@ export function exportAllData() {
     invoices: store.getInvoices(),
     products: store.getProducts(),
     customers: store.getCustomers(),
-    customServices: store.getCustomServices(), // ✅ دیتای مجزای خدمات جدید
-    services: store.getServices(), // ✅ دیتای کل ادغام‌شده
+    customServices: store.getCustomServices(), // ✅ ذخیره خدمات جدید
     shop: store.getShopInfo(),
   };
   if (!data.invoices.length && !data.products.length && !data.customers.length)
@@ -180,15 +179,11 @@ export function importInvoicesFile(file) {
     try {
       const parsed = JSON.parse(reader.result);
 
-      if (parsed.customServices) {
-        store.saveCustomServices(parsed.customServices);
-      }
-
-      // تشخیص فرمت: آرایه = قدیم، آبجکت = جدید
       const invoices = Array.isArray(parsed) ? parsed : parsed.invoices;
       const products = parsed.products;
       const customers = parsed.customers;
       const shop = parsed.shop;
+      const customServices = parsed.customServices; // ✅ خدمات جدید
 
       const invValid = Array.isArray(invoices)
         ? invoices.filter(
@@ -206,6 +201,7 @@ export function importInvoicesFile(file) {
         ? customers.filter((c) => c && (c.phone || c.name))
         : [];
 
+      // ادغام فاکتورها
       const currentInv = store.getInvoices();
       const existingInvNums = new Set(currentInv.map((i) => i.number));
       const addedInv = invValid.filter((i) => !existingInvNums.has(i.number));
@@ -213,6 +209,7 @@ export function importInvoicesFile(file) {
         [...currentInv, ...addedInv].sort((a, b) => b.number - a.number),
       );
 
+      // ادغام محصولات
       if (prdValid.length) {
         const currentPrd = store.getProducts();
         const prdIds = new Set(currentPrd.map((p) => p.id));
@@ -222,6 +219,7 @@ export function importInvoicesFile(file) {
         ]);
       }
 
+      // ادغام مشتریان
       if (cstValid.length) {
         const currentCst = store.getCustomers();
         const cstPhones = new Set(
@@ -233,13 +231,37 @@ export function importInvoicesFile(file) {
         ]);
       }
 
+      // ✅ بازیابی و ادغام خدمات و دسته‌های جدید
+      if (customServices && typeof customServices === "object") {
+        const current = store.getCustomServices();
+        const currentNewCatIds = new Set(
+          (current.newCategories || []).map((c) => c.id),
+        );
+        const addedNewCats = (customServices.newCategories || []).filter(
+          (c) => c && !currentNewCatIds.has(c.id),
+        );
+        const mergedNewCategories = [
+          ...(current.newCategories || []),
+          ...addedNewCats,
+        ];
+        const mergedOverrides = {
+          ...(current.categoryOverrides || {}),
+          ...(customServices.categoryOverrides || {}),
+        };
+        store.saveCustomServices({
+          newCategories: mergedNewCategories,
+          categoryOverrides: mergedOverrides,
+        });
+      }
+
       if (shop && typeof shop === "object") store.saveShopInfo(shop);
 
       alert(
         `✅ ایمپورت انجام شد:\n` +
           `فاکتور: ${addedInv.length} جدید از ${invValid.length}\n` +
           `محصول: ${prdValid.length}\n` +
-          `مشتری: ${cstValid.length}`,
+          `مشتری: ${cstValid.length}\n` +
+          `خدمات و دسته‌بندی‌های جدید نیز بازیابی شدند.`,
       );
       autoSaveInvoices();
       if (window.initInvoicesList) window.initInvoicesList();
