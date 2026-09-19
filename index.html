@@ -17,8 +17,11 @@
             ?.toLowerCase() === "customer" ||
           window.location.hash === "#customer";
         if (isCustomer) {
+          document.documentElement.classList.add("role-customer");
           var m = document.getElementById("manifest-link");
           if (m) m.setAttribute("href", "./manifest-customer.json");
+        } else {
+          document.documentElement.classList.add("role-admin");
         }
       })();
     </script>
@@ -97,6 +100,17 @@
     <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
 
     <style>
+      /* گارد ضدپرش (Anti-Flicker Guard) */
+      html.role-customer .app-root {
+        display: none !important;
+      }
+      html.role-customer #customer-portal {
+        display: block !important;
+      }
+      html.role-admin #customer-portal {
+        display: none !important;
+      }
+
       * {
         font-family: "Vazirmatn", sans-serif;
       }
