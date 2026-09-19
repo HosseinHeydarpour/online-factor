@@ -1,29 +1,167 @@
-import { RATE_CATEGORIES } from "../data/rates.js";
 import { store, faNum } from "./store.js";
 
 let expandedCats = new Set();
+let portalCategories = [];
+let portalProducts = [];
+let portalProductCategories = [];
+let selectedCustomerCatId = "all";
 
-let portalCategories = []; // لیست داینامیک خدمات
-
-// ✅ بارگذاری خدمات هم از حافظه محلی و هم از فایل آنلاین گیت‌هاب
-async function loadPortalCategories() {
+/* ============================================================
+   بارگذاری داینامیک دیتا (آفلاین محلی + فایل‌های آنلاین گیت‌هاب)
+   ============================================================ */
+async function loadPortalData() {
+  // ۱. مقداردهی اولیه از حافظه محلی
   portalCategories = store.getServices();
+  portalProducts = store.getProducts();
+  portalProductCategories = store.getProductCategories();
 
+  // ۲. تلاش برای دریافت آخرین داده‌های آنلاین از مخزن پابلیک گیت‌هاب
   try {
-    const res = await fetch("./data/services.json", { cache: "no-store" });
-    if (res.ok) {
-      const remoteData = await res.json();
-      if (Array.isArray(remoteData) && remoteData.length > 0) {
-        portalCategories = remoteData;
-      }
+    const [resServices, resProducts, resCats] = await Promise.allSettled([
+      fetch("./data/services.json", { cache: "no-store" }),
+      fetch("./data/products.json", { cache: "no-store" }),
+      fetch("./data/product-categories.json", { cache: "no-store" }),
+    ]);
+
+    if (resServices.status === "fulfilled" && resServices.value.ok) {
+      const data = await resServices.value.json();
+      if (Array.isArray(data) && data.length) portalCategories = data;
+    }
+    if (resProducts.status === "fulfilled" && resProducts.value.ok) {
+      const data = await resProducts.value.json();
+      if (Array.isArray(data) && data.length) portalProducts = data;
+    }
+    if (resCats.status === "fulfilled" && resCats.value.ok) {
+      const data = await resCats.value.json();
+      if (Array.isArray(data) && data.length) portalProductCategories = data;
     }
   } catch (_) {
     // در صورت آفلاین بودن از دیتای محلی استفاده می‌شود
   }
 }
 
+/* ============================================================
+   رندر چیپ‌ها و گرید محصولات در پورتال مشتری
+   ============================================================ */
+function renderCustomerProductChips() {
+  const container = document.getElementById("cp-product-chips");
+  if (!container) return;
+
+  const chips = [
+    { id: "all", name: "همه کالاها", icon: "🌐", count: portalProducts.length },
+    ...portalProductCategories.map((c) => ({
+      ...c,
+      count: portalProducts.filter((p) => p.categoryId === c.id).length,
+    })),
+  ];
+
+  container.innerHTML = chips
+    .map((c) => {
+      const active = selectedCustomerCatId === c.id;
+      return `
+      <button data-cp-cat="${c.id}"
+        class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition shadow-sm ${
+          active
+            ? "bg-brand-600 text-white"
+            : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
+        }">
+        <span>${c.icon || "📦"}</span>
+        <span>${c.name}</span>
+        <span class="text-[10px] px-1.5 py-0.2 rounded-full ${
+          active
+            ? "bg-white/20 text-white"
+            : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+        }">${faNum(c.count)}</span>
+      </button>`;
+    })
+    .join("");
+
+  container.querySelectorAll("[data-cp-cat]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      selectedCustomerCatId = btn.dataset.cpCat;
+      renderCustomerProductChips();
+      renderCustomerProducts(
+        document.getElementById("cp-product-search")?.value || "",
+      );
+    });
+  });
+}
+
+function renderCustomerProducts(q = "") {
+  const listEl = document.getElementById("cp-products-list");
+  const emptyEl = document.getElementById("cp-products-empty");
+  if (!listEl) return;
+
+  const query = q.trim().toLowerCase();
+  let list = portalProducts;
+
+  if (selectedCustomerCatId !== "all") {
+    list = list.filter((p) => p.categoryId === selectedCustomerCatId);
+  }
+
+  if (query) {
+    list = list.filter((p) => (p.name || "").toLowerCase().includes(query));
+  }
+
+  emptyEl?.classList.toggle("hidden", list.length > 0);
+
+  if (!list.length) {
+    listEl.innerHTML = "";
+    return;
+  }
+
+  listEl.innerHTML = list
+    .map((p) => {
+      const category = portalProductCategories.find(
+        (c) => c.id === p.categoryId,
+      );
+      return `
+      <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden fade-in flex flex-col">
+        <div class="h-36 sm:h-40 bg-slate-100 dark:bg-slate-700/70 grid place-items-center relative overflow-hidden shrink-0">
+          ${p.image ? `<img src="${p.image}" class="w-full h-full object-cover" />` : `<span class="text-4xl">📦</span>`}
+          ${
+            category
+              ? `<span class="absolute top-2 right-2 text-[10px] font-bold bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 px-2 py-0.5 rounded-full shadow backdrop-blur flex items-center gap-1">
+                   <span>${category.icon || "📦"}</span>
+                   <span>${category.name}</span>
+                 </span>`
+              : ""
+          }
+        </div>
+        <div class="p-3.5 space-y-2 flex-1 flex flex-col justify-between">
+          <div>
+            <h3 class="font-extrabold text-sm text-slate-800 dark:text-slate-100 truncate" title="${p.name}">${p.name}</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              قیمت: <b class="text-brand-700 dark:text-brand-400 text-sm">${faNum(p.price)}</b> تومان
+            </p>
+          </div>
+          ${
+            p.variants?.length
+              ? `<div class="pt-2 border-t border-slate-100 dark:border-slate-700">
+                  <p class="text-[10px] font-bold text-slate-400 mb-1">مدل‌ها و واریانت‌ها:</p>
+                  <div class="flex flex-wrap gap-1">
+                    ${p.variants
+                      .map(
+                        (v) => `
+                      <span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 px-2 py-0.5 rounded-full font-bold">
+                        ${v.name} · ${faNum(v.price)} ت
+                      </span>`,
+                      )
+                      .join("")}
+                  </div>
+                 </div>`
+              : ""
+          }
+        </div>
+      </div>`;
+    })
+    .join("");
+}
+
+/* ============================================================
+   راه‌اندازی کلی پورتال مشتری
+   ============================================================ */
 export function initCustomerPortal() {
-  // مخفی‌کردن کامل رابط مدیریت
   document.querySelector(".app-root")?.classList.add("hidden");
   document.getElementById("login-overlay")?.classList.add("hidden");
 
@@ -31,7 +169,7 @@ export function initCustomerPortal() {
   if (!portal) return;
   portal.classList.remove("hidden");
 
-  // ----- اطلاعات کسب‌وکار در هدر -----
+  // اطلاعات کسب‌وکار در هدر
   const shop = store.getShopInfo();
   const nameEl = document.getElementById("cp-name");
   const sloganEl = document.getElementById("cp-slogan");
@@ -39,7 +177,7 @@ export function initCustomerPortal() {
   const contactEl = document.getElementById("cp-contact");
 
   if (nameEl) nameEl.textContent = shop.name || "کافی‌نت آنلاین";
-  if (sloganEl) sloganEl.textContent = shop.slogan || "نرخ‌نامه خدمات";
+  if (sloganEl) sloganEl.textContent = shop.slogan || "نرخ‌نامه و ویترین خدمات";
   if (logoEl && shop.logo) {
     logoEl.innerHTML = `<img src="${shop.logo}" class="w-full h-full object-contain" />`;
     logoEl.classList.remove("bg-brand-600", "text-white");
@@ -51,7 +189,7 @@ export function initCustomerPortal() {
     contactEl.classList.toggle("hidden", !line);
   }
 
-  // ----- دکمه حالت تاریک -----
+  // تم تاریک
   document.getElementById("cp-theme")?.addEventListener("click", () => {
     const html = document.documentElement;
     html.classList.toggle("dark");
@@ -65,11 +203,10 @@ export function initCustomerPortal() {
   const list = document.getElementById("cp-list");
   const countEl = document.getElementById("cp-count");
 
-  /* ---------- رندر آکاردئونی با دیتای ادغام‌شده ---------- */
-  const render = (q = "") => {
+  // رندر خدمات
+  const renderServices = (q = "") => {
     const query = q.trim().toLowerCase();
     const cats = [];
-    // خواندن تمام خدمات پایه به همراه خدمات و دسته‌های جدید
     const sourceCategories = portalCategories.length
       ? portalCategories
       : store.getServices();
@@ -88,7 +225,7 @@ export function initCustomerPortal() {
     if (countEl)
       countEl.textContent = query
         ? `${faNum(totalServices)} خدمت یافت شد`
-        : `${faNum(totalServices)} خدمت در ${faNum(cats.length)} دسته‌بندی — برای مشاهده قیمت‌ها، دسته را باز کنید`;
+        : `${faNum(totalServices)} خدمت در ${faNum(cats.length)} دسته‌بندی`;
 
     if (!cats.length) {
       list.innerHTML = `<div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-10 text-center text-slate-400 text-sm">موردی یافت نشد.</div>`;
@@ -129,31 +266,34 @@ export function initCustomerPortal() {
         const id = btn.dataset.cat;
         if (expandedCats.has(id)) expandedCats.delete(id);
         else expandedCats.add(id);
-        render(search?.value || "");
+        renderServices(search?.value || "");
       });
     });
   };
 
-  // ----- دکمه‌های باز و بستن همه -----
   document.getElementById("cp-expand-all")?.addEventListener("click", () => {
-    const sourceCategories = portalCategories.length
-      ? portalCategories
-      : store.getServices();
-    sourceCategories.forEach((c) => expandedCats.add(c.id));
-    render(search?.value || "");
+    portalCategories.forEach((c) => expandedCats.add(c.id));
+    renderServices(search?.value || "");
   });
 
   document.getElementById("cp-collapse-all")?.addEventListener("click", () => {
     expandedCats.clear();
-    render(search?.value || "");
+    renderServices(search?.value || "");
   });
 
-  // جستجوی زنده
-  search?.addEventListener("input", () => render(search.value));
+  search?.addEventListener("input", () => renderServices(search.value));
 
-  // لود دیتای کامل و سپس اولین رندر
-  loadPortalCategories().then(() => {
-    render();
+  // جستجوی زنده محصولات
+  const prodSearch = document.getElementById("cp-product-search");
+  prodSearch?.addEventListener("input", () =>
+    renderCustomerProducts(prodSearch.value),
+  );
+
+  // بارگذاری داده‌ها و رندر اولیه
+  loadPortalData().then(() => {
+    renderServices();
+    renderCustomerProductChips();
+    renderCustomerProducts();
   });
 
   initPortalTabs();
@@ -161,7 +301,7 @@ export function initCustomerPortal() {
 }
 
 /* ============================================================
-   🏦 کارت‌های بانکی — دیزاین کارت واقعی + اسلایدر لمسی
+   کارت‌های بانکی
    ============================================================ */
 const BANK_THEMES = {
   ملت: "linear-gradient(135deg,#7f1d1d 0%,#dc2626 45%,#f97316 100%)",
@@ -183,7 +323,6 @@ const BANK_THEMES = {
   مهر: "linear-gradient(135deg,#831843 0%,#db2777 55%,#f472b6 100%)",
 };
 
-/* 💳 کارت‌های بانکی هاردکدشده — fallback وقتی localStorage خالی است */
 const DEFAULT_BANK_ACCOUNTS = [
   {
     bank: "ملت",
@@ -261,6 +400,7 @@ function cpToast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.add("hidden"), 2200);
 }
+
 function cardTemplate(b, i) {
   const bank = (b.bank || "").trim() || "بانک";
   const holder = (b.holder || "").trim() || "—";
@@ -277,7 +417,6 @@ function cardTemplate(b, i) {
       <div class="absolute inset-0 opacity-[.08] pointer-events-none" style="background-image:repeating-linear-gradient(115deg,#fff 0 1px,transparent 1px 14px);"></div>
 
       <div class="relative h-full flex flex-col justify-between p-4 sm:p-6 gap-2">
-        <!-- ردیف ۱: بانک + چیپ -->
         <div class="flex items-start justify-between gap-2">
           <div class="min-w-0">
             <p class="text-[10px] sm:text-xs opacity-75 font-bold">بانک</p>
@@ -293,21 +432,18 @@ function cardTemplate(b, i) {
           </div>
         </div>
 
-        <!-- ردیف ۲: شماره کارت (کلیک = کپی) -->
         <button type="button" data-copy="${card}" data-label="شماره کارت"
           class="cp-copy-btn w-full text-right px-2 py-1 rounded-xl hover:bg-white/10 active:bg-white/20 transition ${off(card)}">
           <p class="text-[10px] sm:text-xs opacity-75 font-bold mb-0.5">شماره کارت 📋</p>
           <p class="font-mono text-[17px] sm:text-2xl md:text-3xl font-extrabold tracking-[0.06em] sm:tracking-[0.1em] text-center sm:text-right" dir="ltr">${fmtCard(card)}</p>
         </button>
 
-        <!-- ردیف ۳: شماره شبا (کلیک = کپی) -->
         <button type="button" data-copy="${sheba}" data-label="شماره شبا"
           class="cp-copy-btn w-full text-right px-2 py-0.5 rounded-xl hover:bg-white/10 active:bg-white/20 transition ${off(sheba)}">
           <p class="text-[10px] sm:text-xs opacity-75 font-bold mb-0.5">شماره شبا 📋</p>
           <p class="font-mono text-[11px] sm:text-sm md:text-base font-bold tracking-[0.03em] sm:tracking-[0.06em] truncate" dir="ltr">${fmtSheba(sheba)}</p>
         </button>
 
-        <!-- ردیف ۴: دارنده کارت -->
         <div class="flex items-end justify-between gap-2 px-2 border-t border-white/20 pt-2">
           <div class="min-w-0">
             <p class="text-[10px] sm:text-xs opacity-75 font-bold">به نام</p>
@@ -400,7 +536,6 @@ function initBankCards() {
     startX = e.clientX;
     startY = e.clientY;
     deltaX = 0;
-    // ❌ capture اینجا نباید باشد — کلیک دکمه کپی را می‌دزدد
     paint(0, false);
   });
 
@@ -411,7 +546,6 @@ function initBankCards() {
     if (locked === null) {
       if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
       locked = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
-      // ✅ capture فقط وقتی درگ افقی واقعاً شروع شد
       if (locked === "x") {
         try {
           viewport.setPointerCapture(e.pointerId);
@@ -485,7 +619,7 @@ function initBankCards() {
 }
 
 /* ============================================================
-   🔀 تب‌های پورتال
+   🔀 ناوبری بین تب‌های سه‌گانه پورتال مشتری
    ============================================================ */
 function initPortalTabs() {
   const tabs = document.querySelectorAll("[data-cp-tab]");
@@ -493,6 +627,7 @@ function initPortalTabs() {
 
   const panels = {
     rates: document.getElementById("cp-panel-rates"),
+    products: document.getElementById("cp-panel-products"),
     cards: document.getElementById("cp-panel-cards"),
   };
 

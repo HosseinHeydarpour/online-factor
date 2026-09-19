@@ -1,8 +1,8 @@
 import { store } from "./store.js";
+import { autoSaveInvoices } from "./backup.js";
 
 const API = "https://api.github.com";
 
-// تنظیمات ریپوی بک‌آپ (خصوصی)
 export function getBackupRepoConfig() {
   const s = store.getSettings();
   return (
@@ -16,7 +16,6 @@ export function getBackupRepoConfig() {
   );
 }
 
-// تنظیمات ریپوی پابلیک (سایت مشتری)
 export function getPublicRepoConfig() {
   const s = store.getSettings();
   return (
@@ -44,6 +43,13 @@ export function autoPushPublicRepo() {
   }, 1500);
 }
 
+/* ---------- همگام‌سازی یکپارچه تمام حافظه‌ها (لوکال + گیت‌هاب خصوصی و عمومی) ---------- */
+export function syncAllStorages() {
+  autoSaveInvoices();
+  autoPushGitHub();
+  autoPushPublicRepo();
+}
+
 export function saveBackupRepoConfig(cfg) {
   store.saveSettings({ ...store.getSettings(), backupRepo: cfg });
 }
@@ -52,7 +58,6 @@ export function savePublicRepoConfig(cfg) {
   store.saveSettings({ ...store.getSettings(), publicRepo: cfg });
 }
 
-// برای سازگاری با کدهای قدیمی
 export function getGitHubConfig() {
   return getBackupRepoConfig();
 }
@@ -69,7 +74,6 @@ function headers(cfg) {
   };
 }
 
-// base64 با پشتیبانی از کاراکترهای یونیکد (فارسی)
 function toBase64(str) {
   return btoa(unescape(encodeURIComponent(str)));
 }
@@ -84,7 +88,7 @@ async function gh(path, cfg, options = {}) {
   return data;
 }
 
-/* ---------- فایل‌های پشتیبان ریپوی پرایوت (شامل فایل مجزای دیتای جدید) ---------- */
+/* ---------- فایل‌های پشتیبان ریپوی پرایوت ---------- */
 function collectBackupFiles() {
   return [
     {
@@ -96,6 +100,11 @@ function collectBackupFiles() {
       content: JSON.stringify(store.getProducts(), null, 2),
     },
     {
+      // ✅ دسته‌بندی محصولات در ریپوی خصوصی
+      path: "backup/product-categories.json",
+      content: JSON.stringify(store.getProductCategories(), null, 2),
+    },
+    {
       path: "backup/customers.json",
       content: JSON.stringify(store.getCustomers(), null, 2),
     },
@@ -104,12 +113,10 @@ function collectBackupFiles() {
       content: JSON.stringify(store.getShopInfo(), null, 2),
     },
     {
-      // ✅ فایل دیتای جدید خدمات به صورت مجزا
       path: "backup/custom-services.json",
       content: JSON.stringify(store.getCustomServices(), null, 2),
     },
     {
-      // ✅ کل دیتای ادغام‌شده خدمات
       path: "backup/services.json",
       content: JSON.stringify(store.getServices(), null, 2),
     },
@@ -120,6 +127,7 @@ function collectBackupFiles() {
           exportedAt: new Date().toISOString(),
           invoiceCount: store.getInvoices().length,
           productCount: store.getProducts().length,
+          productCategoryCount: store.getProductCategories().length,
         },
         null,
         2,
@@ -136,16 +144,19 @@ function collectPublicFiles() {
       content: JSON.stringify(store.getProducts(), null, 2),
     },
     {
+      // ✅ دسته‌بندی محصولات در ریپوی عمومی مشتری
+      path: "data/product-categories.json",
+      content: JSON.stringify(store.getProductCategories(), null, 2),
+    },
+    {
       path: "data/shop-info.json",
       content: JSON.stringify(store.getShopInfo(), null, 2),
     },
     {
-      // ✅ فایل دیتای جدید خدمات در ریپوی پابلیک
       path: "data/custom-services.json",
       content: JSON.stringify(store.getCustomServices(), null, 2),
     },
     {
-      // ✅ کل دیتای ادغام‌شده در ریپوی پابلیک
       path: "data/services.json",
       content: JSON.stringify(store.getServices(), null, 2),
     },
@@ -155,6 +166,7 @@ function collectPublicFiles() {
         {
           exportedAt: new Date().toISOString(),
           productCount: store.getProducts().length,
+          productCategoryCount: store.getProductCategories().length,
         },
         null,
         2,
@@ -162,8 +174,7 @@ function collectPublicFiles() {
     },
   ];
 }
-/* ---------- push کامل با یک کامیت (Git Data API) به ریپوی خصوصی ---------- */
-/* ---------- push کامل با یک کامیت (Git Data API) به ریپوی خصوصی ---------- */
+
 export async function pushBackupToGitHub({ silent = false } = {}) {
   const cfg = getGitHubConfig();
   if (!cfg.owner || !cfg.repo || !cfg.token) {
@@ -177,20 +188,17 @@ export async function pushBackupToGitHub({ silent = false } = {}) {
   const prods = store.getProducts();
   const customSrv = store.getCustomServices();
 
-  // 🛡️ سد امنیتی ۱: جلوگیری قطعی از پاک شدن بک‌آپ با دیتای خالی
   if (invs.length === 0 && custs.length === 0 && prods.length === 0) {
     if (!silent) {
       alert(
         "⛔ عملیات متوقف شد (سد امنیتی ضد تخریب)!\n\n" +
-          "حافظه این مرورگر در حال حاضر خالی است (۰ فاکتور، ۰ مشتری، ۰ محصول).\n" +
-          "اگر اکنون پوش انجام شود، بک‌آپ قبلی شما در گیت‌هاب با یک فایل خالی بازنویسی و پاک خواهد شد!\n\n" +
-          "💡 اگر قصد دارید اطلاعات قبلی‌تان از گیت‌هاب بازگردد، باید روی دکمه «⬇️ بازیابی از گیت‌هاب» کلیک کنید.",
+          "حافظه این مرورگر در حال حاضر خالی است.\n" +
+          "اگر قصد بازیابی دارید، روی «⬇️ بازیابی از گیت‌هاب» بزنید.",
       );
     }
     return { ok: false, message: "داده‌های محلی خالی است؛ عملیات لغو شد." };
   }
 
-  // 🛡️ سد امنیتی ۲: درخواست تأییدیه از کاربر با نمایش آمار قبل از ارسال دستی
   if (!silent) {
     const srvCount =
       (customSrv?.newCategories?.length || 0) +
@@ -199,17 +207,15 @@ export async function pushBackupToGitHub({ silent = false } = {}) {
     const confirmMsg =
       "☁️ تأیید ارسال پشتیبان به گیت‌هاب:\n\n" +
       `آیا مطمئن هستید که می‌خواهید نسخه فعلی سیستم روی مخزن «${cfg.repo}» ذخیره شود؟\n\n` +
-      `📊 اطلاعاتی که ارسال خواهند شد:\n` +
+      `📊 اطلاعات:\n` +
       `• فاکتورها: ${invs.length} عدد\n` +
       `• مشتریان: ${custs.length} نفر\n` +
       `• محصولات: ${prods.length} مورد\n` +
-      `• دسته‌ها و خدمات سفارشی: ${srvCount} مورد\n\n` +
-      "⚠️ توجه: این اطلاعات جایگزین آخرین بک‌آپ گیت‌هاب می‌شود.\n" +
-      "برای تأیید و ارسال، OK را بزنید.";
+      `• دسته‌های محصولات: ${store.getProductCategories().length} مورد\n` +
+      `• خدمات سفارشی: ${srvCount} مورد\n\n` +
+      "برای تأیید، OK را بزنید.";
 
-    if (!confirm(confirmMsg)) {
-      return { ok: false, message: "لغو توسط کاربر" };
-    }
+    if (!confirm(confirmMsg)) return { ok: false, message: "لغو توسط کاربر" };
   }
 
   try {
@@ -286,7 +292,7 @@ export async function pushBackupToGitHub({ silent = false } = {}) {
       ),
     });
 
-    const message = `🤖 بک‌آپ خودکار: ${store.getInvoices().length} فاکتور — ${new Date().toLocaleString("fa-IR")}`;
+    const message = `🤖 بک‌آپ خودکار: ${store.getInvoices().length} فاکتور، ${store.getProductCategories().length} دسته محصول — ${new Date().toLocaleString("fa-IR")}`;
     const commit = await gh(
       `/repos/${cfg.owner}/${cfg.repo}/git/commits`,
       cfg,
@@ -332,7 +338,6 @@ export async function pushBackupToGitHub({ silent = false } = {}) {
   }
 }
 
-/* ---------- push خودکار با debounce ---------- */
 let pushTimer = null;
 export function autoPushGitHub() {
   const cfg = getBackupRepoConfig();
@@ -341,7 +346,6 @@ export function autoPushGitHub() {
   pushTimer = setTimeout(() => pushBackupToGitHub({ silent: true }), 1500);
 }
 
-/* ---------- push به ریپوی پابلیک (سایت مشتری - امن و فاقد اطلاعات خصوصی) ---------- */
 export async function pushToPublicRepo({ silent = false } = {}) {
   const cfg = getPublicRepoConfig();
 
@@ -352,11 +356,10 @@ export async function pushToPublicRepo({ silent = false } = {}) {
     return { ok: false, message: "تنظیمات ریپوی پابلیک ناقص است" };
   }
 
-  // 🛡️ تاییدیه قبل از ارسال به پابلیک
   if (!silent) {
     const ok = confirm(
       "🌐 تأیید ارسال اطلاعات به ریپوی پابلیک (سایت مشتری):\n\n" +
-        "آیا مایلید اطلاعات عمومی فروشگاه، خدمات و محصولات روی سایت مشتری به‌روزرسانی شوند؟",
+        "آیا مایلید اطلاعات محصولات، دسته‌بندی‌ها و خدمات روی سایت مشتری به‌روزرسانی شوند؟",
     );
     if (!ok) return { ok: false, message: "لغو توسط کاربر" };
   }
@@ -373,7 +376,6 @@ export async function pushToPublicRepo({ silent = false } = {}) {
   }
 
   try {
-    // فقط فایل‌های عمومی جمع‌آوری می‌شوند
     const files = collectPublicFiles();
     const branch = cfg.branch || "main";
 
@@ -393,7 +395,6 @@ export async function pushToPublicRepo({ silent = false } = {}) {
       );
       baseTree = lastCommit.tree.sha;
 
-      // دریافت لیست فایل‌های موجود برای پاک کردن فایل‌های حساس قبلی
       try {
         const treeData = await gh(
           `/repos/${cfg.owner}/${cfg.repo}/git/trees/${baseTree}?recursive=1`,
@@ -431,7 +432,6 @@ export async function pushToPublicRepo({ silent = false } = {}) {
       baseTree = lastCommit.tree.sha;
     }
 
-    // ۱) ایجاد blob فایل‌های عمومی
     const treeItems = [];
     for (const f of files) {
       const blob = await gh(`/repos/${cfg.owner}/${cfg.repo}/git/blobs`, cfg, {
@@ -449,7 +449,6 @@ export async function pushToPublicRepo({ silent = false } = {}) {
       });
     }
 
-    // ۲) حذف خودکار فایل‌های حساس (customers و invoices) اگر قبلاً در ریپوی پابلیک پوش شده باشند
     const privateFilesToDelete = [
       "data/customers.json",
       "data/invoices.json",
@@ -463,12 +462,11 @@ export async function pushToPublicRepo({ silent = false } = {}) {
           path: privPath,
           mode: "100644",
           type: "blob",
-          sha: null, // این شناسه در گیت فایل را از درخت کامیت حذف می‌کند
+          sha: null,
         });
       }
     }
 
-    // ۳) ایجاد درخت گیت جدید
     const tree = await gh(`/repos/${cfg.owner}/${cfg.repo}/git/trees`, cfg, {
       method: "POST",
       body: JSON.stringify(
@@ -478,8 +476,7 @@ export async function pushToPublicRepo({ silent = false } = {}) {
       ),
     });
 
-    // ۴) ساخت کامیت عمومی
-    const message = `📤 بروزرسانی اطلاعات و محصولات (عمومی) — ${new Date().toLocaleString("fa-IR")}`;
+    const message = `📤 بروزرسانی محصولات و دسته‌بندی‌ها (عمومی) — ${new Date().toLocaleString("fa-IR")}`;
     const commit = await gh(
       `/repos/${cfg.owner}/${cfg.repo}/git/commits`,
       cfg,
@@ -493,7 +490,6 @@ export async function pushToPublicRepo({ silent = false } = {}) {
       },
     );
 
-    // ۵) آپدیت رفرنس شاخه
     if (latestSha) {
       await gh(
         `/repos/${cfg.owner}/${cfg.repo}/git/refs/heads/${branch}`,
@@ -514,7 +510,7 @@ export async function pushToPublicRepo({ silent = false } = {}) {
       ...store.getSettings(),
       lastPublicPush: { at: Date.now(), ok: true },
     });
-    if (!silent) alert("اطلاعات عمومی با موفقیت روی ریپوی پابلیک push شد ✅");
+    if (!silent) alert("اطلاعات با موفقیت روی ریپوی پابلیک push شد ✅");
     return { ok: true, sha: commit.sha };
   } catch (err) {
     store.saveSettings({
@@ -526,7 +522,6 @@ export async function pushToPublicRepo({ silent = false } = {}) {
   }
 }
 
-/* ---------- تست اتصال ریپوی بک‌آپ ---------- */
 export async function testGitHubConnection() {
   const cfg = getGitHubConfig();
   if (!cfg.token || !cfg.owner || !cfg.repo)
@@ -543,7 +538,6 @@ export async function testGitHubConnection() {
   }
 }
 
-/* ---------- تست اتصال ریپوی پابلیک ---------- */
 export async function testPublicGitHubConnection() {
   const cfg = getPublicRepoConfig();
   if (!cfg.token || !cfg.owner || !cfg.repo) {
@@ -553,7 +547,7 @@ export async function testPublicGitHubConnection() {
   try {
     const repo = await gh(`/repos/${cfg.owner}/${cfg.repo}`, cfg);
     const repoStatus = repo.private
-      ? "خصوصی (Private) ⚠️ توجه: اگر ریپو خصوصی باشد مشتری بدون لاگین به آن دسترسی نخواهد داشت!"
+      ? "خصوصی (Private) ⚠️"
       : "عمومی (Public) ✅";
     alert(
       `اتصال به ریپوی پابلیک موفق بود ✅\n` +
@@ -568,15 +562,12 @@ export async function testPublicGitHubConnection() {
   }
 }
 
-// base64 → متن یونیکد‌امن (فارسی)
 function fromBase64(b64) {
   const bin = atob(String(b64).replace(/\s/g, ""));
   const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
   return new TextDecoder().decode(bytes);
 }
 
-/* ---------- بازیابی (Pull) از گیت‌هاب ---------- */
-/* ---------- بازیابی (Pull) از گیت‌هاب شامل خدمات جدید ---------- */
 export async function restoreFromGitHub({ replace = false } = {}) {
   const cfg = getGitHubConfig();
   if (!cfg.owner || !cfg.repo || !cfg.token) {
@@ -598,9 +589,9 @@ export async function restoreFromGitHub({ replace = false } = {}) {
       }
     };
 
-    // ۱) خواندن فایل‌های بک‌آپ از گیت‌هاب
     const invoices = await readJson("backup/invoices.json");
     const products = await readJson("backup/products.json");
+    const productCategories = await readJson("backup/product-categories.json"); // ✅ خواندن دسته‌های محصول از بک‌آپ
     const shop = await readJson("backup/shop-info.json");
     const customers = await readJson("backup/customers.json");
     const customServices = await readJson("backup/custom-services.json");
@@ -612,6 +603,9 @@ export async function restoreFromGitHub({ replace = false } = {}) {
 
     const invCount = Array.isArray(invoices) ? invoices.length : 0;
     const prdCount = Array.isArray(products) ? products.length : 0;
+    const pCatCount = Array.isArray(productCategories)
+      ? productCategories.length
+      : 0;
     const cstCount = Array.isArray(customers) ? customers.length : 0;
     const srvCount =
       (customServices?.newCategories?.length || 0) +
@@ -621,7 +615,7 @@ export async function restoreFromGitHub({ replace = false } = {}) {
       !confirm(
         `📥 بازیابی از گیت‌هاب:\n` +
           `• ${invCount} فاکتور\n` +
-          `• ${prdCount} محصول\n` +
+          `• ${prdCount} محصول در ${pCatCount} دسته‌بندی\n` +
           `• ${cstCount} مشتری\n` +
           `• ${srvCount} دسته‌بندی و خدمات سفارشی\n\n` +
           `حالت بازیابی: ${replace ? "⚠️ جایگزینی کامل" : "➕ ادغام بدون تکراری"}\n` +
@@ -630,7 +624,21 @@ export async function restoreFromGitHub({ replace = false } = {}) {
     )
       return;
 
-    // ۲) بازیابی خدمات جدید و سفارشی (حل مشکل شما)
+    // بازیابی دسته‌بندی محصولات
+    if (Array.isArray(productCategories)) {
+      if (replace) {
+        store.setProductCategories(productCategories);
+      } else {
+        const current = store.getProductCategories();
+        const ids = new Set(current.map((c) => c.id));
+        const added = productCategories.filter(
+          (c) => c && c.id && !ids.has(c.id),
+        );
+        store.setProductCategories([...current, ...added]);
+      }
+    }
+
+    // بازیابی خدمات جدید و سفارشی
     if (customServices && typeof customServices === "object") {
       if (replace) {
         store.saveCustomServices(customServices);
@@ -655,18 +663,9 @@ export async function restoreFromGitHub({ replace = false } = {}) {
           categoryOverrides: mergedOverrides,
         });
       }
-    } else if (Array.isArray(services)) {
-      // سازگاری با حالت‌هایی که کل آرایه ذخیره شده بود
-      const customCats = services.filter((c) => c && c.custom);
-      if (customCats.length) {
-        store.saveCustomServices({
-          newCategories: customCats,
-          categoryOverrides: {},
-        });
-      }
     }
 
-    // ۳) بازیابی مشتریان
+    // بازیابی مشتریان
     if (Array.isArray(customers)) {
       if (replace) {
         store.saveCustomers(customers);
@@ -680,7 +679,7 @@ export async function restoreFromGitHub({ replace = false } = {}) {
       }
     }
 
-    // ۴) بازیابی فاکتورها
+    // بازیابی فاکتورها
     if (Array.isArray(invoices)) {
       if (replace) {
         store.setInvoices(invoices);
@@ -694,7 +693,7 @@ export async function restoreFromGitHub({ replace = false } = {}) {
       }
     }
 
-    // ۵) بازیابی محصولات
+    // بازیابی محصولات
     if (Array.isArray(products)) {
       if (replace) {
         store.setProducts(products);
@@ -708,27 +707,23 @@ export async function restoreFromGitHub({ replace = false } = {}) {
       }
     }
 
-    // ۶) اطلاعات فروشگاه
+    // اطلاعات فروشگاه
     if (shop && typeof shop === "object") {
       store.saveShopInfo({ ...store.getShopInfo(), ...shop });
     }
 
-    // همگام‌سازی شمارنده فاکتور
     const maxNum = store
       .getInvoices()
       .reduce((m, i) => Math.max(m, i.number || 0), 0);
     if (maxNum > store.getCounter()) store.setCounter(maxNum);
 
-    alert(
-      "✅ بازیابی تمام اطلاعات و خدمات جدید با موفقیت انجام شد. برنامه تازه می‌شود…",
-    );
+    alert("✅ بازیابی اطلاعات با موفقیت انجام شد. برنامه تازه می‌شود…");
     location.reload();
   } catch (err) {
     alert("بازیابی از گیت‌هاب ناموفق بود ❌\n" + err.message);
   }
 }
 
-/* ---------- UI تنظیمات گیت‌هاب ---------- */
 export function initGitHubUI() {
   const $ = (id) => document.getElementById(id);
   if (!$("gh-owner")) return;

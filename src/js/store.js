@@ -2,6 +2,7 @@ import { RATE_CATEGORIES } from "../data/rates.js";
 
 const KEYS = {
   PRODUCTS: "cafe_products",
+  PRODUCT_CATEGORIES: "cafe_product_categories", // ✅ کلید دسته‌بندی محصولات
   INVOICES: "cafe_invoices",
   COUNTER: "cafe_invoice_counter",
   SHOP: "cafe_shop_info",
@@ -10,6 +11,14 @@ const KEYS = {
   CUSTOMERS: "cafe_customers",
   CUSTOM_SERVICES: "cafe_custom_services",
 };
+
+// دسته‌بندی‌های پیش‌فرض محصولات
+const DEFAULT_PRODUCT_CATEGORIES = [
+  { id: "pcat-storage", name: "ذخیره‌سازی اطلاعات", icon: "💾" },
+  { id: "pcat-cables", name: "کابل و اتصالات", icon: "🔌" },
+  { id: "pcat-stationery", name: "نوشت‌افزار و لوازم اداری", icon: "✏️" },
+  { id: "pcat-accessories", name: "لوازم جانبی کامپیوتر", icon: "🖱️" },
+];
 
 function read(key, fallback) {
   try {
@@ -45,6 +54,42 @@ export function hashPassword(str) {
 const SESSION_KEY = "cafe_session";
 
 export const store = {
+  // ---------- دسته‌بندی محصولات فیزیکی ----------
+  getProductCategories() {
+    return read(KEYS.PRODUCT_CATEGORIES, DEFAULT_PRODUCT_CATEGORIES);
+  },
+  getProductCategory(id) {
+    return this.getProductCategories().find((c) => c.id === id);
+  },
+  saveProductCategory(category) {
+    const list = this.getProductCategories();
+    const id = category.id || "pcat-" + uid();
+    const item = {
+      id,
+      name: (category.name || "").trim(),
+      icon: (category.icon || "📦").trim(),
+    };
+    const idx = list.findIndex((c) => c.id === id);
+    if (idx >= 0) list[idx] = item;
+    else list.push(item);
+    write(KEYS.PRODUCT_CATEGORIES, list);
+    return item;
+  },
+  deleteProductCategory(id) {
+    const list = this.getProductCategories().filter((c) => c.id !== id);
+    write(KEYS.PRODUCT_CATEGORIES, list);
+
+    // برداشتن ارجاع دسته از محصولاتی که این دسته را داشتند
+    const products = this.getProducts().map((p) =>
+      p.categoryId === id ? { ...p, categoryId: "" } : p,
+    );
+    this.setProducts(products);
+  },
+  setProductCategories(list) {
+    write(KEYS.PRODUCT_CATEGORIES, list);
+    return list;
+  },
+
   // ---------- محصولات ----------
   getProducts() {
     return read(KEYS.PRODUCTS, []);
@@ -55,10 +100,14 @@ export const store = {
   saveProduct(product) {
     const list = this.getProducts();
     const idx = list.findIndex((p) => p.id === product.id);
-    if (idx >= 0) list[idx] = product;
-    else list.unshift(product);
+    const item = {
+      ...product,
+      categoryId: product.categoryId || "",
+    };
+    if (idx >= 0) list[idx] = item;
+    else list.unshift(item);
     write(KEYS.PRODUCTS, list);
-    return product;
+    return item;
   },
   deleteProduct(id) {
     write(
@@ -80,13 +129,11 @@ export const store = {
     return data;
   },
 
-  // دریافت تمام خدمات (ادغام هوشمند دیتای پایه + ویرایش‌ها + دسته‌های جدید)
   getServices() {
     const base = JSON.parse(JSON.stringify(RATE_CATEGORIES));
     const custom = this.getCustomServices();
     const overrides = custom.categoryOverrides || {};
 
-    // اعمال تغییرات و ویرایش‌ها روی دسته‌های موجود در rates.js
     const updatedBase = base.map((cat) => {
       if (overrides[cat.id]) {
         return {
@@ -98,7 +145,6 @@ export const store = {
       return cat;
     });
 
-    // افزودن دسته‌های کاملاً جدید به ابتدای لیست
     const newCats = (custom.newCategories || []).map((c) => ({
       ...c,
       custom: true,
@@ -106,7 +152,6 @@ export const store = {
     return [...newCats, ...updatedBase];
   },
 
-  // ذخیره دسته جدید با تمام خدماتش
   saveNewCategory(title, items) {
     const custom = this.getCustomServices();
     const newCat = {
@@ -125,11 +170,9 @@ export const store = {
     return newCat;
   },
 
-  // ذخیره و ویرایش خدمات یک دسته موجود (تغییر قیمت، عنوان، حذف و اضافه سطرهای جدید)
   updateCategoryItems(catId, updatedTitle, items) {
     const custom = this.getCustomServices();
 
-    // اگر دسته در بین دسته‌های جدیدِ کاربر است:
     const newCatIdx = (custom.newCategories || []).findIndex(
       (c) => c.id === catId,
     );
@@ -145,7 +188,6 @@ export const store = {
       return custom.newCategories[newCatIdx];
     }
 
-    // در غیر این صورت دسته جزو دسته‌های پیش‌فرض بوده که ویرایش شده است:
     if (!custom.categoryOverrides) custom.categoryOverrides = {};
     custom.categoryOverrides[catId] = {
       title: updatedTitle.trim(),
@@ -159,7 +201,6 @@ export const store = {
     return custom.categoryOverrides[catId];
   },
 
-  // حذف یک خدمت
   deleteServiceItem(catId, itemId) {
     const list = this.getServices();
     const cat = list.find((c) => c.id === catId);
@@ -168,7 +209,6 @@ export const store = {
     this.updateCategoryItems(catId, cat.title, remainingItems);
   },
 
-  // حذف کل دسته
   deleteCategory(catId) {
     const custom = this.getCustomServices();
     if (custom.newCategories) {
@@ -179,6 +219,7 @@ export const store = {
     }
     this.saveCustomServices(custom);
   },
+
   // ---------- فاکتورها ----------
   nextInvoiceNumber() {
     const n = read(KEYS.COUNTER, 1000) + 1;
@@ -194,6 +235,7 @@ export const store = {
   getInvoices() {
     return read(KEYS.INVOICES, []);
   },
+
   // ---------- مشتریان ----------
   getCustomers() {
     return read(KEYS.CUSTOMERS, []);
@@ -203,7 +245,6 @@ export const store = {
     const phone = (customer.phone || "").trim();
     const name = (customer.name || "").trim();
 
-    // ✅ تطبیق: اول id، بعد ترکیب شماره+نام، بعد شماره تنها / نام تنها
     let idx = -1;
     if (customer.id) idx = list.findIndex((c) => c.id === customer.id);
     if (idx < 0 && phone && name)
@@ -234,7 +275,7 @@ export const store = {
     });
 
     if (idx >= 0) list[idx] = record;
-    else list.unshift(record); // ✅ مشتری جدید حتی با شماره تکراری
+    else list.unshift(record);
     write(KEYS.CUSTOMERS, list);
     return record;
   },
@@ -253,7 +294,6 @@ export const store = {
     write(KEYS.INVOICES, list);
     return list;
   },
-
   setProducts(list) {
     write(KEYS.PRODUCTS, list);
     return list;
@@ -274,7 +314,7 @@ export const store = {
       phone: "",
       address: "",
       logo: "",
-      bankAccounts: [], // ✅ لیست کارت‌های بانکی
+      bankAccounts: [],
     });
   },
   saveShopInfo(info) {
@@ -315,7 +355,7 @@ export const store = {
     sessionStorage.removeItem(SESSION_KEY);
   },
 
-  // ---------- تنظیمات عمومی (حالت توسعه) ----------
+  // ---------- تنظیمات عمومی ----------
   getSettings() {
     return read(KEYS.SETTINGS, { devMode: false });
   },
@@ -324,7 +364,7 @@ export const store = {
     return settings;
   },
 
-  // ---------- ریست کامل (حذف تمامی اطلاعات) ----------
+  // ---------- ریست کامل ----------
   resetAll() {
     Object.values(KEYS).forEach((k) => localStorage.removeItem(k));
   },
@@ -335,7 +375,6 @@ export const store = {
 
     let start, end;
     if (startDate && endDate) {
-      // ✅ نرمال‌سازی ارقام فارسی به لاتین قبل از تجزیه
       const [sy, sm, sd] = toEnDigits(startDate).split("/").map(Number);
       const [ey, em, ed] = toEnDigits(endDate).split("/").map(Number);
       start = fromJalali(sy, sm, sd).getTime();
@@ -400,7 +439,6 @@ export const faNum = (n) =>
 export const uid = () =>
   Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
-// تبدیل تاریخ میلادی به شمسی
 function gregorianToJalali(gy, gm, gd) {
   const g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
   let jy = gy <= 1600 ? 0 : 979;
@@ -489,7 +527,6 @@ export const nowTimeFa = () =>
     minute: "2-digit",
   }).format(new Date());
 
-// ---------- تبدیل عدد به حروف فارسی ----------
 export function numberToWordsFa(num) {
   num = Math.floor(Number(num) || 0);
   if (num === 0) return "صفر";

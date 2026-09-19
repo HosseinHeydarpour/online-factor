@@ -806,25 +806,41 @@
         </section>
 
         <!-- ============ ویو: محصولات فیزیکی ============ -->
+
         <section id="view-products" class="view hidden space-y-4 sm:space-y-5">
           <div class="flex items-center justify-between flex-wrap gap-3">
             <h2 class="font-extrabold text-base sm:text-lg">
               📦 مدیریت محصولات فیزیکی
             </h2>
-            <div class="flex gap-2 w-full sm:w-auto">
+            <div class="flex gap-2 w-full sm:w-auto flex-wrap">
               <input
                 id="product-search"
                 placeholder="جستجوی محصول…"
                 class="flex-1 sm:flex-initial sm:w-48 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
               />
               <button
+                id="btn-manage-product-categories"
+                type="button"
+                class="shrink-0 bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow flex items-center gap-1.5 transition"
+              >
+                <span>📁 دسته‌بندی‌ها</span>
+              </button>
+              <button
                 id="btn-add-product"
+                type="button"
                 class="shrink-0 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow"
               >
                 + محصول جدید
               </button>
             </div>
           </div>
+
+          <!-- چیپ‌های فیلتر دسته‌بندی محصولات -->
+          <div
+            id="product-category-chips"
+            class="flex gap-1.5 overflow-x-auto no-scrollbar py-1"
+          ></div>
+
           <div
             id="products-grid"
             class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4"
@@ -833,10 +849,9 @@
             id="products-empty"
             class="hidden bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 rounded-2xl p-8 sm:p-10 text-center text-slate-400 dark:text-slate-300 text-sm"
           >
-            هنوز محصولی ثبت نشده — روی «محصول جدید» بزنید.
+            محصولی در این دسته‌بندی یافت نشد.
           </div>
         </section>
-
         <!-- ============ ویو: گزارش‌گیری درآمد ============ -->
         <section id="view-reports" class="view hidden space-y-4 sm:space-y-6">
           <div
@@ -1553,7 +1568,17 @@
             </button>
           </div>
           <div class="space-y-3 text-sm">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label
+                  class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
+                  >دسته‌بندی محصول</label
+                >
+                <select
+                  id="p-category"
+                  class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 outline-none focus:ring-2 focus:ring-brand-500 text-xs"
+                ></select>
+              </div>
               <div>
                 <label
                   class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
@@ -1561,7 +1586,8 @@
                 >
                 <input
                   id="p-name"
-                  class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 outline-none focus:ring-2 focus:ring-brand-500"
+                  placeholder="مثلاً: فلش ۶۴ گیگ سن‌دیسک"
+                  class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 outline-none focus:ring-2 focus:ring-brand-500 text-xs"
                 />
               </div>
               <div>
@@ -1573,8 +1599,10 @@
                   id="p-price"
                   type="number"
                   min="0"
-                  class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 outline-none focus:ring-2 focus:ring-brand-500"
+                  placeholder="مثلاً ۱۲۵۰۰۰۰"
+                  class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 outline-none focus:ring-2 focus:ring-brand-500 font-mono text-left text-xs"
                 />
+                <div id="p-price-preview"></div>
               </div>
             </div>
             <div>
@@ -1625,7 +1653,80 @@
         </div>
       </div>
     </div>
+    <!-- ===================== مودال: مدیریت دسته‌بندی محصولات ===================== -->
+    <div
+      id="product-categories-modal"
+      class="hidden fixed inset-0 z-[65] modal-backdrop grid place-items-center p-3 sm:p-4"
+    >
+      <div
+        class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl p-4 sm:p-6 fade-in max-h-[90vh] overflow-auto border border-slate-200 dark:border-slate-700"
+      >
+        <div class="flex justify-between items-center mb-3">
+          <h3
+            class="font-extrabold text-sm sm:text-base text-slate-800 dark:text-slate-100"
+          >
+            📁 مدیریت دسته‌بندی‌های کالا
+          </h3>
+          <button
+            id="btn-close-pcat-modal"
+            class="text-slate-400 hover:text-rose-500 text-xl font-bold"
+          >
+            ✕
+          </button>
+        </div>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-5">
+          تعریف، ویرایش یا حذف دسته‌ها. به محض ثبت، اطلاعات روی
+          <b>ریپوی خصوصی و عمومی گیت‌هاب</b> سینک می‌شود.
+        </p>
 
+        <!-- فرم ایجاد/ویرایش دسته -->
+        <div
+          class="bg-slate-50 dark:bg-slate-700/40 p-3 rounded-xl border border-slate-200 dark:border-slate-600 mb-4 space-y-2"
+        >
+          <input type="hidden" id="pcat-edit-id" value="" />
+          <div class="flex gap-2 items-center">
+            <input
+              id="pcat-icon-input"
+              placeholder="آیکون"
+              value="📦"
+              maxlength="4"
+              class="w-14 rounded-lg border border-slate-300 dark:border-slate-600 px-2 py-2 text-center text-base outline-none focus:ring-2 focus:ring-brand-500"
+            />
+            <input
+              id="pcat-name-input"
+              placeholder="نام دسته‌بندی (مثلاً: فلش و ذخیره‌سازی)"
+              class="flex-1 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500 font-bold"
+            />
+            <button
+              id="btn-save-pcat"
+              type="button"
+              class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-lg shadow shrink-0 transition"
+            >
+              ثبت دسته
+            </button>
+          </div>
+          <button
+            id="btn-cancel-edit-pcat"
+            type="button"
+            class="hidden text-[11px] text-rose-500 hover:underline font-bold"
+          >
+            انصراف از ویرایش
+          </button>
+        </div>
+
+        <!-- لیست دسته‌بندی‌های موجود -->
+        <div class="space-y-2">
+          <label
+            class="text-xs font-bold text-slate-600 dark:text-slate-300 block"
+            >دسته‌های موجود:</label
+          >
+          <div
+            id="pcat-list-container"
+            class="space-y-1.5 max-h-56 overflow-y-auto pl-1"
+          ></div>
+        </div>
+      </div>
+    </div>
     <!-- ===================== مودال: اطلاعات تکمیلی مشتری ===================== -->
     <div
       id="customer-details-modal"
@@ -1949,9 +2050,8 @@
           </div>
         </div>
       </header>
-
       <main class="max-w-3xl mx-auto px-4 py-5 space-y-4">
-        <!-- تب‌های پورتال -->
+        <!-- تب‌های پورتال مشتری (۳ تایی) -->
         <div
           class="flex gap-1.5 bg-white dark:bg-slate-800 rounded-2xl p-1.5 border border-slate-200 dark:border-slate-700 shadow-sm"
         >
@@ -1962,13 +2062,20 @@
             📋 نرخ‌نامه خدمات
           </button>
           <button
+            data-cp-tab="products"
+            class="cp-tab flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+          >
+            📦 کالاها و محصولات
+          </button>
+          <button
             data-cp-tab="cards"
             class="cp-tab flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
           >
             💳 کارت‌های بانکی
           </button>
         </div>
-        <!-- پنل نرخ‌نامه -->
+
+        <!-- ۱. پنل نرخ‌نامه خدمات -->
         <div id="cp-panel-rates" class="space-y-4">
           <div
             class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-3 sm:p-4"
@@ -2001,8 +2108,41 @@
 
           <div id="cp-list" class="space-y-3"></div>
         </div>
-        <!-- پنل کارت‌های بانکی -->
-        <!-- پنل کارت‌های بانکی -->
+
+        <!-- ۲. پنل کالاها و محصولات فیزیکی (جدید) -->
+        <div id="cp-panel-products" class="hidden space-y-4">
+          <div
+            class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-3 sm:p-4 space-y-3"
+          >
+            <div class="relative">
+              <input
+                id="cp-product-search"
+                type="text"
+                placeholder="جستجوی کالا… (مثلاً: فلش، کابل، ماوس)"
+                class="w-full rounded-xl border border-slate-300 dark:border-slate-600 py-2.5 sm:py-3 pr-10 pl-3 text-sm focus:ring-2 focus:ring-brand-500 outline-none"
+              />
+              <span class="absolute right-3 top-3 text-slate-400">🔍</span>
+            </div>
+            <!-- چیپ‌های فیلتر دسته‌بندی کالاها برای مشتری -->
+            <div
+              id="cp-product-chips"
+              class="flex gap-1.5 overflow-x-auto no-scrollbar py-1"
+            ></div>
+          </div>
+
+          <div
+            id="cp-products-list"
+            class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4"
+          ></div>
+          <div
+            id="cp-products-empty"
+            class="hidden bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-10 text-center text-slate-400 text-sm"
+          >
+            کالایی در این دسته‌بندی یافت نشد.
+          </div>
+        </div>
+
+        <!-- ۳. پنل کارت‌های بانکی -->
         <div id="cp-panel-cards" class="hidden space-y-3">
           <div class="w-full">
             <div
@@ -2016,7 +2156,7 @@
             </div>
           </div>
 
-          <!-- دکمه‌های ناوبری + نقطه‌ها (زیر کارت، بدون تداخل با شماره کارت) -->
+          <!-- دکمه‌های ناوبری + نقطه‌ها -->
           <div class="flex items-center justify-center gap-3 pt-1">
             <button
               id="cp-card-prev"
@@ -2059,7 +2199,7 @@
           class="text-center text-[11px] text-slate-500 dark:text-slate-400 leading-6"
         ></p>
         <p class="text-center text-[10px] text-slate-400 pb-6">
-          همه قیمت‌ها به تومان است · نرخ‌نامه مصوب ۱۴۰۵
+          همه قیمت‌ها به تومان است · کافی‌نت آنلاین
         </p>
       </main>
     </div>

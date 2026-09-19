@@ -1,24 +1,40 @@
 import { store, faNum, uid } from "./store.js";
 import { addItemToInvoice } from "./invoice.js";
-import { autoSaveInvoices } from "./backup.js"; // 💾 بک‌آپ محلی
-import { autoPushGitHub } from "./github.js"; // ☁️ بک‌آپ گیت‌هاب
-import { autoPushPublicRepo } from "./github.js"; // ☁️ بک‌آپ گیت‌هاب
+import { autoSaveInvoices } from "./backup.js";
+import {
+  autoPushGitHub,
+  autoPushPublicRepo,
+  syncAllStorages,
+} from "./github.js";
+import { createPricePreviewHTML } from "./price-helper.js";
 
 let editingId = null;
 let tempImage = "";
 let tempVariants = [];
+let selectedCategoryId = "all"; // فیلتر دسته‌بندی فعال
 
 const el = {
   grid: document.getElementById("products-grid"),
   empty: document.getElementById("products-empty"),
+  chips: document.getElementById("product-category-chips"),
   modal: document.getElementById("product-modal"),
   title: document.getElementById("product-modal-title"),
+  category: document.getElementById("p-category"),
   name: document.getElementById("p-name"),
   price: document.getElementById("p-price"),
+  pricePreview: document.getElementById("p-price-preview"),
   image: document.getElementById("p-image"),
   preview: document.getElementById("p-preview"),
   variants: document.getElementById("variants-list"),
   search: document.getElementById("product-search"),
+
+  // مودال دسته‌ها
+  catModal: document.getElementById("product-categories-modal"),
+  catList: document.getElementById("pcat-list-container"),
+  catNameInput: document.getElementById("pcat-name-input"),
+  catIconInput: document.getElementById("pcat-icon-input"),
+  catEditId: document.getElementById("pcat-edit-id"),
+  btnCancelEditCat: document.getElementById("btn-cancel-edit-pcat"),
 };
 
 function toast(msg) {
@@ -30,19 +46,85 @@ function toast(msg) {
 }
 
 /* ============================================================
-   کارت محصول — نسخه بهبودیافته
-   (دارک‌مود کامل + بج تعداد واریانت + چیدمان هم‌قد + دکمه‌های title‌دار)
+   چیپ‌های فیلتر دسته‌بندی
+============================================================ */
+export function renderCategoryChips() {
+  if (!el.chips) return;
+  const categories = store.getProductCategories();
+  const allProducts = store.getProducts();
+
+  const chipsData = [
+    { id: "all", name: "همه محصولات", icon: "🌐", count: allProducts.length },
+    ...categories.map((c) => ({
+      ...c,
+      count: allProducts.filter((p) => p.categoryId === c.id).length,
+    })),
+  ];
+
+  el.chips.innerHTML = chipsData
+    .map((c) => {
+      const active = selectedCategoryId === c.id;
+      return `
+      <button data-chip-cat="${c.id}"
+        class="shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition shadow-sm ${
+          active
+            ? "bg-brand-600 text-white"
+            : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
+        }">
+        <span>${c.icon || "📦"}</span>
+        <span>${c.name}</span>
+        <span class="text-[10px] px-1.5 py-0.2 rounded-full ${
+          active
+            ? "bg-white/20 text-white"
+            : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+        }">${faNum(c.count)}</span>
+      </button>`;
+    })
+    .join("");
+
+  el.chips.querySelectorAll("[data-chip-cat]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      selectedCategoryId = btn.dataset.chipCat;
+      renderCategoryChips();
+      renderProducts(el.search?.value.trim() || "");
+    });
+  });
+}
+
+/* ============================================================
+   کارت‌های محصولات با تگ دسته‌بندی
 ============================================================ */
 export function renderProducts(filter = "") {
-  const list = store.getProducts().filter((p) => p.name.includes(filter));
-  el.empty.classList.toggle("hidden", list.length > 0);
+  let list = store.getProducts();
+
+  if (selectedCategoryId !== "all") {
+    list = list.filter((p) => p.categoryId === selectedCategoryId);
+  }
+
+  if (filter) {
+    list = list.filter((p) => (p.name || "").includes(filter));
+  }
+
+  el.empty?.classList.toggle("hidden", list.length > 0);
   el.grid.innerHTML = list
-    .map(
-      (p) => `
+    .map((p) => {
+      const category = store.getProductCategory(p.categoryId);
+      return `
     <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden fade-in flex flex-col">
       <!-- تصویر -->
       <div class="h-32 sm:h-36 bg-slate-100 dark:bg-slate-700 grid place-items-center relative overflow-hidden shrink-0">
         ${p.image ? `<img src="${p.image}" class="w-full h-full object-cover" />` : `<span class="text-4xl">📦</span>`}
+        
+        <!-- بج دسته بندی -->
+        ${
+          category
+            ? `<span class="absolute top-2 right-2 text-[10px] font-bold bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 px-2 py-0.5 rounded-full shadow backdrop-blur flex items-center gap-1">
+                 <span>${category.icon || "📦"}</span>
+                 <span>${category.name}</span>
+               </span>`
+            : ""
+        }
+
         ${
           p.variants?.length
             ? `<span class="absolute top-2 left-2 text-[10px] font-bold bg-brand-600 text-white px-2 py-0.5 rounded-full shadow">${faNum(p.variants.length)} واریانت</span>`
@@ -77,13 +159,13 @@ export function renderProducts(filter = "") {
           <button data-delete="${p.id}" title="حذف" class="text-xs bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 px-3 py-2 rounded-lg font-bold">🗑️</button>
         </div>
       </div>
-    </div>`,
-    )
+    </div>`;
+    })
     .join("");
 }
 
 /* ============================================================
-   مودال پرسش واریانت — «کدوم مورد مورد تاییده؟»
+   مودال انتخاب واریانت
 ============================================================ */
 function openVariantPicker(product, preselectId = null, onConfirm = null) {
   const overlay = document.createElement("div");
@@ -91,7 +173,7 @@ function openVariantPicker(product, preselectId = null, onConfirm = null) {
     "fixed inset-0 z-[60] modal-backdrop grid place-items-center p-4";
   overlay.innerHTML = `
     <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl shadow-2xl p-5 fade-in">
-      <h3 class="font-extrabold text-sm mb-1">✅ کدوم مورد مورد تاییده؟</h3>
+      <h3 class="font-extrabold text-sm mb-1">✅ انتخاب واریانت محصول</h3>
       <p class="text-xs text-slate-500 dark:text-slate-400 mb-3 truncate">${product.name}</p>
       <div class="space-y-2 max-h-64 overflow-auto pl-1">
         <button data-pick=""
@@ -138,9 +220,6 @@ function openVariantPicker(product, preselectId = null, onConfirm = null) {
   });
 }
 
-/* ============================================================
-   افزودن محصول به فاکتور — اگر واریانت داشت، اول می‌پرسد
-============================================================ */
 export function addProductToInvoice(product, preselectVariantId = null) {
   if (!product) return;
 
@@ -168,22 +247,47 @@ export function addProductToInvoice(product, preselectVariantId = null) {
   }
 }
 
-/* ---------- فرم واریانت‌ها داخل مودال محصول ---------- */
+/* ---------- فرم واریانت‌ها ---------- */
 function renderVariantsForm() {
   el.variants.innerHTML = tempVariants.length
     ? tempVariants
         .map(
           (v, i) => `
-      <div class="flex gap-2 items-center">
-        <input data-vname="${i}" value="${v.name}" placeholder="عنوان واریانت (مثلاً ۶۴ گیگ)"
-          class="flex-1 rounded-lg border border-slate-300 dark:border-slate-600 px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-brand-500" />
-        <input data-vprice="${i}" type="number" min="0" value="${v.price}" placeholder="قیمت"
-          class="w-28 rounded-lg border border-slate-300 dark:border-slate-600 px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-brand-500" />
-        <button data-vdel="${i}" class="text-rose-500 hover:bg-rose-50 dark:hover:bg-slate-700 w-7 h-7 rounded-lg">✕</button>
+      <div class="bg-slate-50 dark:bg-slate-700/40 p-2.5 rounded-xl border border-slate-200 dark:border-slate-600 space-y-1">
+        <div class="flex gap-2 items-center">
+          <input data-vname="${i}" value="${v.name}" placeholder="عنوان واریانت (مثلاً ۶۴ گیگ)"
+            class="flex-1 rounded-lg border border-slate-300 dark:border-slate-600 px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-brand-500" />
+          <input data-vprice="${i}" type="number" min="0" value="${v.price || ""}" placeholder="قیمت"
+            class="w-28 rounded-lg border border-slate-300 dark:border-slate-600 px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-brand-500 text-left font-mono" />
+          <button type="button" data-vdel="${i}" class="text-rose-500 hover:bg-rose-50 dark:hover:bg-slate-600 w-7 h-7 rounded-lg font-bold">✕</button>
+        </div>
+        <div data-vpreview="${i}">
+          ${createPricePreviewHTML(v.price)}
+        </div>
       </div>`,
         )
         .join("")
     : `<p class="text-[11px] text-slate-400">واریانتی ثبت نشده است.</p>`;
+}
+
+function updateMainPricePreview() {
+  if (el.pricePreview) {
+    el.pricePreview.innerHTML = createPricePreviewHTML(el.price.value);
+  }
+}
+
+function fillCategorySelect(selectedId = "") {
+  if (!el.category) return;
+  const categories = store.getProductCategories();
+  el.category.innerHTML = `
+    <option value="">بدون دسته‌بندی</option>
+    ${categories
+      .map(
+        (c) =>
+          `<option value="${c.id}" ${c.id === selectedId ? "selected" : ""}>${c.icon || "📦"} ${c.name}</option>`,
+      )
+      .join("")}
+  `;
 }
 
 function openModal(product = null) {
@@ -196,32 +300,161 @@ function openModal(product = null) {
   el.preview.src = tempImage;
   el.preview.classList.toggle("hidden", !tempImage);
   el.image.value = "";
+
+  fillCategorySelect(product?.categoryId || "");
+  updateMainPricePreview();
   renderVariantsForm();
   el.modal.classList.remove("hidden");
 }
 
 function closeModal() {
-  el.modal.classList.add("hidden");
+  el.modal?.classList.add("hidden");
 }
 
-/* ---------- ایونت‌ها ---------- */
+/* ============================================================
+   مدیریت مودال دسته‌بندی‌ها + سینک آنی گیت‌هاب
+============================================================ */
+function renderCategoriesListModal() {
+  if (!el.catList) return;
+  const categories = store.getProductCategories();
+  const allProducts = store.getProducts();
+
+  if (!categories.length) {
+    el.catList.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">دسته‌ای تعریف نشده است.</p>`;
+    return;
+  }
+
+  el.catList.innerHTML = categories
+    .map((c) => {
+      const count = allProducts.filter((p) => p.categoryId === c.id).length;
+      return `
+      <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 text-xs">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="text-base">${c.icon || "📦"}</span>
+          <span class="font-bold text-slate-800 dark:text-slate-100 truncate">${c.name}</span>
+          <span class="text-[10px] text-slate-400">(${faNum(count)} کالا)</span>
+        </div>
+        <div class="flex items-center gap-1 shrink-0">
+          <button data-pcat-edit="${c.id}" class="text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 p-1.5 rounded-lg">✏️</button>
+          <button data-pcat-del="${c.id}" class="text-rose-500 hover:bg-rose-50 dark:hover:bg-slate-600 p-1.5 rounded-lg">🗑️</button>
+        </div>
+      </div>`;
+    })
+    .join("");
+}
+
+function resetCategoryForm() {
+  if (el.catEditId) el.catEditId.value = "";
+  if (el.catNameInput) el.catNameInput.value = "";
+  if (el.catIconInput) el.catIconInput.value = "📦";
+  el.btnCancelEditCat?.classList.add("hidden");
+}
+
+function openCategoriesModal() {
+  resetCategoryForm();
+  renderCategoriesListModal();
+  el.catModal?.classList.remove("hidden");
+}
+
+function closeCategoriesModal() {
+  el.catModal?.classList.add("hidden");
+  resetCategoryForm();
+}
+
+function initCategoryModalEvents() {
+  document
+    .getElementById("btn-manage-product-categories")
+    ?.addEventListener("click", openCategoriesModal);
+  document
+    .getElementById("btn-close-pcat-modal")
+    ?.addEventListener("click", closeCategoriesModal);
+  el.catModal?.addEventListener("click", (e) => {
+    if (e.target === el.catModal) closeCategoriesModal();
+  });
+
+  el.btnCancelEditCat?.addEventListener("click", resetCategoryForm);
+
+  // ذخیره دسته جدید یا ویرایش شده
+  document.getElementById("btn-save-pcat")?.addEventListener("click", () => {
+    const name = el.catNameInput?.value.trim();
+    const icon = el.catIconInput?.value.trim() || "📦";
+    const editId = el.catEditId?.value;
+
+    if (!name) return alert("نام دسته‌بندی الزامی است.");
+
+    store.saveProductCategory({ id: editId || null, name, icon });
+    resetCategoryForm();
+    renderCategoriesListModal();
+    renderCategoryChips();
+    renderProducts(el.search?.value.trim() || "");
+
+    // 🚀 همگام‌سازی آنی محلی + گیت‌هاب خصوصی و پابلیک
+    syncAllStorages();
+    toast("✅ دسته‌بندی ذخیره شد و روی گیت‌هاب همگام‌سازی شد ☁️");
+  });
+
+  // کلیک روی ویرایش یا حذف دسته
+  el.catList?.addEventListener("click", (e) => {
+    const editBtn = e.target.closest("[data-pcat-edit]");
+    const delBtn = e.target.closest("[data-pcat-del]");
+
+    if (editBtn) {
+      const id = editBtn.dataset.pcatEdit;
+      const cat = store.getProductCategory(id);
+      if (cat) {
+        el.catEditId.value = cat.id;
+        el.catNameInput.value = cat.name;
+        el.catIconInput.value = cat.icon || "📦";
+        el.btnCancelEditCat?.classList.remove("hidden");
+        el.catNameInput.focus();
+      }
+    }
+
+    if (delBtn) {
+      const id = delBtn.dataset.pcatDel;
+      if (
+        confirm(
+          "این دسته‌بندی حذف شود؟ (محصولات متعلق به این دسته حذف نمی‌شوند و به دسته عمومی منتقل می‌شوند)",
+        )
+      ) {
+        store.deleteProductCategory(id);
+        if (selectedCategoryId === id) selectedCategoryId = "all";
+        renderCategoriesListModal();
+        renderCategoryChips();
+        renderProducts(el.search?.value.trim() || "");
+
+        // 🚀 همگام‌سازی آنی پس از حذف
+        syncAllStorages();
+        toast("دسته‌بندی حذف شد 🗑️");
+      }
+    }
+  });
+}
+
+/* ============================================================
+   اتصال ایونت‌های اصلی ماژول
+============================================================ */
 export function initProductEvents() {
+  initCategoryModalEvents();
+  renderCategoryChips();
+
   document
     .getElementById("btn-add-product")
-    .addEventListener("click", () => openModal());
+    ?.addEventListener("click", () => openModal());
   document
     .getElementById("btn-close-modal")
-    .addEventListener("click", closeModal);
+    ?.addEventListener("click", closeModal);
   document
     .getElementById("btn-cancel-product")
-    .addEventListener("click", closeModal);
-  el.modal.addEventListener(
+    ?.addEventListener("click", closeModal);
+  el.modal?.addEventListener(
     "click",
     (e) => e.target === el.modal && closeModal(),
   );
 
-  // آپلود عکس → base64
-  el.image.addEventListener("change", (e) => {
+  el.price?.addEventListener("input", updateMainPricePreview);
+
+  el.image?.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
@@ -233,50 +466,62 @@ export function initProductEvents() {
     reader.readAsDataURL(file);
   });
 
-  // واریانت‌ها
-  document.getElementById("btn-add-variant").addEventListener("click", () => {
+  document.getElementById("btn-add-variant")?.addEventListener("click", () => {
     tempVariants.push({ id: uid(), name: "", price: 0 });
     renderVariantsForm();
   });
-  el.variants.addEventListener("input", (e) => {
+
+  el.variants?.addEventListener("input", (e) => {
     const ni = e.target.dataset.vname;
     const pi = e.target.dataset.vprice;
-    if (ni !== undefined) tempVariants[ni].name = e.target.value;
-    if (pi !== undefined) tempVariants[pi].price = Number(e.target.value) || 0;
+    if (ni !== undefined) tempVariants[Number(ni)].name = e.target.value;
+    if (pi !== undefined) {
+      const idx = Number(pi);
+      tempVariants[idx].price = Number(e.target.value) || 0;
+      const previewBox = el.variants.querySelector(`[data-vpreview="${idx}"]`);
+      if (previewBox) {
+        previewBox.innerHTML = createPricePreviewHTML(e.target.value);
+      }
+    }
   });
-  el.variants.addEventListener("click", (e) => {
-    const di = e.target.dataset.vdel;
-    if (di !== undefined) {
+
+  el.variants?.addEventListener("click", (e) => {
+    const delBtn = e.target.closest("[data-vdel]");
+    if (delBtn) {
+      const di = Number(delBtn.dataset.vdel);
       tempVariants.splice(di, 1);
       renderVariantsForm();
     }
   });
 
-  // ---------- ذخیره محصول + بک‌آپ کامل ----------
-  document.getElementById("btn-save-product").addEventListener("click", () => {
+  // ذخیره محصول
+  document.getElementById("btn-save-product")?.addEventListener("click", () => {
     const name = el.name.value.trim();
     const price = Number(el.price.value) || 0;
+    const categoryId = el.category?.value || "";
+
     if (!name || price <= 0) return alert("نام و قیمت محصول الزامی است.");
     const variants = tempVariants.filter((v) => v.name.trim());
+
     store.saveProduct({
       id: editingId ?? uid(),
       name,
+      categoryId,
       price,
       image: tempImage,
       variants,
     });
+
     closeModal();
-    renderProducts();
+    renderCategoryChips();
+    renderProducts(el.search?.value.trim() || "");
     toast(editingId ? "محصول ویرایش شد ✅" : "محصول اضافه شد ✅");
 
-    // ✅ بک‌آپ خودکار
-    autoSaveInvoices(); // 💾 فایل محلی
-    autoPushGitHub(); // ☁️ ریپوی خصوصی
-    autoPushPublicRepo(); // 🌐 ریپوی پابلیک (جدید)
+    syncAllStorages();
   });
 
-  // ---------- کلیک‌های روی گرید محصولات ----------
-  el.grid.addEventListener("click", (e) => {
+  // کلیک‌های گرید محصولات
+  el.grid?.addEventListener("click", (e) => {
     const edit = e.target.dataset.edit;
     const del = e.target.dataset.delete;
     const add = e.target.dataset.addProduct;
@@ -286,21 +531,18 @@ export function initProductEvents() {
 
     if (del && confirm("این محصول حذف شود؟")) {
       store.deleteProduct(del);
-      renderProducts();
+      renderCategoryChips();
+      renderProducts(el.search?.value.trim() || "");
       toast("محصول حذف شد 🗑️");
-      // ✅ بک‌آپ بعد از حذف
-      autoSaveInvoices();
-      autoPushGitHub();
-      autoPushPublicRepo(); // 🌐 ریپوی پابلیک (جدید)
+      syncAllStorages();
     }
 
-    // ✅ افزودن به فاکتور — اگر واریانت داشت، مودال پرسش باز می‌شود
     if (add) addProductToInvoice(store.getProduct(add));
     if (addV)
       addProductToInvoice(store.getProduct(addV), e.target.dataset.variantId);
   });
 
-  el.search.addEventListener("input", () =>
+  el.search?.addEventListener("input", () =>
     renderProducts(el.search.value.trim()),
   );
 }

@@ -188,14 +188,22 @@ function renderItems() {
 
   el.items.innerHTML = products.length
     ? products
-        .map(
-          (p) => `
+        .map((p) => {
+          const cat = store.getProductCategory(p.categoryId);
+          return `
       <div class="bg-white border border-slate-200 rounded-xl p-3 flex items-center gap-3 hover:border-brand-500 transition fade-in">
         <div class="w-14 h-14 rounded-xl bg-slate-100 grid place-items-center overflow-hidden shrink-0">
           ${p.image ? `<img src="${p.image}" class="w-full h-full object-cover" />` : "📦"}
         </div>
         <div class="min-w-0 flex-1">
-          <p class="text-sm font-bold truncate">${p.name}</p>
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <p class="text-sm font-bold truncate">${p.name}</p>
+            ${
+              cat
+                ? `<span class="text-[10px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded">${cat.icon || "📦"} ${cat.name}</span>`
+                : ""
+            }
+          </div>
           <p class="text-[11px] text-slate-400 mt-0.5">${faNum(p.price)} تومان</p>
           ${p.variants?.length ? `<p class="text-[10px] text-slate-400">${p.variants.map((v) => v.name).join(" | ")}</p>` : ""}
         </div>
@@ -212,10 +220,10 @@ function renderItems() {
               : ""
           }
         </div>
-      </div>`,
-        )
+      </div>`;
+        })
         .join("")
-    : `<p class="text-center text-slate-400 text-sm py-10">محصولی ثبت نشده است. از تب «محصولات فیزیکی» محصول اضافه کنید.</p>`;
+    : `<p class="text-center text-slate-400 text-sm py-10">محصولی یافت نشد.</p>`;
 }
 
 // debounce ساده برای سرچ

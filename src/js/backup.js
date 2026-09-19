@@ -6,7 +6,6 @@ const HANDLE_KEY = "invoices-backup";
 
 let fileHandle = null;
 
-/* ---------- IndexedDB برای نگه‌داشتن handle فایل بین جلسات ---------- */
 function idbOpen() {
   return new Promise((resolve, reject) => {
     const rq = indexedDB.open(DB_NAME, 1);
@@ -45,7 +44,6 @@ async function idbDel(key) {
   });
 }
 
-/* ---------- مجوز دسترسی ---------- */
 async function ensurePermission(handle) {
   if (!handle) return false;
   const opts = { mode: "readwrite" };
@@ -57,23 +55,22 @@ async function ensurePermission(handle) {
   }
 }
 
-/* ---------- نوشتن کل فاکتورها و خدمات داخل فایل لوکال ---------- */
 async function writeInvoicesToFile(handle) {
   const writable = await handle.createWritable();
   const payload = {
-    version: 2,
+    version: 3,
     exportedAt: new Date().toISOString(),
     invoices: store.getInvoices(),
     products: store.getProducts(),
+    productCategories: store.getProductCategories(), // ✅ ذخیره دسته‌های محصولات
     customers: store.getCustomers(),
-    customServices: store.getCustomServices(), // ✅ ذخیره خدمات جدید
+    customServices: store.getCustomServices(),
     shop: store.getShopInfo(),
   };
   await writable.write(JSON.stringify(payload, null, 2));
   await writable.close();
 }
 
-/* ---------- وضعیت UI ---------- */
 async function refreshStatus() {
   const status = document.getElementById("backup-status");
   const btnConnect = document.getElementById("btn-backup-connect");
@@ -99,7 +96,6 @@ async function refreshStatus() {
   btnDisconnect?.classList.remove("hidden");
 }
 
-/* ---------- اتصال فایل پشتیبان ---------- */
 export async function connectBackupFile() {
   if (!("showSaveFilePicker" in window)) {
     alert(
@@ -116,7 +112,7 @@ export async function connectBackupFile() {
     });
     fileHandle = handle;
     await idbSet(HANDLE_KEY, handle);
-    const ok = await ensurePermission(handle); // داخل کلیک کاربر → مجوز گرفته می‌شود
+    const ok = await ensurePermission(handle);
     if (ok) await writeInvoicesToFile(handle);
     await refreshStatus();
   } catch (err) {
@@ -130,11 +126,10 @@ export async function disconnectBackupFile() {
   await refreshStatus();
 }
 
-/* ---------- ذخیره خودکار (لحظه ثبت هر فاکتور) ---------- */
 export async function autoSaveInvoices() {
   try {
     if (!fileHandle) fileHandle = await idbGet(HANDLE_KEY);
-    if (!fileHandle) return; // اتصال برقرار نشده
+    if (!fileHandle) return;
     const ok = await ensurePermission(fileHandle);
     if (!ok) {
       refreshStatus();
@@ -146,15 +141,15 @@ export async function autoSaveInvoices() {
   }
 }
 
-/* ---------- اکسپورت (دانلود JSON) ---------- */
 export function exportAllData() {
   const data = {
-    version: 2,
+    version: 3,
     exportedAt: new Date().toISOString(),
     invoices: store.getInvoices(),
     products: store.getProducts(),
+    productCategories: store.getProductCategories(), // ✅ دسته‌های محصولات
     customers: store.getCustomers(),
-    customServices: store.getCustomServices(), // ✅ ذخیره خدمات جدید
+    customServices: store.getCustomServices(),
     shop: store.getShopInfo(),
   };
   if (!data.invoices.length && !data.products.length && !data.customers.length)
@@ -172,7 +167,7 @@ export function exportAllData() {
   a.remove();
   URL.revokeObjectURL(url);
 }
-/* ---------- ایمپورت (ادغام JSON قبلی) ---------- */
+
 export function importInvoicesFile(file) {
   const reader = new FileReader();
   reader.onload = () => {
@@ -181,9 +176,10 @@ export function importInvoicesFile(file) {
 
       const invoices = Array.isArray(parsed) ? parsed : parsed.invoices;
       const products = parsed.products;
+      const productCategories = parsed.productCategories; // ✅ بازیابی دسته‌های محصولات
       const customers = parsed.customers;
       const shop = parsed.shop;
-      const customServices = parsed.customServices; // ✅ خدمات جدید
+      const customServices = parsed.customServices;
 
       const invValid = Array.isArray(invoices)
         ? invoices.filter(
@@ -219,6 +215,16 @@ export function importInvoicesFile(file) {
         ]);
       }
 
+      // ادغام دسته‌های محصولات
+      if (Array.isArray(productCategories) && productCategories.length) {
+        const currentCats = store.getProductCategories();
+        const catIds = new Set(currentCats.map((c) => c.id));
+        const addedCats = productCategories.filter(
+          (c) => c && c.id && !catIds.has(c.id),
+        );
+        store.setProductCategories([...currentCats, ...addedCats]);
+      }
+
       // ادغام مشتریان
       if (cstValid.length) {
         const currentCst = store.getCustomers();
@@ -231,7 +237,7 @@ export function importInvoicesFile(file) {
         ]);
       }
 
-      // ✅ بازیابی و ادغام خدمات و دسته‌های جدید
+      // ادغام خدمات سفارشی
       if (customServices && typeof customServices === "object") {
         const current = store.getCustomServices();
         const currentNewCatIds = new Set(
@@ -258,10 +264,10 @@ export function importInvoicesFile(file) {
 
       alert(
         `✅ ایمپورت انجام شد:\n` +
-          `فاکتور: ${addedInv.length} جدید از ${invValid.length}\n` +
-          `محصول: ${prdValid.length}\n` +
-          `مشتری: ${cstValid.length}\n` +
-          `خدمات و دسته‌بندی‌های جدید نیز بازیابی شدند.`,
+          `فاکتور: ${addedInv.length} جدید\n` +
+          `محصول: ${prdValid.length} عدد\n` +
+          `مشتری: ${cstValid.length} نفر\n` +
+          `دسته‌بندی‌ها و خدمات با موفقیت بازیابی شدند.`,
       );
       autoSaveInvoices();
       if (window.initInvoicesList) window.initInvoicesList();
@@ -272,7 +278,7 @@ export function importInvoicesFile(file) {
   };
   reader.readAsText(file);
 }
-/* ---------- اتصال ایونت‌ها ---------- */
+
 export async function initBackup() {
   fileHandle = await idbGet(HANDLE_KEY).catch(() => null);
 
