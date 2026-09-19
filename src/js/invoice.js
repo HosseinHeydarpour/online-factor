@@ -180,9 +180,10 @@ export async function buildPrintHTML(number, invoiceData = null) {
     <div style="display:flex;align-items:center;gap:16px;">
       ${
         shop.logo
-          ? `<img src="${shop.logo}" style="width:66px;height:66px;object-fit:contain;border-radius:12px;border:1px solid #e2e8f0;background:#f8fafc;padding:3px;" />`
+          ? `<img src="${shop.logo}" style="width:66px;height:66px;object-fit:contain;border-radius:12px;" />`
           : `<div style="width:66px;height:66px;border-radius:14px;background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;">ک</div>`
       }
+      
       <div>
         <div style="font-size:23px;font-weight:900;color:#0c4a6e;line-height:1.5;">${shop.name || "کافی‌نت آنلاین"}</div>
         <div style="font-size:11px;color:#64748b;margin-top:3px;line-height:1.7;">${shop.slogan || "ارائه‌دهنده خدمات اینترنتی و ثبت‌نام‌های دولتی"}</div>

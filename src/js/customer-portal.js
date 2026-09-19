@@ -21,8 +21,11 @@ export function initCustomerPortal() {
 
   if (nameEl) nameEl.textContent = shop.name || "کافی‌نت آنلاین";
   if (sloganEl) sloganEl.textContent = shop.slogan || "نرخ‌نامه خدمات";
-  if (logoEl && shop.logo)
+  if (logoEl && shop.logo) {
     logoEl.innerHTML = `<img src="${shop.logo}" class="w-full h-full object-contain" />`;
+    logoEl.classList.remove("bg-brand-600", "text-white");
+    logoEl.classList.add("bg-transparent");
+  }
   if (contactEl) {
     const line = [shop.phone, shop.address].filter(Boolean).join("  |  ");
     contactEl.textContent = line;

@@ -8,8 +8,8 @@ import {
 } from "./products.js";
 import { initInvoicesList } from "./invoices-list.js";
 import { initAuth } from "./auth.js";
-import { initBackup } from "./backup.js";
-import { initGitHubUI } from "./github.js";
+import { initBackup, autoSaveInvoices } from "./backup.js";
+import { initGitHubUI, autoPushGitHub } from "./github.js";
 import { initReports } from "./reports.js"; // ✅ اضافه شد
 import { initCustomers, renderCustomers } from "./customers.js";
 import { initCustomerPortal } from "./customer-portal.js";
@@ -227,6 +227,24 @@ function toast(msg) {
   setTimeout(() => t.classList.add("hidden"), 2000);
 }
 
+// ---------- لوگوی نوبار ----------
+
+// ---------- لوگوی نوبار ----------
+function updateNavLogo() {
+  const box = document.getElementById("nav-logo");
+  if (!box) return;
+  const shop = store.getShopInfo();
+  if (shop.logo) {
+    box.innerHTML = `<img src="${shop.logo}" class="w-full h-full object-contain" alt="لوگو" />`;
+    box.classList.remove("bg-brand-600", "text-white");
+    box.classList.add("bg-white", "dark:bg-slate-700", "p-1");
+  } else {
+    box.innerHTML = "ک";
+    box.classList.add("bg-brand-600", "text-white");
+    box.classList.remove("bg-white", "dark:bg-slate-700", "p-1");
+  }
+}
+
 // ---------- تنظیمات کسب‌وکار ----------
 function initSettings() {
   const shop = store.getShopInfo();
@@ -270,9 +288,12 @@ function initSettings() {
       logo: tempLogo,
     };
     store.saveShopInfo(info);
+    updateNavLogo(); // ✅ لوگوی نوبار هم فوراً عوض شود
 
+    autoSaveInvoices(); // ✅ بک‌آپ روی فایل محلی متصل‌شده
+    autoPushGitHub(); // ✅ push خودکار به گیت‌هاب
     const toast = document.getElementById("toast");
-    toast.textContent = "✅ تنظیمات ذخیره شد";
+    toast.textContent = "✅ تنظیمات ذخیره شد + بک‌آپ گرفته شد";
     toast.classList.remove("hidden");
     setTimeout(() => toast.classList.add("hidden"), 2200);
   });
@@ -348,10 +369,12 @@ if (APP_ROLE === "customer") {
   initCustomerPortal();
 } else {
   document.getElementById("today-date").textContent = todayFa();
+  updateNavLogo(); // ✅ بارگذاری لوگو در نوبار هنگام شروع برنامه
   initAuth();
   initInvoiceEvents();
   initProductEvents();
   initSettings();
+  updateNavLogo(); // ✅ بارگذاری لوگو در نوبار هنگام شروع
   initBackup();
   initGitHubUI();
   initCustomers();

@@ -197,6 +197,10 @@ window.viewInvoice = function (invNumber) {
     )
     .join("");
 
+  const shop = store.getShopInfo();
+  const logoHtml = shop.logo
+    ? `<img src="${shop.logo}" class="w-full h-full object-contain" />`
+    : "ک";
   const customerName = invoice.customer?.name || "بدون نام";
   const customerPhone = invoice.customer?.phone || "-";
   const jDateFull = isValidJalaliDate(invoice.date)
@@ -209,9 +213,7 @@ window.viewInvoice = function (invNumber) {
       <!-- سربرگ فاکتور -->
       <div class="flex items-center justify-between pb-4 border-b-2 border-brand-100 mb-4">
         <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-xl bg-brand-600 text-white grid place-items-center text-lg font-bold shadow">
-            ک
-          </div>
+          <div class="w-12 h-12 rounded-xl ${shop.logo ? "bg-white dark:bg-slate-700 p-1" : "bg-brand-600 text-white"} grid place-items-center text-lg font-bold shadow overflow-hidden">${logoHtml}</div>
           <div>
             <h2 class="font-extrabold text-lg text-slate-700">کافی‌نت آنلاین</h2>
             <p class="text-xs text-slate-500">سیستم صدور فاکتور و نرخ‌نامه خدمات</p>
