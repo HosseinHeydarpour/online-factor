@@ -267,6 +267,46 @@
         background: transparent;
       }
 
+      /* ===== پورتال مشتری: اسلایدر کارت بانکی ===== */
+      .cp-slider-viewport {
+        overflow: hidden;
+        touch-action: pan-y; /* اسکرول عمودی صفحه حفظ می‌شود، کشیدن افقی به ما می‌رسد */
+        -webkit-user-select: none;
+        user-select: none;
+        outline: none;
+      }
+      .cp-slider-track {
+        display: flex;
+        align-items: stretch;
+        direction: ltr; /* محاسبه translateX ساده و قطعی شود */
+        will-change: transform;
+      }
+      .cp-bank-card {
+        aspect-ratio: 1.42 / 1; /* موبایل: بلندتر تا فونت‌های بزرگ جا شوند */
+        border-radius: 1.1rem;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 14px 34px rgba(2, 6, 23, 0.28);
+      }
+      @media (min-width: 640px) {
+        .cp-bank-card {
+          aspect-ratio: 1.586 / 1; /* نسبت واقعی کارت بانکی */
+        }
+      }
+      .cp-copy-btn {
+        transition:
+          background-color 0.18s ease,
+          transform 0.12s ease;
+      }
+      .cp-copy-btn:active {
+        transform: scale(0.985);
+      }
+      .cp-dot {
+        transition:
+          width 0.25s ease,
+          background-color 0.25s ease;
+      }
+
       /* ==================== چاپ ==================== */
       #print-area {
         display: none;
@@ -1671,7 +1711,7 @@
       >
         <div class="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
           <div
-            id="nav-logo"
+            id="cp-logo"
             class="w-11 h-11 rounded-2xl bg-brand-600 text-white grid place-items-center text-xl font-bold shadow overflow-hidden shrink-0"
           >
             ک
@@ -1700,36 +1740,102 @@
       </header>
 
       <main class="max-w-3xl mx-auto px-4 py-5 space-y-4">
+        <!-- تب‌های پورتال -->
         <div
-          class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-3 sm:p-4"
+          class="flex gap-1.5 bg-white dark:bg-slate-800 rounded-2xl p-1.5 border border-slate-200 dark:border-slate-700 shadow-sm"
         >
-          <div class="relative">
-            <input
-              id="cp-search"
-              type="text"
-              placeholder="جستجوی خدمت… (مثلاً: پرینت، ثنا، گذرنامه)"
-              class="w-full rounded-xl border border-slate-300 dark:border-slate-600 py-2.5 sm:py-3 pr-10 pl-3 text-sm focus:ring-2 focus:ring-brand-500 outline-none"
-            />
-            <span class="absolute right-3 top-3 text-slate-400">🔍</span>
-          </div>
-          <p id="cp-count" class="text-[11px] text-slate-400 mt-2"></p>
-          <div class="flex gap-2 mt-2">
-            <button
-              id="cp-expand-all"
-              class="text-[10px] font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-slate-700 hover:bg-brand-100 dark:hover:bg-slate-600 px-2.5 py-1 rounded-lg"
-            >
-              🔽 باز کردن همه
-            </button>
-            <button
-              id="cp-collapse-all"
-              class="text-[10px] font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 px-2.5 py-1 rounded-lg"
-            >
-              ▶️ بستن همه
-            </button>
-          </div>
+          <button
+            data-cp-tab="rates"
+            class="cp-tab flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold bg-brand-600 text-white transition"
+          >
+            📋 نرخ‌نامه خدمات
+          </button>
+          <button
+            data-cp-tab="cards"
+            class="cp-tab flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+          >
+            💳 کارت‌های بانکی
+          </button>
         </div>
+        <!-- پنل نرخ‌نامه -->
+        <div id="cp-panel-rates" class="space-y-4">
+          <div
+            class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-3 sm:p-4"
+          >
+            <div class="relative">
+              <input
+                id="cp-search"
+                type="text"
+                placeholder="جستجوی خدمت… (مثلاً: پرینت، ثنا، گذرنامه)"
+                class="w-full rounded-xl border border-slate-300 dark:border-slate-600 py-2.5 sm:py-3 pr-10 pl-3 text-sm focus:ring-2 focus:ring-brand-500 outline-none"
+              />
+              <span class="absolute right-3 top-3 text-slate-400">🔍</span>
+            </div>
+            <p id="cp-count" class="text-[11px] text-slate-400 mt-2"></p>
+            <div class="flex gap-2 mt-2">
+              <button
+                id="cp-expand-all"
+                class="text-[10px] font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-slate-700 hover:bg-brand-100 dark:hover:bg-slate-600 px-2.5 py-1 rounded-lg"
+              >
+                🔽 باز کردن همه
+              </button>
+              <button
+                id="cp-collapse-all"
+                class="text-[10px] font-bold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 px-2.5 py-1 rounded-lg"
+              >
+                ▶️ بستن همه
+              </button>
+            </div>
+          </div>
 
-        <div id="cp-list" class="space-y-3"></div>
+          <div id="cp-list" class="space-y-3"></div>
+        </div>
+        <!-- پنل کارت‌های بانکی -->
+        <div id="cp-panel-cards" class="hidden space-y-4">
+          <div class="relative">
+            <div
+              id="cp-cards-viewport"
+              class="cp-slider-viewport rounded-3xl"
+              tabindex="0"
+              role="region"
+              aria-label="کارت‌های بانکی"
+            >
+              <div id="cp-cards-track" class="cp-slider-track"></div>
+            </div>
+            <button
+              id="cp-card-prev"
+              type="button"
+              aria-label="کارت قبلی"
+              class="absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/90 dark:bg-slate-700/90 shadow-lg grid place-items-center text-slate-700 dark:text-slate-100 text-xl font-black z-10 active:scale-95 transition"
+            >
+              ›
+            </button>
+            <button
+              id="cp-card-next"
+              type="button"
+              aria-label="کارت بعدی"
+              class="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/90 dark:bg-slate-700/90 shadow-lg grid place-items-center text-slate-700 dark:text-slate-100 text-xl font-black z-10 active:scale-95 transition"
+            >
+              ‹
+            </button>
+          </div>
+          <div
+            id="cp-cards-dots"
+            class="flex items-center justify-center gap-2"
+          ></div>
+          <div
+            id="cp-cards-empty"
+            class="hidden bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-10 text-center text-slate-400 text-sm"
+          >
+            هنوز کارت بانکی ثبت نشده است.
+          </div>
+          <p
+            class="text-center text-[11px] text-slate-500 dark:text-slate-400 leading-6"
+          >
+            👆 برای کپی، روی <b>شماره کارت</b> یا <b>شماره شبا</b> بزنید · برای
+            جابه‌جایی، کارت را بکشید
+          </p>
+        </div>
 
         <p
           id="cp-contact"
