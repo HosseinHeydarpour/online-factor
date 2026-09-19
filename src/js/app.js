@@ -12,6 +12,7 @@ import { initBackup } from "./backup.js";
 import { initGitHubUI } from "./github.js";
 import { initReports } from "./reports.js"; // ✅ اضافه شد
 import { initCustomers, renderCustomers } from "./customers.js";
+import { initCustomerPortal } from "./customer-portal.js";
 
 const el = {
   tabs: document.querySelectorAll(".view-tab"),
@@ -335,14 +336,26 @@ function initSettings() {
 }
 
 // ---------- init ----------
-document.getElementById("today-date").textContent = todayFa();
-initAuth(); // ✅ اول از همه: بررسی نشست / نمایش صفحه لاگین
-initInvoiceEvents();
-initProductEvents();
-initSettings();
-initBackup();
-initGitHubUI(); // ✅ اضافه شد
-initCustomers(); // ✅ بعد از initSettings()
-window.initInvoiceDetailEvents();
-setView("invoice");
-setSource("services");
+// ---------- تشخیص نقش از آدرس ----------
+// ?role=customer  → پورتال مشتری (فقط نرخ‌نامه)
+// ?role=admin یا بدون پارامتر → مدیریت کامل
+const APP_ROLE = (
+  new URLSearchParams(window.location.search).get("role") ||
+  (window.location.hash === "#customer" ? "customer" : "admin")
+).toLowerCase();
+
+if (APP_ROLE === "customer") {
+  initCustomerPortal();
+} else {
+  document.getElementById("today-date").textContent = todayFa();
+  initAuth();
+  initInvoiceEvents();
+  initProductEvents();
+  initSettings();
+  initBackup();
+  initGitHubUI();
+  initCustomers();
+  window.initInvoiceDetailEvents();
+  setView("invoice");
+  setSource("services");
+}
