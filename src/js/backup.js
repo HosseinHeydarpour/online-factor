@@ -58,11 +58,12 @@ async function ensurePermission(handle) {
 async function writeInvoicesToFile(handle) {
   const writable = await handle.createWritable();
   const payload = {
-    version: 3,
+    version: 4,
     exportedAt: new Date().toISOString(),
     invoices: store.getInvoices(),
     products: store.getProducts(),
-    productCategories: store.getProductCategories(), // ✅ ذخیره دسته‌های محصولات
+    productCategories: store.getProductCategories(),
+    announcements: store.getAnnouncements(), // ✅ ذخیره اعلانات در فایل لوکال
     customers: store.getCustomers(),
     customServices: store.getCustomServices(),
     shop: store.getShopInfo(),
@@ -143,11 +144,12 @@ export async function autoSaveInvoices() {
 
 export function exportAllData() {
   const data = {
-    version: 3,
+    version: 4,
     exportedAt: new Date().toISOString(),
     invoices: store.getInvoices(),
     products: store.getProducts(),
-    productCategories: store.getProductCategories(), // ✅ دسته‌های محصولات
+    productCategories: store.getProductCategories(),
+    announcements: store.getAnnouncements(), // ✅ اعلانات در خروجی JSON
     customers: store.getCustomers(),
     customServices: store.getCustomServices(),
     shop: store.getShopInfo(),
@@ -180,6 +182,7 @@ export function importInvoicesFile(file) {
       const customers = parsed.customers;
       const shop = parsed.shop;
       const customServices = parsed.customServices;
+      const announcements = parsed.announcements;
 
       const invValid = Array.isArray(invoices)
         ? invoices.filter(
@@ -204,6 +207,15 @@ export function importInvoicesFile(file) {
       store.setInvoices(
         [...currentInv, ...addedInv].sort((a, b) => b.number - a.number),
       );
+
+      if (Array.isArray(announcements) && announcements.length) {
+        const currentAnn = store.getAnnouncements();
+        const annIds = new Set(currentAnn.map((a) => a.id));
+        const addedAnn = announcements.filter(
+          (a) => a && a.id && !annIds.has(a.id),
+        );
+        store.setAnnouncements([...currentAnn, ...addedAnn]);
+      }
 
       // ادغام محصولات
       if (prdValid.length) {

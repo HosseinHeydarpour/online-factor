@@ -90,6 +90,12 @@
       href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css"
     />
 
+    <link
+      href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+
     <style>
       * {
         font-family: "Vazirmatn", sans-serif;
@@ -107,6 +113,116 @@
       }
       .dark ::-webkit-scrollbar-thumb {
         background: #475569;
+      }
+
+      /* استایل رندر ریچ تکست در پورتال مشتری */
+      .cp-rich-text p {
+        margin-bottom: 0.75rem;
+        line-height: 1.85;
+        font-size: 0.875rem;
+        color: #334155;
+      }
+      .dark .cp-rich-text p {
+        color: #cbd5e1;
+      }
+      .cp-rich-text h1,
+      .cp-rich-text h2,
+      .cp-rich-text h3 {
+        font-weight: 800;
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+        color: #0f172a;
+      }
+      .dark .cp-rich-text h1,
+      .dark .cp-rich-text h2,
+      .dark .cp-rich-text h3 {
+        color: #f8fafc;
+      }
+      .cp-rich-text h1 {
+        font-size: 1.25rem;
+      }
+      .cp-rich-text h2 {
+        font-size: 1.1rem;
+      }
+      .cp-rich-text h3 {
+        font-size: 0.95rem;
+      }
+      .cp-rich-text ul {
+        list-style-type: disc;
+        padding-right: 1.25rem;
+        margin-bottom: 0.75rem;
+        font-size: 0.875rem;
+        line-height: 1.8;
+      }
+      .cp-rich-text ol {
+        list-style-type: decimal;
+        padding-right: 1.25rem;
+        margin-bottom: 0.75rem;
+        font-size: 0.875rem;
+        line-height: 1.8;
+      }
+      .cp-rich-text blockquote {
+        border-right: 3px solid #0284c7;
+        padding-right: 0.75rem;
+        margin: 0.75rem 0;
+        color: #64748b;
+        font-style: italic;
+      }
+      .dark .cp-rich-text blockquote {
+        border-color: #38bdf8;
+        color: #94a3b8;
+      }
+      .cp-rich-text a {
+        color: #0284c7;
+        text-decoration: underline;
+        font-weight: 700;
+      }
+      .dark .cp-rich-text a {
+        color: #38bdf8;
+      }
+
+      /* استایل‌های سفارشی ریچ تکست ادیتور و دارک‌مود */
+      .ql-editor {
+        direction: rtl;
+        text-align: right;
+        font-family: "Vazirmatn", sans-serif !important;
+        font-size: 13px;
+        min-height: 190px;
+        line-height: 1.8;
+      }
+      .ql-toolbar.ql-snow {
+        border-top-left-radius: 0.75rem;
+        border-top-right-radius: 0.75rem;
+        border-color: #cbd5e1;
+        direction: rtl;
+        text-align: right;
+      }
+      .ql-container.ql-snow {
+        border-bottom-left-radius: 0.75rem;
+        border-bottom-right-radius: 0.75rem;
+        border-color: #cbd5e1;
+      }
+      .dark .ql-toolbar.ql-snow {
+        background-color: #1e293b;
+        border-color: #475569;
+      }
+      .dark .ql-container.ql-snow {
+        background-color: #1e293b;
+        border-color: #475569;
+        color: #f1f5f9;
+      }
+      .dark .ql-stroke {
+        stroke: #cbd5e1 !important;
+      }
+      .dark .ql-fill {
+        fill: #cbd5e1 !important;
+      }
+      .dark .ql-picker {
+        color: #cbd5e1 !important;
+      }
+      .dark .ql-picker-options {
+        background-color: #1e293b !important;
+        border-color: #475569 !important;
       }
 
       /* اسکرول‌بار نامرئی برای نوبار موبایل */
@@ -466,6 +582,12 @@
             👁️ مشاهده فاکتور
           </button>
           <button
+            data-view="announcements"
+            class="view-tab px-3 sm:px-4 py-2 sm:py-2.5 rounded-t-xl font-bold border-b-2 border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+          >
+            📢 اعلانات و اخبار
+          </button>
+          <button
             data-view="settings"
             class="view-tab px-3 sm:px-4 py-2 sm:py-2.5 rounded-t-xl font-bold border-b-2 border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
           >
@@ -802,6 +924,46 @@
             هنوز مشتری ثبت نشده است.<br />
             با ثبت اولین فاکتور، نام و شماره مشتری به‌صورت خودکار اینجا ذخیره
             می‌شود.
+          </div>
+        </section>
+
+        <!-- ============ ویو: مدیریت اعلانات و اخبار ============ -->
+        <section
+          id="view-announcements"
+          class="view hidden space-y-4 sm:space-y-5"
+        >
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h2 class="font-extrabold text-base sm:text-lg">
+                📢 مدیریت اعلانات و اخبار
+              </h2>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                اطلاعیه‌ها، اخبار ثبت‌نام‌ها و پیام‌های مهم که برای مشتریان
+                نمایش داده می‌شود.
+              </p>
+            </div>
+            <div class="flex gap-2 w-full sm:w-auto">
+              <input
+                id="announcement-search"
+                placeholder="جستجوی در اخبار…"
+                class="flex-1 sm:w-56 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+              />
+              <button
+                id="btn-add-announcement"
+                type="button"
+                class="shrink-0 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow transition"
+              >
+                ➕ اعلان جدید
+              </button>
+            </div>
+          </div>
+
+          <div id="announcements-list" class="space-y-3"></div>
+          <div
+            id="announcements-empty"
+            class="hidden bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 rounded-2xl p-10 text-center text-slate-400 text-sm"
+          >
+            هنوز اعلانی ثبت نشده است. روی «➕ اعلان جدید» کلیک کنید.
           </div>
         </section>
 
@@ -1253,7 +1415,81 @@
                 هنوز کارتی ثبت نشده است.
               </div>
             </div>
-
+            <!-- تنظیمات وب‌پوش نجوا -->
+            <div
+              class="mt-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 space-y-3"
+            >
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <h3 class="font-extrabold text-base mb-1">
+                  🔔 تنظیمات پوش نوتیفیکیشن نجوا (Najva)
+                </h3>
+                <span
+                  class="text-[10px] bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 font-bold px-2 py-0.5 rounded-full"
+                >
+                  سازگار با ایران
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 dark:text-slate-400 leading-6">
+                برای ارسال نوتیفیکیشن به گوشی مشتریان، در سایت
+                <a
+                  href="https://najva.com"
+                  target="_blank"
+                  class="text-brand-600 dark:text-brand-400 underline font-bold"
+                  >نجوا (Najva.com)</a
+                >
+                یک پنل رایگان ثبت کنید و اطلاعات زیر را وارد نمایید:
+              </p>
+              <div class="space-y-3">
+                <div>
+                  <label
+                    class="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1"
+                  >
+                    شناسه اسکریپت نجوا (Website ID / Script ID)
+                  </label>
+                  <input
+                    id="najva-script-id"
+                    placeholder="مثلاً: 12345678-abcd-ef01-2345-6789abcdef01"
+                    dir="ltr"
+                    class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs font-mono outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                  <span class="text-[10px] text-slate-400"
+                    >کدی که در پنل نجوا در انتهای آدرس اسکریپت js شما قرار
+                    دارد.</span
+                  >
+                </div>
+                <div>
+                  <label
+                    class="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1"
+                  >
+                    توکن API نجوا (اختیاری - برای ارسال مستقیم از فرم خبر)
+                  </label>
+                  <input
+                    id="najva-api-token"
+                    type="password"
+                    placeholder="Token xxxxxxxxxxxxxxxxxxxxxxxx"
+                    dir="ltr"
+                    class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs font-mono outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+                <label
+                  class="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300 cursor-pointer pt-1"
+                >
+                  <input
+                    id="najva-enabled"
+                    type="checkbox"
+                    class="w-4 h-4 accent-brand-600"
+                  />
+                  فعال‌سازی نمایش درخواست عضویت نوتیفیکیشن برای مشتریان
+                </label>
+                <button
+                  id="btn-save-najva"
+                  type="button"
+                  class="bg-brand-600 hover:bg-brand-700 text-white font-bold py-2 px-4 rounded-xl text-xs shadow transition"
+                >
+                  💾 ذخیره تنظیمات نجوا
+                </button>
+              </div>
+            </div>
             <!-- تغییر رمز عبور -->
             <div
               class="mt-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 space-y-3"
@@ -2051,25 +2287,31 @@
         </div>
       </header>
       <main class="max-w-3xl mx-auto px-4 py-5 space-y-4">
-        <!-- تب‌های پورتال مشتری (۳ تایی) -->
+        <!-- تب‌های پورتال مشتری (۴ تایی ریسپانسیو) -->
         <div
-          class="flex gap-1.5 bg-white dark:bg-slate-800 rounded-2xl p-1.5 border border-slate-200 dark:border-slate-700 shadow-sm"
+          class="flex gap-1.5 bg-white dark:bg-slate-800 rounded-2xl p-1.5 border border-slate-200 dark:border-slate-700 shadow-sm overflow-x-auto no-scrollbar"
         >
           <button
             data-cp-tab="rates"
-            class="cp-tab flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold bg-brand-600 text-white transition"
+            class="cp-tab shrink-0 flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold bg-brand-600 text-white transition whitespace-nowrap"
           >
             📋 نرخ‌نامه خدمات
           </button>
           <button
             data-cp-tab="products"
-            class="cp-tab flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+            class="cp-tab shrink-0 flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition whitespace-nowrap"
           >
-            📦 کالاها
+            📦 کالاها و محصولات
+          </button>
+          <button
+            data-cp-tab="news"
+            class="cp-tab shrink-0 flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition whitespace-nowrap"
+          >
+            📢 اخبار و اعلانات
           </button>
           <button
             data-cp-tab="cards"
-            class="cp-tab flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+            class="cp-tab shrink-0 flex-1 py-2.5 px-3 rounded-xl text-xs sm:text-sm font-extrabold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition whitespace-nowrap"
           >
             💳 کارت‌های بانکی
           </button>
@@ -2109,7 +2351,7 @@
           <div id="cp-list" class="space-y-3"></div>
         </div>
 
-        <!-- ۲. پنل کالاها و محصولات فیزیکی (جدید) -->
+        <!-- ۲. پنل کالاها و محصولات فیزیکی -->
         <div id="cp-panel-products" class="hidden space-y-4">
           <div
             class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-3 sm:p-4 space-y-3"
@@ -2123,7 +2365,6 @@
               />
               <span class="absolute right-3 top-3 text-slate-400">🔍</span>
             </div>
-            <!-- چیپ‌های فیلتر دسته‌بندی کالاها برای مشتری -->
             <div
               id="cp-product-chips"
               class="flex gap-1.5 overflow-x-auto no-scrollbar py-1"
@@ -2142,7 +2383,32 @@
           </div>
         </div>
 
-        <!-- ۳. پنل کارت‌های بانکی -->
+        <!-- ۳. پنل اخبار و اعلانات (جدید) -->
+        <div id="cp-panel-news" class="hidden space-y-4">
+          <div
+            class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-3 sm:p-4"
+          >
+            <div class="relative">
+              <input
+                id="cp-news-search"
+                type="text"
+                placeholder="جستجو در اطلاعیه‌ها و اخبار…"
+                class="w-full rounded-xl border border-slate-300 dark:border-slate-600 py-2.5 sm:py-3 pr-10 pl-3 text-sm focus:ring-2 focus:ring-brand-500 outline-none"
+              />
+              <span class="absolute right-3 top-3 text-slate-400">🔍</span>
+            </div>
+          </div>
+
+          <div id="cp-news-list" class="space-y-3"></div>
+          <div
+            id="cp-news-empty"
+            class="hidden bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-10 text-center text-slate-400 text-sm"
+          >
+            موردی در اخبار یافت نشد.
+          </div>
+        </div>
+
+        <!-- ۴. پنل کارت‌های بانکی -->
         <div id="cp-panel-cards" class="hidden space-y-3">
           <div class="w-full">
             <div
@@ -2156,7 +2422,6 @@
             </div>
           </div>
 
-          <!-- دکمه‌های ناوبری + نقطه‌ها -->
           <div class="flex items-center justify-center gap-3 pt-1">
             <button
               id="cp-card-prev"
@@ -2669,6 +2934,148 @@
             حذف فیلترها
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- ===================== مودال: ایجاد و ویرایش اعلان با ریچ تکست ===================== -->
+    <div
+      id="announcement-modal"
+      class="hidden fixed inset-0 z-[65] modal-backdrop grid place-items-center p-3 sm:p-4"
+    >
+      <div
+        class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl p-4 sm:p-6 fade-in max-h-[92vh] overflow-y-auto border border-slate-200 dark:border-slate-700 space-y-4"
+      >
+        <div
+          class="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-700"
+        >
+          <h3
+            id="ann-modal-title"
+            class="font-extrabold text-sm sm:text-base text-slate-800 dark:text-slate-100"
+          >
+            📢 ایجاد اعلان جدید
+          </h3>
+          <button
+            id="btn-close-ann-modal"
+            class="text-slate-400 hover:text-rose-500 text-xl font-bold"
+          >
+            ✕
+          </button>
+        </div>
+
+        <form id="announcement-form" class="space-y-3 text-xs sm:text-sm">
+          <!-- ردیف اول: تیتر و دسته‌بندی -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="sm:col-span-2">
+              <label
+                class="font-bold text-slate-600 dark:text-slate-300 block mb-1"
+                >عنوان اعلان / خبر *</label
+              >
+              <input
+                id="ann-title"
+                required
+                placeholder="مثلاً: آغاز ثبت‌نام مرحله دوم وام ازدواج و فرزندآوری"
+                class="w-full rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500 font-bold"
+              />
+            </div>
+            <div>
+              <label
+                class="font-bold text-slate-600 dark:text-slate-300 block mb-1"
+                >دسته‌بندی</label
+              >
+              <select
+                id="ann-category"
+                class="w-full rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500 font-bold"
+              >
+                <option value="عمومی">📢 عمومی</option>
+                <option value="فوری و مهم">🚨 فوری و مهم</option>
+                <option value="وام و تسهیلات">💰 وام و تسهیلات</option>
+                <option value="ثبت‌نام دولتی">🏛️ ثبت‌نام دولتی</option>
+                <option value="دانشگاهی و کنکور">🎓 دانشگاهی و کنکور</option>
+                <option value="مالیاتی">📊 امور مالیاتی</option>
+                <option value="خودرو">🚗 خودرو</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- چکیده کوتاه خبر -->
+          <div>
+            <label
+              class="font-bold text-slate-600 dark:text-slate-300 block mb-1"
+            >
+              خلاصه خبر (جهت نمایش در کارت پیش‌نمایش):
+            </label>
+            <textarea
+              id="ann-summary"
+              rows="2"
+              placeholder="یک یا دو خط خلاصه از خبر که مشتری در نگاه اول ببیند…"
+              class="w-full rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500 resize-none leading-5"
+            ></textarea>
+          </div>
+
+          <!-- ریچ‌تکست ادیتور Quill -->
+          <div>
+            <label
+              class="font-bold text-slate-600 dark:text-slate-300 block mb-1"
+            >
+              متن کامل و فرمت‌بندی‌شده خبر:
+            </label>
+            <div
+              id="ann-editor-container"
+              class="rounded-xl overflow-hidden bg-white dark:bg-slate-800"
+            ></div>
+          </div>
+
+          <!-- گزینه سنجاق کردن -->
+          <div class="flex items-center gap-2 pt-1">
+            <input
+              id="ann-pin"
+              type="checkbox"
+              class="w-4 h-4 accent-brand-600 rounded cursor-pointer"
+            />
+            <label
+              for="ann-pin"
+              class="text-xs font-bold text-slate-700 dark:text-slate-200 cursor-pointer"
+            >
+              📌 این اعلان در صدر اخبار سنجاق شود (Pin to Top)
+            </label>
+          </div>
+
+          <div
+            class="flex items-center gap-2 pt-1 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/60 p-2.5 rounded-xl"
+          >
+            <input
+              id="ann-send-push"
+              type="checkbox"
+              class="w-4 h-4 accent-brand-600 rounded cursor-pointer"
+            />
+            <label
+              for="ann-send-push"
+              class="text-xs font-bold text-amber-800 dark:text-amber-300 cursor-pointer"
+            >
+              🔔 ارسال نوتیفیکیشن فوری به گوشی اعضای کافی‌نت (پوش نجوا)
+            </label>
+          </div>
+
+          <!-- دکمه‌ها -->
+          <div
+            class="flex gap-2 pt-3 border-t border-slate-200 dark:border-slate-700"
+          >
+            <button
+              type="submit"
+              id="btn-save-announcement"
+              class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl text-xs sm:text-sm shadow transition"
+            >
+              💾 انتشار و ذخیره اعلان
+            </button>
+            <button
+              type="button"
+              id="btn-cancel-ann-modal"
+              class="px-5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl text-xs sm:text-sm font-bold transition"
+            >
+              انصراف
+            </button>
+          </div>
+        </form>
       </div>
     </div>
 

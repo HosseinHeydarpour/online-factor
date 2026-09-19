@@ -14,6 +14,7 @@ import { initReports } from "./reports.js"; // ✅ اضافه شد
 import { initCustomers, renderCustomers } from "./customers.js";
 import { initCustomerPortal } from "./customer-portal.js";
 import { autoPushPublicRepo } from "./github.js";
+import { initAnnouncements, renderAnnouncements } from "./announcements.js";
 
 const el = {
   tabs: document.querySelectorAll(".view-tab"),
@@ -25,6 +26,7 @@ const el = {
     "invoice-detail": document.getElementById("view-invoice-detail"),
     settings: document.getElementById("view-settings"),
     customers: document.getElementById("view-customers"),
+    announcements: document.getElementById("view-announcements"), // ✅ اضافه شد
   },
   srcTabs: document.querySelectorAll(".src-tab"),
   search: document.getElementById("search-input"),
@@ -60,6 +62,7 @@ function setView(view) {
   if (view === "reports") initReports();
   if (view === "invoices") initInvoicesList();
   if (view === "customers") renderCustomers();
+  if (view === "announcements") renderAnnouncements();
 }
 
 window.setView = setView;
@@ -815,7 +818,26 @@ const APP_ROLE = getAppRole();
 
 if (APP_ROLE === "customer") {
   initCustomerPortal();
+  initNajvaClient(); // ✅ بارگذاری خودکار اسکریپت نجوا برای مشتری
 } else {
+  const najvaCfg = getNajvaConfig();
+  const scriptIdInput = document.getElementById("najva-script-id");
+  const apiTokenInput = document.getElementById("najva-api-token");
+  const enabledInput = document.getElementById("najva-enabled");
+
+  if (scriptIdInput) scriptIdInput.value = najvaCfg.scriptId || "";
+  if (apiTokenInput) apiTokenInput.value = najvaCfg.apiToken || "";
+  if (enabledInput) enabledInput.checked = Boolean(najvaCfg.enabled);
+
+  document.getElementById("btn-save-najva")?.addEventListener("click", () => {
+    saveNajvaConfig({
+      scriptId: scriptIdInput?.value.trim() || "",
+      apiToken: apiTokenInput?.value.trim() || "",
+      enabled: Boolean(enabledInput?.checked),
+    });
+    alert("تنظیمات نجوا ذخیره شد ✅");
+  });
+
   document.getElementById("today-date").textContent = todayFa();
   updateNavLogo(); // ✅ بارگذاری لوگو در نوبار هنگام شروع برنامه
   initAuth();
@@ -827,6 +849,7 @@ if (APP_ROLE === "customer") {
   initGitHubUI();
   initCustomers();
   initServiceModal();
+  initAnnouncements();
   window.initInvoiceDetailEvents();
   setView("invoice");
   setSource("services");

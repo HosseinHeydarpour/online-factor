@@ -2,7 +2,8 @@ import { RATE_CATEGORIES } from "../data/rates.js";
 
 const KEYS = {
   PRODUCTS: "cafe_products",
-  PRODUCT_CATEGORIES: "cafe_product_categories", // ✅ کلید دسته‌بندی محصولات
+  PRODUCT_CATEGORIES: "cafe_product_categories",
+  ANNOUNCEMENTS: "cafe_announcements", // ✅ کلید ذخیره اخبار و اعلانات
   INVOICES: "cafe_invoices",
   COUNTER: "cafe_invoice_counter",
   SHOP: "cafe_shop_info",
@@ -11,6 +12,22 @@ const KEYS = {
   CUSTOMERS: "cafe_customers",
   CUSTOM_SERVICES: "cafe_custom_services",
 };
+
+// اعلان پیش‌فرض اولیه
+const DEFAULT_ANNOUNCEMENTS = [
+  {
+    id: "ann-welcome",
+    title: "به کافی‌نت آنلاین خوش آمدید",
+    summary: "اطلاع‌رسانی آخرین خدمات، ثبت‌نام‌های دولتی و نرخ‌نامه مصوب.",
+    content:
+      "<p>مشتریان گرامی، کلیه خدمات اینترنتی، ثبت‌نام‌های دانشگاهی، خدمات قضایی و استعلام‌های دولتی در این مجموعه با تعرفه مصوب اتحادیه انجام می‌شود.</p>",
+    category: "عمومی",
+    pin: true,
+    date: "1405/01/01",
+    time: "10:00",
+    status: "published",
+  },
+];
 
 // دسته‌بندی‌های پیش‌فرض محصولات
 const DEFAULT_PRODUCT_CATEGORIES = [
@@ -54,6 +71,49 @@ export function hashPassword(str) {
 const SESSION_KEY = "cafe_session";
 
 export const store = {
+  // ---------- اخبار و اعلانات ----------
+  getAnnouncements() {
+    const list = read(KEYS.ANNOUNCEMENTS, DEFAULT_ANNOUNCEMENTS);
+    // همیشه اخبار پین‌شده در ابتدا و بر اساس تاریخ/زمان مرتب شوند
+    return list.sort((a, b) => {
+      if (a.pin === b.pin)
+        return (b.date + b.time).localeCompare(a.date + a.time);
+      return a.pin ? -1 : 1;
+    });
+  },
+  getAnnouncement(id) {
+    return this.getAnnouncements().find((a) => a.id === id);
+  },
+  saveAnnouncement(ann) {
+    const list = this.getAnnouncements();
+    const id = ann.id || "ann-" + uid();
+    const item = {
+      id,
+      title: (ann.title || "").trim(),
+      summary: (ann.summary || "").trim(),
+      content: ann.content || "",
+      category: (ann.category || "عمومی").trim(),
+      pin: Boolean(ann.pin),
+      date: ann.date || toJalali().full,
+      time: ann.time || nowTimeFa(),
+      status: ann.status || "published",
+    };
+    const idx = list.findIndex((a) => a.id === id);
+    if (idx >= 0) list[idx] = item;
+    else list.unshift(item);
+    write(KEYS.ANNOUNCEMENTS, list);
+    return item;
+  },
+  deleteAnnouncement(id) {
+    const list = this.getAnnouncements().filter((a) => a.id !== id);
+    write(KEYS.ANNOUNCEMENTS, list);
+    return list;
+  },
+  setAnnouncements(list) {
+    write(KEYS.ANNOUNCEMENTS, list);
+    return list;
+  },
+
   // ---------- دسته‌بندی محصولات فیزیکی ----------
   getProductCategories() {
     return read(KEYS.PRODUCT_CATEGORIES, DEFAULT_PRODUCT_CATEGORIES);
@@ -78,8 +138,6 @@ export const store = {
   deleteProductCategory(id) {
     const list = this.getProductCategories().filter((c) => c.id !== id);
     write(KEYS.PRODUCT_CATEGORIES, list);
-
-    // برداشتن ارجاع دسته از محصولاتی که این دسته را داشتند
     const products = this.getProducts().map((p) =>
       p.categoryId === id ? { ...p, categoryId: "" } : p,
     );

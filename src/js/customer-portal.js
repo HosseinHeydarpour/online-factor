@@ -4,24 +4,26 @@ let expandedCats = new Set();
 let portalCategories = [];
 let portalProducts = [];
 let portalProductCategories = [];
+let portalAnnouncements = []; // ✅ لیست داینامیک اخبار
 let selectedCustomerCatId = "all";
 
 /* ============================================================
    بارگذاری داینامیک دیتا (آفلاین محلی + فایل‌های آنلاین گیت‌هاب)
    ============================================================ */
 async function loadPortalData() {
-  // ۱. مقداردهی اولیه از حافظه محلی
   portalCategories = store.getServices();
   portalProducts = store.getProducts();
   portalProductCategories = store.getProductCategories();
+  portalAnnouncements = store.getAnnouncements();
 
-  // ۲. تلاش برای دریافت آخرین داده‌های آنلاین از مخزن پابلیک گیت‌هاب
   try {
-    const [resServices, resProducts, resCats] = await Promise.allSettled([
-      fetch("./data/services.json", { cache: "no-store" }),
-      fetch("./data/products.json", { cache: "no-store" }),
-      fetch("./data/product-categories.json", { cache: "no-store" }),
-    ]);
+    const [resServices, resProducts, resCats, resAnnouncements] =
+      await Promise.allSettled([
+        fetch("./data/services.json", { cache: "no-store" }),
+        fetch("./data/products.json", { cache: "no-store" }),
+        fetch("./data/product-categories.json", { cache: "no-store" }),
+        fetch("./data/announcements.json", { cache: "no-store" }), // ✅ دریافت اخبار از گیت‌هاب عمومی
+      ]);
 
     if (resServices.status === "fulfilled" && resServices.value.ok) {
       const data = await resServices.value.json();
@@ -35,9 +37,131 @@ async function loadPortalData() {
       const data = await resCats.value.json();
       if (Array.isArray(data) && data.length) portalProductCategories = data;
     }
+    if (resAnnouncements.status === "fulfilled" && resAnnouncements.value.ok) {
+      const data = await resAnnouncements.value.json();
+      if (Array.isArray(data) && data.length) portalAnnouncements = data;
+    }
   } catch (_) {
     // در صورت آفلاین بودن از دیتای محلی استفاده می‌شود
   }
+}
+
+/* ============================================================
+   رندر بخش اخبار و اعلانات در پورتال مشتری
+   ============================================================ */
+function renderCustomerNews(q = "") {
+  const listEl = document.getElementById("cp-news-list");
+  const emptyEl = document.getElementById("cp-news-empty");
+  if (!listEl) return;
+
+  const query = q.trim().toLowerCase();
+  let list = portalAnnouncements.slice().sort((a, b) => {
+    if (a.pin === b.pin)
+      return (b.date + b.time).localeCompare(a.date + a.time);
+    return a.pin ? -1 : 1;
+  });
+
+  if (query) {
+    list = list.filter(
+      (a) =>
+        a.title.toLowerCase().includes(query) ||
+        (a.summary || "").toLowerCase().includes(query) ||
+        (a.category || "").toLowerCase().includes(query),
+    );
+  }
+
+  emptyEl?.classList.toggle("hidden", list.length > 0);
+
+  if (!list.length) {
+    listEl.innerHTML = "";
+    return;
+  }
+
+  listEl.innerHTML = list
+    .map(
+      (ann) => `
+    <div data-news-card="${ann.id}"
+      class="bg-white dark:bg-slate-800 rounded-2xl border ${
+        ann.pin
+          ? "border-amber-400 dark:border-amber-500/80 shadow-md ring-1 ring-amber-400/20"
+          : "border-slate-200 dark:border-slate-700 shadow-sm"
+      } p-4 transition fade-in space-y-2 cursor-pointer hover:border-brand-500 dark:hover:border-brand-400">
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <div class="flex items-center gap-1.5 flex-wrap">
+          ${
+            ann.pin
+              ? `<span class="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                   📌 سنجاق‌شده
+                 </span>`
+              : ""
+          }
+          <span class="bg-brand-50 dark:bg-slate-700 text-brand-700 dark:text-brand-300 text-[10px] font-bold px-2 py-0.5 rounded-md border border-brand-100 dark:border-slate-600">
+            ${ann.category || "عمومی"}
+          </span>
+        </div>
+        <span class="text-[10px] text-slate-400 font-mono">
+          🕒 ${ann.date}
+        </span>
+      </div>
+
+      <h3 class="font-black text-sm sm:text-base text-slate-800 dark:text-slate-100 leading-6">
+        ${ann.title}
+      </h3>
+
+      ${
+        ann.summary
+          ? `<p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-5">${ann.summary}</p>`
+          : ""
+      }
+
+      <div class="pt-1 flex items-center justify-end text-brand-600 dark:text-brand-400 font-bold text-xs gap-1">
+        <span>مشاهده متن کامل</span>
+        <span>←</span>
+      </div>
+    </div>`,
+    )
+    .join("");
+}
+
+/* ============================================================
+   دیالوگ نمایش متن کامل خبر
+   ============================================================ */
+function openNewsDetailModal(ann) {
+  const modal = document.getElementById("cp-news-modal");
+  const titleEl = document.getElementById("cp-modal-news-title");
+  const metaEl = document.getElementById("cp-modal-news-meta");
+  const contentEl = document.getElementById("cp-modal-news-content");
+  if (!modal || !titleEl || !contentEl) return;
+
+  titleEl.textContent = ann.title;
+
+  metaEl.innerHTML = `
+    ${
+      ann.pin
+        ? `<span class="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-[10px] font-black px-2 py-0.5 rounded-full">
+             📌 سنجاق‌شده
+           </span>`
+        : ""
+    }
+    <span class="bg-brand-50 dark:bg-slate-700 text-brand-700 dark:text-brand-300 text-[10px] font-bold px-2 py-0.5 rounded-md border border-brand-100 dark:border-slate-600">
+      ${ann.category || "عمومی"}
+    </span>
+    <span class="text-[10px] text-slate-400 font-mono">
+      تاریخ: ${ann.date} ساعت ${ann.time}
+    </span>
+  `;
+
+  // رندر ایمن ریچ‌تکست (در صورت خالی بودن، خلاصه یا پیام جایگزین قرار می‌گیرد)
+  contentEl.innerHTML =
+    ann.content && ann.content !== "<p><br></p>"
+      ? ann.content
+      : `<p>${ann.summary || "متن تکمیلی برای این خبر درج نشده است."}</p>`;
+
+  modal.classList.remove("hidden");
+}
+
+function closeNewsDetailModal() {
+  document.getElementById("cp-news-modal")?.classList.add("hidden");
 }
 
 /* ============================================================
@@ -169,7 +293,6 @@ export function initCustomerPortal() {
   if (!portal) return;
   portal.classList.remove("hidden");
 
-  // اطلاعات کسب‌وکار در هدر
   const shop = store.getShopInfo();
   const nameEl = document.getElementById("cp-name");
   const sloganEl = document.getElementById("cp-slogan");
@@ -189,7 +312,6 @@ export function initCustomerPortal() {
     contactEl.classList.toggle("hidden", !line);
   }
 
-  // تم تاریک
   document.getElementById("cp-theme")?.addEventListener("click", () => {
     const html = document.documentElement;
     html.classList.toggle("dark");
@@ -203,7 +325,6 @@ export function initCustomerPortal() {
   const list = document.getElementById("cp-list");
   const countEl = document.getElementById("cp-count");
 
-  // رندر خدمات
   const renderServices = (q = "") => {
     const query = q.trim().toLowerCase();
     const cats = [];
@@ -283,17 +404,44 @@ export function initCustomerPortal() {
 
   search?.addEventListener("input", () => renderServices(search.value));
 
-  // جستجوی زنده محصولات
+  // سرچ محصولات
   const prodSearch = document.getElementById("cp-product-search");
   prodSearch?.addEventListener("input", () =>
     renderCustomerProducts(prodSearch.value),
   );
 
-  // بارگذاری داده‌ها و رندر اولیه
+  // سرچ اخبار
+  const newsSearch = document.getElementById("cp-news-search");
+  newsSearch?.addEventListener("input", () =>
+    renderCustomerNews(newsSearch.value),
+  );
+
+  // کلیک روی کارت خبر جهت باز کردن دیالوگ مطالعه
+  document.getElementById("cp-news-list")?.addEventListener("click", (e) => {
+    const card = e.target.closest("[data-news-card]");
+    if (!card) return;
+    const annId = card.dataset.newsCard;
+    const ann = portalAnnouncements.find((a) => a.id === annId);
+    if (ann) openNewsDetailModal(ann);
+  });
+
+  // بستن دیالوگ خبر
+  document
+    .getElementById("btn-close-cp-news-modal")
+    ?.addEventListener("click", closeNewsDetailModal);
+  document
+    .getElementById("btn-dismiss-cp-news-modal")
+    ?.addEventListener("click", closeNewsDetailModal);
+  document.getElementById("cp-news-modal")?.addEventListener("click", (e) => {
+    if (e.target.id === "cp-news-modal") closeNewsDetailModal();
+  });
+
+  // بارگذاری داده‌ها و رندر اولیه همه پنل‌ها
   loadPortalData().then(() => {
     renderServices();
     renderCustomerProductChips();
     renderCustomerProducts();
+    renderCustomerNews();
   });
 
   initPortalTabs();
@@ -619,7 +767,7 @@ function initBankCards() {
 }
 
 /* ============================================================
-   🔀 ناوبری بین تب‌های سه‌گانه پورتال مشتری
+   🔀 ناوبری بین تب‌های چهارگانه پورتال مشتری
    ============================================================ */
 function initPortalTabs() {
   const tabs = document.querySelectorAll("[data-cp-tab]");
@@ -628,6 +776,7 @@ function initPortalTabs() {
   const panels = {
     rates: document.getElementById("cp-panel-rates"),
     products: document.getElementById("cp-panel-products"),
+    news: document.getElementById("cp-panel-news"), // ✅ تب اخبار و اعلانات
     cards: document.getElementById("cp-panel-cards"),
   };
 

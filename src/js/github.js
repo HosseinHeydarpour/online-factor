@@ -96,6 +96,10 @@ function collectBackupFiles() {
       content: JSON.stringify(store.getInvoices(), null, 2),
     },
     {
+      path: "backup/announcements.json",
+      content: JSON.stringify(store.getAnnouncements(), null, 2),
+    },
+    {
       path: "backup/products.json",
       content: JSON.stringify(store.getProducts(), null, 2),
     },
@@ -142,6 +146,10 @@ function collectPublicFiles() {
     {
       path: "data/products.json",
       content: JSON.stringify(store.getProducts(), null, 2),
+    },
+    {
+      path: "data/announcements.json",
+      content: JSON.stringify(store.getAnnouncements(), null, 2),
     },
     {
       // ✅ دسته‌بندی محصولات در ریپوی عمومی مشتری
@@ -635,6 +643,18 @@ export async function restoreFromGitHub({ replace = false } = {}) {
           (c) => c && c.id && !ids.has(c.id),
         );
         store.setProductCategories([...current, ...added]);
+      }
+    }
+
+    // بازیابی اخبار و اعلانات
+    if (Array.isArray(announcements)) {
+      if (replace) {
+        store.setAnnouncements(announcements);
+      } else {
+        const current = store.getAnnouncements();
+        const ids = new Set(current.map((a) => a.id));
+        const added = announcements.filter((a) => a && a.id && !ids.has(a.id));
+        store.setAnnouncements([...current, ...added]);
       }
     }
 

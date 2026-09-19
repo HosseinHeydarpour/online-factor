@@ -20,6 +20,30 @@ const STATIC_ASSETS = [
   "./data/rates.js",
 ];
 
+// اضافه کردن اسکریپت وب‌پوش نجوا به سرویس ورکر PWA
+try {
+  importScripts(
+    "https://static.najva.com/static/js/scripts/najva-service-worker.js",
+  );
+} catch (e) {
+  console.warn("نجوا در حالت آفلاین لود نشد:", e);
+}
+
+const ASSETS_TO_CACHE = [
+  "./",
+  "./index.html",
+  "./manifest.json",
+  "./manifest-customer.json",
+];
+
+self.addEventListener("install", (e) => {
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (e) => {
+  e.waitUntil(clients.claim());
+});
+
 // مرحله ۱: نصب و ذخیره دارایی‌های استاتیک
 self.addEventListener("install", (event) => {
   event.waitUntil(
