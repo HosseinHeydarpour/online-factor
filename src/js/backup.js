@@ -66,6 +66,8 @@ async function writeInvoicesToFile(handle) {
     invoices: store.getInvoices(),
     products: store.getProducts(),
     customers: store.getCustomers(),
+    customServices: store.getCustomServices(), // ✅ دیتای مجزای خدمات جدید
+    services: store.getServices(), // ✅ دیتای کل ادغام‌شده
     shop: store.getShopInfo(),
   };
   await writable.write(JSON.stringify(payload, null, 2));
@@ -152,6 +154,8 @@ export function exportAllData() {
     invoices: store.getInvoices(),
     products: store.getProducts(),
     customers: store.getCustomers(),
+    customServices: store.getCustomServices(), // ✅ دیتای مجزای خدمات جدید
+    services: store.getServices(), // ✅ دیتای کل ادغام‌شده
     shop: store.getShopInfo(),
   };
   if (!data.invoices.length && !data.products.length && !data.customers.length)
@@ -175,6 +179,10 @@ export function importInvoicesFile(file) {
   reader.onload = () => {
     try {
       const parsed = JSON.parse(reader.result);
+
+      if (parsed.customServices) {
+        store.saveCustomServices(parsed.customServices);
+      }
 
       // تشخیص فرمت: آرایه = قدیم، آبجکت = جدید
       const invoices = Array.isArray(parsed) ? parsed : parsed.invoices;

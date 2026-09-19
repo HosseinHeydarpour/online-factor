@@ -87,19 +87,25 @@ el.srcTabs.forEach((b) =>
 
 // ---------- سرچ سریع (ایندکس ساده برای سرعت) ----------
 function getAllServices() {
-  return RATE_CATEGORIES.flatMap((c) =>
+  return getCategories().flatMap((c) =>
     c.items.map((i) => ({ ...i, catId: c.id, catTitle: c.title })),
   );
 }
 
 function searchServices(q) {
-  const all = getAllServices();
-  if (!q) return RATE_CATEGORIES; // برگرداندن کل دسته‌بندی‌ها وقتی سرچ خالی است
+  const categories = getCategories();
+  if (!q) return categories; // برگرداندن تمام دسته‌های موجود و جدید
 
-  const query = q.trim();
-
-  // پیدا کردن دسته‌بندی‌هایی که عنوانشان با جستجو مطابقت دارد
-  return RATE_CATEGORIES.filter((c) => c.title.includes(query));
+  const query = q.trim().toLowerCase();
+  return categories
+    .map((c) => {
+      const catMatch = c.title.toLowerCase().includes(query);
+      const items = catMatch
+        ? c.items
+        : c.items.filter((i) => i.title.toLowerCase().includes(query));
+      return { ...c, items, match: catMatch || items.length > 0 };
+    })
+    .filter((c) => c.match);
 }
 
 function renderItems() {
@@ -205,15 +211,56 @@ el.search.addEventListener("input", () => {
 });
 
 // کلیک برای افزودن به فاکتور
+// مدیریت کلیک روی خدمات و دکمه‌های افزودن / حذف
 el.items.addEventListener("click", (e) => {
   const sId = e.target.dataset.addService;
   const pId = e.target.dataset.addProduct;
   const vId = e.target.dataset.variantId;
+  const quickCat = e.target.dataset.quickAddToCat;
+  const delItem = e.target.dataset.delItem;
+  const delCat = e.target.dataset.delCat;
 
+  // کلیک روی دکمه ➕ کنار سر‌دسته برای افزودن سریع
+  if (quickCat) {
+    window.openAddServiceModal(quickCat);
+    return;
+  }
+
+  // حذف یک خدمت جدید با سطل آشغال 🗑️
+  if (delItem) {
+    if (confirm("این خدمت حذف شود؟")) {
+      store.deleteServiceItem(e.target.dataset.catId, delItem);
+      renderItems();
+      // همگام‌سازی فوری تغییرات
+      autoSaveInvoices();
+      autoPushGitHub();
+      autoPushPublicRepo();
+      toast("خدمت حذف شد 🗑️");
+    }
+    return;
+  }
+
+  // حذف دسته‌بندی جدید با سطل آشغال 🗑️
+  if (delCat) {
+    if (confirm("این دسته‌بندی و تمامی خدمات آن حذف شوند؟")) {
+      store.deleteCategory(delCat);
+      renderItems();
+      // همگام‌سازی فوری تغییرات
+      autoSaveInvoices();
+      autoPushGitHub();
+      autoPushPublicRepo();
+      toast("دسته‌بندی حذف شد 🗑️");
+    }
+    return;
+  }
+
+  // افزودن به فاکتور
   if (sId) {
     const s = getAllServices().find((x) => x.id === sId);
-    addItemToInvoice({ title: s.title, price: s.price, meta: s.catTitle });
-    toast("به فاکتور اضافه شد 🧾");
+    if (s) {
+      addItemToInvoice({ title: s.title, price: s.price, meta: s.catTitle });
+      toast("به فاکتور اضافه شد 🧾");
+    }
   }
 
   if (pId) {
@@ -221,6 +268,10 @@ el.items.addEventListener("click", (e) => {
   }
 });
 
+// دریافت خدمات داینامیک از Store (حل مشکل دیده نشدن دسته جدید)
+function getCategories() {
+  return store.getServices();
+}
 function toast(msg) {
   const t = document.getElementById("toast");
   t.textContent = msg;
@@ -342,6 +393,189 @@ function collectBankAccounts() {
   return banks;
 }
 
+/* ============================================================
+   مودال پیشرفته مدیریت و تعریف خدمات (ورود چندتایی + ادیت دسته‌ها)
+============================================================ */
+function initServiceModal() {
+  const modal = document.getElementById("service-form-modal");
+  if (!modal || modal.dataset.bound) return;
+  modal.dataset.bound = "1";
+
+  const btnOpen = document.getElementById("btn-open-service-modal");
+  const btnClose = document.getElementById("btn-close-service-modal");
+  const btnCancel = document.getElementById("btn-cancel-service-modal");
+  const form = document.getElementById("service-form");
+
+  const tabExisting = document.getElementById("sf-tab-existing");
+  const tabNew = document.getElementById("sf-tab-new");
+  const selectCatWrapper = document.getElementById("sf-select-cat-wrapper");
+  const catSelect = document.getElementById("sf-cat-select");
+  const catTitleInput = document.getElementById("sf-cat-title-input");
+  const rowsContainer = document.getElementById("sf-rows-container");
+  const btnAddRow = document.getElementById("btn-add-service-row");
+
+  let isNewCategoryMode = false;
+  let currentRows = []; // لیست سطرهای در حال ویرایش
+
+  // ساخت HTML سطرهای خدمت
+  function renderRows() {
+    if (!currentRows.length) {
+      currentRows.push({ id: "", title: "", price: "" });
+    }
+    rowsContainer.innerHTML = currentRows
+      .map(
+        (row, idx) => `
+      <div class="flex items-center gap-2 bg-slate-50 dark:bg-slate-700/50 p-2 rounded-xl border border-slate-200 dark:border-slate-600">
+        <span class="w-5 text-center text-xs font-bold text-slate-400">${faNum(idx + 1)}</span>
+        <input data-row-title="${idx}" value="${row.title || ""}" placeholder="عنوان خدمت (مثلاً: ثبت اظهارنامه)"
+          class="flex-1 rounded-lg border border-slate-300 dark:border-slate-600 px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-brand-500" />
+        <input data-row-price="${idx}" type="number" min="0" value="${row.price || ""}" placeholder="قیمت (تومان)"
+          class="w-28 sm:w-32 rounded-lg border border-slate-300 dark:border-slate-600 px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-brand-500 text-left font-mono" />
+        <button type="button" data-row-del="${idx}" title="حذف این سطر"
+          class="w-7 h-7 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-slate-600 font-bold text-sm grid place-items-center">✕</button>
+      </div>`,
+      )
+      .join("");
+  }
+
+  // بارگذاری خدمات یک دسته انتخاب‌شده درون سطرها جهت ادیت
+  function loadCategoryForEdit(catId) {
+    const cats = store.getServices();
+    const cat = cats.find((c) => c.id === catId);
+    if (!cat) return;
+
+    catTitleInput.value = cat.title || "";
+    // کپی خدمات دسته جهت ویرایش
+    currentRows = (cat.items || []).map((it) => ({
+      id: it.id,
+      title: it.title,
+      price: it.price,
+    }));
+    renderRows();
+  }
+
+  function setMode(newMode) {
+    isNewCategoryMode = newMode;
+    if (isNewCategoryMode) {
+      tabNew.className =
+        "flex-1 py-2 rounded-lg bg-white dark:bg-slate-800 text-brand-700 dark:text-brand-400 shadow-sm transition";
+      tabExisting.className =
+        "flex-1 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:text-brand-600 transition";
+      selectCatWrapper.classList.add("hidden");
+      catTitleInput.value = "";
+      currentRows = [{ id: "", title: "", price: "" }];
+      renderRows();
+    } else {
+      tabExisting.className =
+        "flex-1 py-2 rounded-lg bg-white dark:bg-slate-800 text-brand-700 dark:text-brand-400 shadow-sm transition";
+      tabNew.className =
+        "flex-1 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:text-brand-600 transition";
+      selectCatWrapper.classList.remove("hidden");
+      fillSelect();
+    }
+  }
+
+  function fillSelect(preselectedId = "") {
+    const cats = store.getServices();
+    catSelect.innerHTML = cats
+      .map(
+        (c) =>
+          `<option value="${c.id}" ${c.id === preselectedId ? "selected" : ""}>${c.title}</option>`,
+      )
+      .join("");
+    const activeId = preselectedId || catSelect.value;
+    if (activeId) loadCategoryForEdit(activeId);
+  }
+
+  window.openAddServiceModal = function (preselectedCatId = "") {
+    fillSelect(preselectedCatId);
+    setMode(false);
+    if (preselectedCatId) {
+      catSelect.value = preselectedCatId;
+      loadCategoryForEdit(preselectedCatId);
+    }
+    modal.classList.remove("hidden");
+  };
+
+  const closeModal = () => modal.classList.add("hidden");
+
+  btnOpen?.addEventListener("click", () => window.openAddServiceModal());
+  btnClose?.addEventListener("click", closeModal);
+  btnCancel?.addEventListener("click", closeModal);
+  modal.addEventListener("click", (e) => e.target === modal && closeModal());
+
+  tabExisting?.addEventListener("click", () => setMode(false));
+  tabNew?.addEventListener("click", () => setMode(true));
+
+  // با تغییر انتخاب دراپ‌داون، خدمات آن دسته بارگذاری می‌شوند
+  catSelect?.addEventListener("change", () => {
+    loadCategoryForEdit(catSelect.value);
+  });
+
+  // دکمه افزودن سطر جدید
+  btnAddRow?.addEventListener("click", () => {
+    currentRows.push({ id: "", title: "", price: "" });
+    renderRows();
+  });
+
+  // ثبت و همگام‌سازی ورودی‌های درون سطرها
+  rowsContainer?.addEventListener("input", (e) => {
+    const tIdx = e.target.dataset.rowTitle;
+    const pIdx = e.target.dataset.rowPrice;
+    if (tIdx !== undefined) currentRows[Number(tIdx)].title = e.target.value;
+    if (pIdx !== undefined) currentRows[Number(pIdx)].price = e.target.value;
+  });
+
+  // حذف یک سطر در فرم
+  rowsContainer?.addEventListener("click", (e) => {
+    const dIdx = e.target.closest("[data-row-del]")?.dataset.rowDel;
+    if (dIdx !== undefined) {
+      currentRows.splice(Number(dIdx), 1);
+      renderRows();
+    }
+  });
+
+  // ثبت نهایی فرم
+  form?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const catTitle = catTitleInput.value.trim();
+    if (!catTitle) return alert("نام دسته‌بندی الزامی است.");
+
+    // فیلتر سطرهای معتبر (سطرهایی که عنوان دارند)
+    const validItems = currentRows
+      .filter((r) => r.title && r.title.trim())
+      .map((r) => ({
+        id: r.id || "",
+        title: r.title.trim(),
+        price: Number(r.price) || 0,
+      }));
+
+    if (!validItems.length) {
+      return alert("حداقل یک خدمت با عنوان مشخص در سطرها وارد کنید.");
+    }
+
+    if (isNewCategoryMode) {
+      // ایجاد دسته جدید به همراه تمام خدماتش
+      const newCat = store.saveNewCategory(catTitle, validItems);
+      expandedCategories.add(newCat.id);
+    } else {
+      // بروزرسانی دسته موجود و تمام خدمات آن
+      const targetCatId = catSelect.value;
+      store.updateCategoryItems(targetCatId, catTitle, validItems);
+      expandedCategories.add(targetCatId);
+    }
+
+    closeModal();
+    renderItems(); // نمایش فوری در لیست
+
+    // بک‌آپ آنی محلی و ارسال به گیت‌هاب (ریپوی خصوصی و پابلیک)
+    autoSaveInvoices();
+    autoPushGitHub();
+    autoPushPublicRepo();
+
+    toast("✅ دسته‌بندی و خدمات با موفقیت ذخیره و همگام شدند");
+  });
+}
 // ---------- تنظیمات کسب‌وکار ----------
 function initSettings() {
   const shop = store.getShopInfo();
@@ -489,6 +723,7 @@ if (APP_ROLE === "customer") {
   initBackup();
   initGitHubUI();
   initCustomers();
+  initServiceModal();
   window.initInvoiceDetailEvents();
   setView("invoice");
   setSource("services");

@@ -1,3 +1,5 @@
+import { RATE_CATEGORIES } from "../data/rates.js";
+
 const KEYS = {
   PRODUCTS: "cafe_products",
   INVOICES: "cafe_invoices",
@@ -5,7 +7,8 @@ const KEYS = {
   SHOP: "cafe_shop_info",
   AUTH: "cafe_auth",
   SETTINGS: "cafe_settings",
-  CUSTOMERS: "cafe_customers", // ✅ جدید
+  CUSTOMERS: "cafe_customers",
+  CUSTOM_SERVICES: "cafe_custom_services",
 };
 
 function read(key, fallback) {
@@ -64,6 +67,118 @@ export const store = {
     );
   },
 
+  // ---------- مدیریت دیتای جدید به صورت مجزا ----------
+  getCustomServices() {
+    return read(KEYS.CUSTOM_SERVICES, {
+      newCategories: [],
+      categoryOverrides: {},
+    });
+  },
+
+  saveCustomServices(data) {
+    write(KEYS.CUSTOM_SERVICES, data);
+    return data;
+  },
+
+  // دریافت تمام خدمات (ادغام هوشمند دیتای پایه + ویرایش‌ها + دسته‌های جدید)
+  getServices() {
+    const base = JSON.parse(JSON.stringify(RATE_CATEGORIES));
+    const custom = this.getCustomServices();
+    const overrides = custom.categoryOverrides || {};
+
+    // اعمال تغییرات و ویرایش‌ها روی دسته‌های موجود در rates.js
+    const updatedBase = base.map((cat) => {
+      if (overrides[cat.id]) {
+        return {
+          ...cat,
+          title: overrides[cat.id].title || cat.title,
+          items: overrides[cat.id].items || cat.items,
+        };
+      }
+      return cat;
+    });
+
+    // افزودن دسته‌های کاملاً جدید به ابتدای لیست
+    const newCats = (custom.newCategories || []).map((c) => ({
+      ...c,
+      custom: true,
+    }));
+    return [...newCats, ...updatedBase];
+  },
+
+  // ذخیره دسته جدید با تمام خدماتش
+  saveNewCategory(title, items) {
+    const custom = this.getCustomServices();
+    const newCat = {
+      id: "cat-" + uid(),
+      title: title.trim(),
+      items: items.map((it) => ({
+        id: it.id || "srv-" + uid(),
+        title: it.title.trim(),
+        price: Number(it.price) || 0,
+        custom: true,
+      })),
+      custom: true,
+    };
+    custom.newCategories.unshift(newCat);
+    this.saveCustomServices(custom);
+    return newCat;
+  },
+
+  // ذخیره و ویرایش خدمات یک دسته موجود (تغییر قیمت، عنوان، حذف و اضافه سطرهای جدید)
+  updateCategoryItems(catId, updatedTitle, items) {
+    const custom = this.getCustomServices();
+
+    // اگر دسته در بین دسته‌های جدیدِ کاربر است:
+    const newCatIdx = (custom.newCategories || []).findIndex(
+      (c) => c.id === catId,
+    );
+    if (newCatIdx >= 0) {
+      custom.newCategories[newCatIdx].title = updatedTitle.trim();
+      custom.newCategories[newCatIdx].items = items.map((it) => ({
+        id: it.id || "srv-" + uid(),
+        title: it.title.trim(),
+        price: Number(it.price) || 0,
+        custom: true,
+      }));
+      this.saveCustomServices(custom);
+      return custom.newCategories[newCatIdx];
+    }
+
+    // در غیر این صورت دسته جزو دسته‌های پیش‌فرض بوده که ویرایش شده است:
+    if (!custom.categoryOverrides) custom.categoryOverrides = {};
+    custom.categoryOverrides[catId] = {
+      title: updatedTitle.trim(),
+      items: items.map((it) => ({
+        id: it.id || "srv-" + uid(),
+        title: it.title.trim(),
+        price: Number(it.price) || 0,
+      })),
+    };
+    this.saveCustomServices(custom);
+    return custom.categoryOverrides[catId];
+  },
+
+  // حذف یک خدمت
+  deleteServiceItem(catId, itemId) {
+    const list = this.getServices();
+    const cat = list.find((c) => c.id === catId);
+    if (!cat) return;
+    const remainingItems = cat.items.filter((i) => i.id !== itemId);
+    this.updateCategoryItems(catId, cat.title, remainingItems);
+  },
+
+  // حذف کل دسته
+  deleteCategory(catId) {
+    const custom = this.getCustomServices();
+    if (custom.newCategories) {
+      custom.newCategories = custom.newCategories.filter((c) => c.id !== catId);
+    }
+    if (custom.categoryOverrides && custom.categoryOverrides[catId]) {
+      delete custom.categoryOverrides[catId];
+    }
+    this.saveCustomServices(custom);
+  },
   // ---------- فاکتورها ----------
   nextInvoiceNumber() {
     const n = read(KEYS.COUNTER, 1000) + 1;

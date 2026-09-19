@@ -47,10 +47,14 @@ export function initCustomerPortal() {
   const countEl = document.getElementById("cp-count");
 
   /* ---------- رندر آکاردئونی ---------- */
+  /* ---------- رندر آکاردئونی با دیتای ادغام‌شده ---------- */
   const render = (q = "") => {
     const query = q.trim().toLowerCase();
+
+    // خواندن دیتای ادغام‌شده (استاتیک + جدید)
+    const categories = store.getServices();
     const cats = [];
-    for (const c of RATE_CATEGORIES) {
+    for (const c of categories) {
       const catMatch = c.title.toLowerCase().includes(query);
       const items = query
         ? catMatch

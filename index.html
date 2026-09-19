@@ -484,18 +484,30 @@
                   >🔍</span
                 >
               </div>
-              <div class="flex gap-2 mt-3 overflow-x-auto no-scrollbar">
+              <div
+                class="flex items-center justify-between mt-3 flex-wrap gap-2"
+              >
+                <div class="flex gap-2 overflow-x-auto no-scrollbar">
+                  <button
+                    data-src="services"
+                    class="src-tab shrink-0 px-4 py-1.5 rounded-full text-xs font-bold bg-brand-600 text-white"
+                  >
+                    خدمات (نرخ‌نامه)
+                  </button>
+                  <button
+                    data-src="products"
+                    class="src-tab shrink-0 px-4 py-1.5 rounded-full text-xs font-bold bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300"
+                  >
+                    محصولات فیزیکی
+                  </button>
+                </div>
+                <!-- دکمه تعریف خدمت / دسته‌بندی جدید -->
                 <button
-                  data-src="services"
-                  class="src-tab shrink-0 px-4 py-1.5 rounded-full text-xs font-bold bg-brand-600 text-white"
+                  id="btn-open-service-modal"
+                  type="button"
+                  class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-1.5 rounded-xl shadow flex items-center gap-1.5 transition"
                 >
-                  خدمات (نرخ‌نامه)
-                </button>
-                <button
-                  data-src="products"
-                  class="src-tab shrink-0 px-4 py-1.5 rounded-full text-xs font-bold bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300"
-                >
-                  محصولات فیزیکی
+                  <span>➕ تعریف خدمت یا دسته جدید</span>
                 </button>
               </div>
             </div>
@@ -2267,6 +2279,117 @@
       </div>
     </div>
 
+    <!-- ===================== مودال: مدیریت، ویرایش و افزودن خدمات ===================== -->
+    <div
+      id="service-form-modal"
+      class="hidden fixed inset-0 z-[65] modal-backdrop grid place-items-center p-3 sm:p-4"
+    >
+      <div
+        class="bg-white dark:bg-slate-800 w-full max-w-lg rounded-2xl shadow-2xl p-4 sm:p-6 fade-in max-h-[90vh] overflow-auto border border-slate-200 dark:border-slate-700"
+      >
+        <div class="flex justify-between items-center mb-3">
+          <h3
+            class="font-extrabold text-sm sm:text-base text-slate-800 dark:text-slate-100"
+          >
+            ⚙️ مدیریت و تعریف خدمات
+          </h3>
+          <button
+            id="btn-close-service-modal"
+            class="text-slate-400 hover:text-rose-500 text-xl font-bold"
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- انتخاب تب: انتخاب دسته فعلی جهت ویرایش یا ساخت دسته جدید -->
+        <div
+          class="flex gap-2 p-1 bg-slate-100 dark:bg-slate-700/60 rounded-xl mb-4 text-xs font-bold"
+        >
+          <button
+            type="button"
+            id="sf-tab-existing"
+            class="flex-1 py-2 rounded-lg bg-white dark:bg-slate-800 text-brand-700 dark:text-brand-400 shadow-sm transition"
+          >
+            ویرایش / افزودن به دسته موجود
+          </button>
+          <button
+            type="button"
+            id="sf-tab-new"
+            class="flex-1 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:text-brand-600 transition"
+          >
+            ➕ ایجاد دسته کاملاً جدید
+          </button>
+        </div>
+
+        <form id="service-form" class="space-y-4 text-xs sm:text-sm">
+          <!-- بخش انتخاب دسته موجود -->
+          <div id="sf-select-cat-wrapper">
+            <label
+              class="font-bold text-slate-600 dark:text-slate-300 block mb-1"
+            >
+              انتخاب دسته‌بندی:
+            </label>
+            <select
+              id="sf-cat-select"
+              class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+            ></select>
+          </div>
+
+          <!-- عنوان دسته (قابل ویرایش) -->
+          <div>
+            <label
+              class="font-bold text-slate-600 dark:text-slate-300 block mb-1"
+            >
+              نام دسته‌بندی:
+            </label>
+            <input
+              id="sf-cat-title-input"
+              placeholder="مثلاً: 🏢 خدمات مالیاتی و دارایی"
+              class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500 font-bold text-slate-800 dark:text-slate-100"
+            />
+          </div>
+
+          <!-- سطرهای خدمات (چندتایی) -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label class="font-bold text-slate-600 dark:text-slate-300">
+                خدمات این دسته (عنوان و قیمت):
+              </label>
+              <button
+                type="button"
+                id="btn-add-service-row"
+                class="text-xs font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-slate-700 hover:bg-brand-100 dark:hover:bg-slate-600 px-3 py-1 rounded-lg border border-brand-200 dark:border-slate-600 transition"
+              >
+                ➕ افزودن سطر خدمت
+              </button>
+            </div>
+
+            <div
+              id="sf-rows-container"
+              class="space-y-2 max-h-60 overflow-y-auto pl-1"
+            ></div>
+          </div>
+
+          <div
+            class="flex gap-2 pt-3 border-t border-slate-200 dark:border-slate-700"
+          >
+            <button
+              type="submit"
+              class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs sm:text-sm shadow transition"
+            >
+              💾 ذخیره تغییرات و خدمات
+            </button>
+            <button
+              type="button"
+              id="btn-cancel-service-modal"
+              class="px-4 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-xl text-xs sm:text-sm font-bold transition"
+            >
+              انصراف
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
     <!-- ===================== مودال: فیلتر پیشرفته فاکتورها ===================== -->
     <div
       id="invoice-filter-modal"

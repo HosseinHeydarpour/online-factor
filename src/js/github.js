@@ -84,7 +84,7 @@ async function gh(path, cfg, options = {}) {
   return data;
 }
 
-/* ---------- فایل‌های پشتیبان کامل (برای ریپوی خصوصی) ---------- */
+/* ---------- فایل‌های پشتیبان ریپوی پرایوت (شامل فایل مجزای دیتای جدید) ---------- */
 function collectBackupFiles() {
   return [
     {
@@ -104,13 +104,22 @@ function collectBackupFiles() {
       content: JSON.stringify(store.getShopInfo(), null, 2),
     },
     {
+      // ✅ فایل دیتای جدید خدمات به صورت مجزا
+      path: "backup/custom-services.json",
+      content: JSON.stringify(store.getCustomServices(), null, 2),
+    },
+    {
+      // ✅ کل دیتای ادغام‌شده خدمات
+      path: "backup/services.json",
+      content: JSON.stringify(store.getServices(), null, 2),
+    },
+    {
       path: "backup/meta.json",
       content: JSON.stringify(
         {
           exportedAt: new Date().toISOString(),
           invoiceCount: store.getInvoices().length,
           productCount: store.getProducts().length,
-          customerCount: store.getCustomers().length,
         },
         null,
         2,
@@ -119,7 +128,7 @@ function collectBackupFiles() {
   ];
 }
 
-/* ---------- فایل‌های عمومی (فقط برای ریپوی پابلیک - بدون مشتریان و فاکتورها) ---------- */
+/* ---------- فایل‌های عمومی ریپوی پابلیک (سایت مشتری) ---------- */
 function collectPublicFiles() {
   return [
     {
@@ -129,6 +138,16 @@ function collectPublicFiles() {
     {
       path: "data/shop-info.json",
       content: JSON.stringify(store.getShopInfo(), null, 2),
+    },
+    {
+      // ✅ فایل دیتای جدید خدمات در ریپوی پابلیک
+      path: "data/custom-services.json",
+      content: JSON.stringify(store.getCustomServices(), null, 2),
+    },
+    {
+      // ✅ کل دیتای ادغام‌شده در ریپوی پابلیک
+      path: "data/services.json",
+      content: JSON.stringify(store.getServices(), null, 2),
     },
     {
       path: "data/meta.json",
@@ -143,7 +162,6 @@ function collectPublicFiles() {
     },
   ];
 }
-
 /* ---------- push کامل با یک کامیت (Git Data API) به ریپوی خصوصی ---------- */
 export async function pushBackupToGitHub({ silent = false } = {}) {
   const cfg = getGitHubConfig();
