@@ -228,7 +228,7 @@ function cardTemplate(b, i) {
       <div class="absolute -bottom-20 -right-10 w-56 h-56 rounded-full bg-black/25 blur-3xl"></div>
       <div class="absolute inset-0 opacity-[.08]" style="background-image:repeating-linear-gradient(115deg,#fff 0 1px,transparent 1px 14px);"></div>
 
-      <div class="relative h-full flex flex-col justify-between gap-2 p-10 sm:p-6">
+      <div class="relative h-full flex flex-col justify-between gap-2 p-10 sm:p-12">
         <!-- ردیف ۱: بانک + چیپ -->
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
