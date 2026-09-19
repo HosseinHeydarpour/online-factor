@@ -1,6 +1,6 @@
 {
   "name": "کافی‌نت آنلاین | نرخ‌نامه خدمات",
-  "short_name": "کافی نت آنلاین",
+  "short_name": "نرخ‌نامه",
   "description": "مشاهده نرخ‌نامه خدمات، تعرفه‌ها و شماره کارت‌های کافی‌نت آنلاین",
   "start_url": "./?role=customer",
   "scope": "./",
@@ -12,22 +12,16 @@
   "dir": "rtl",
   "icons": [
     {
-      "src": "./icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
-    {
       "src": "./icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "./icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
