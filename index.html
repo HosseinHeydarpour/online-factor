@@ -2630,9 +2630,28 @@
         });
       }
 
-      // مدیریت دکمه نصب اپلیکیشن
+      // تشخیص نقش مشتری از آدرس
+      function isCustomerRole() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const role =
+          urlParams.get("role") ||
+          (window.location.hash === "#customer" ? "customer" : "");
+        return role.toLowerCase() === "customer";
+      }
+
+      // مدیریت دکمه و پیشنهاد نصب اپلیکیشن
       let deferredPrompt = null;
       window.addEventListener("beforeinstallprompt", (e) => {
+        // ⛔ اگر نقش کاربر «مشتری» باشد، پیشنهاد نصب خودکار مرورگر و دکمه نصب کاملاً مسدود می‌شود
+        if (isCustomerRole()) {
+          e.preventDefault(); // جلوگیری از نمایش بنر خودکار مرورگر
+          deferredPrompt = null;
+          const btn = document.getElementById("btn-install-app");
+          if (btn) btn.classList.add("hidden");
+          return;
+        }
+
+        // ✅ برای مدیر، پیشنهاد و دکمه نصب فعال می‌ماند
         e.preventDefault();
         deferredPrompt = e;
         const btn = document.getElementById("btn-install-app");
@@ -2640,6 +2659,8 @@
       });
 
       document.addEventListener("click", async (e) => {
+        if (isCustomerRole()) return;
+
         if (e.target?.id === "btn-install-app" && deferredPrompt) {
           deferredPrompt.prompt();
           const { outcome } = await deferredPrompt.userChoice;
