@@ -3279,14 +3279,28 @@
       });
     </script>
 
-    <script>
-      window.NAJVA = {};
-      var s = document.createElement("script");
-      s.src = "https://van.najva.com/static/js/main-script.js";
-      s.defer = !0;
-      s.id = "najva-mini-script";
-      s.setAttribute("data-najva-id", "9dfe837b-270c-4667-8967-651b1e372e22");
-      document.head.appendChild(s);
+    <!-- اسکریپت وب‌پوش نجوا (فقط در حالت پورتال مشتری) -->
+    <script type="text/javascript">
+      (function () {
+        var isCustomer =
+          new URLSearchParams(window.location.search)
+            .get("role")
+            ?.toLowerCase() === "customer" ||
+          window.location.hash === "#customer" ||
+          localStorage.getItem("cafe_app_role") === "customer";
+
+        // اگر ادمین باشد، پوش فعال نمی‌شود
+        if (!isCustomer) return;
+
+        // بارگذاری اسکریپت رسمی نجوا
+        window.NAJVA = {};
+        var s = document.createElement("script");
+        s.src = "https://van.najva.com/static/js/main-script.js";
+        s.defer = true;
+        s.id = "najva-mini-script";
+        s.setAttribute("data-najva-id", "9dfe837b-270c-4667-8967-651b1e372e22");
+        document.head.appendChild(s);
+      })();
     </script>
   </body>
 </html>
