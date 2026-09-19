@@ -121,12 +121,20 @@ function renderItems() {
             return `
         <div class="bg-white border border-slate-200 rounded-xl overflow-hidden fade-in">
           <!-- سر‌دسته خدمات -->
-          <div data-cat-id="${c.id}" class="cat-header flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50 transition ${isExpanded ? "bg-brand-50" : ""}">
+     
+          <div data-cat-id="${c.id}" class="cat-header flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/60 transition ${isExpanded ? "bg-brand-50 dark:bg-slate-700/40" : ""}">
             <div class="flex items-center gap-2 min-w-0">
               <span class="text-lg">${isExpanded ? "🔽" : "▶️"}</span>
-              <p class="text-sm font-bold truncate">${c.title}</p>
+              <p class="text-sm font-bold truncate text-slate-800 dark:text-slate-100">${c.title}</p>
+              ${c.custom ? `<span class="text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded-md">سفارشی</span>` : ""}
             </div>
-            <span class="text-xs text-slate-400 shrink-0">${faNum(c.items.length)} خدمت</span>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <span class="text-xs text-slate-400 shrink-0 ml-1">${faNum(c.items.length)} خدمت</span>
+              <button data-quick-add-to-cat="${c.id}" title="ویرایش یا افزودن به این دسته" class="text-[11px] bg-brand-50 dark:bg-slate-700 text-brand-700 dark:text-brand-300 hover:bg-brand-100 dark:hover:bg-slate-600 px-2.5 py-1 rounded-lg font-bold border border-brand-200 dark:border-slate-600 transition">
+                ✏️ ویرایش
+              </button>
+              ${c.custom ? `<button data-del-cat="${c.id}" title="حذف این دسته‌بندی" class="text-xs bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 px-2 py-1 rounded-lg border border-rose-200 dark:border-rose-900/40 font-bold transition">🗑️ حذف دسته</button>` : ""}
+            </div>
           </div>
           <!-- زیرمجموعه‌ها -->
           <div class="cat-items space-y-2 p-3 ${isExpanded ? "" : "hidden"}">
@@ -152,8 +160,15 @@ function renderItems() {
 
     // افزودن ایونت برای کلیک روی سر‌دسته‌ها
     setTimeout(() => {
+      // کلیک روی آکاردئون دسته‌ها (جلوگیری از تداخل با دکمه حذف و ویرایش)
       document.querySelectorAll(".cat-header").forEach((header) => {
-        header.addEventListener("click", () => {
+        header.addEventListener("click", (e) => {
+          if (
+            e.target.closest("[data-del-cat]") ||
+            e.target.closest("[data-quick-add-to-cat]")
+          ) {
+            return; // اگر روی دکمه حذف یا ویرایش کلیک شد، آکاردئون باز/بسته نشود
+          }
           const catId = header.dataset.catId;
           if (expandedCategories.has(catId)) {
             expandedCategories.delete(catId);
@@ -212,26 +227,48 @@ el.search.addEventListener("input", () => {
 
 // کلیک برای افزودن به فاکتور
 // مدیریت کلیک روی خدمات و دکمه‌های افزودن / حذف
+// رویدادهای کلیک روی آیتم‌ها و دکمه‌های حذف/ویرایش
 el.items.addEventListener("click", (e) => {
-  const sId = e.target.dataset.addService;
-  const pId = e.target.dataset.addProduct;
-  const vId = e.target.dataset.variantId;
-  const quickCat = e.target.dataset.quickAddToCat;
-  const delItem = e.target.dataset.delItem;
-  const delCat = e.target.dataset.delCat;
+  const quickCatBtn = e.target.closest("[data-quick-add-to-cat]");
+  const delCatBtn = e.target.closest("[data-del-cat]");
+  const delItemBtn = e.target.closest("[data-del-item]");
+  const addServiceBtn = e.target.closest("[data-add-service]");
+  const addProductBtn = e.target.closest("[data-add-product]");
 
-  // کلیک روی دکمه ➕ کنار سر‌دسته برای افزودن سریع
-  if (quickCat) {
-    window.openAddServiceModal(quickCat);
+  // باز کردن فرم ویرایش دسته
+  if (quickCatBtn) {
+    window.openAddServiceModal(quickCatBtn.dataset.quickAddToCat);
     return;
   }
 
-  // حذف یک خدمت جدید با سطل آشغال 🗑️
-  if (delItem) {
-    if (confirm("این خدمت حذف شود؟")) {
-      store.deleteServiceItem(e.target.dataset.catId, delItem);
+  // ✅ حذف کامل یک دسته‌بندی سفارشی
+  if (delCatBtn) {
+    const catId = delCatBtn.dataset.delCat;
+    if (
+      confirm(
+        "⚠️ آیا از حذف کامل این دسته‌بندی و تمامی خدمات درون آن اطمینان دارید؟",
+      )
+    ) {
+      store.deleteCategory(catId);
+      expandedCategories.delete(catId);
       renderItems();
-      // همگام‌سازی فوری تغییرات
+
+      // همگام‌سازی آنی با فایل و گیت‌هاب (پابلیک و پرایوت)
+      autoSaveInvoices();
+      autoPushGitHub();
+      autoPushPublicRepo();
+      toast("دسته‌بندی با موفقیت حذف شد 🗑️");
+    }
+    return;
+  }
+
+  // حذف یک خدمت مشخص از درون دسته
+  if (delItemBtn) {
+    const catId = delItemBtn.dataset.catId;
+    const itemId = delItemBtn.dataset.delItem;
+    if (confirm("این خدمت حذف شود؟")) {
+      store.deleteServiceItem(catId, itemId);
+      renderItems();
       autoSaveInvoices();
       autoPushGitHub();
       autoPushPublicRepo();
@@ -240,30 +277,19 @@ el.items.addEventListener("click", (e) => {
     return;
   }
 
-  // حذف دسته‌بندی جدید با سطل آشغال 🗑️
-  if (delCat) {
-    if (confirm("این دسته‌بندی و تمامی خدمات آن حذف شوند؟")) {
-      store.deleteCategory(delCat);
-      renderItems();
-      // همگام‌سازی فوری تغییرات
-      autoSaveInvoices();
-      autoPushGitHub();
-      autoPushPublicRepo();
-      toast("دسته‌بندی حذف شد 🗑️");
-    }
-    return;
-  }
-
-  // افزودن به فاکتور
-  if (sId) {
+  if (addServiceBtn) {
+    const sId = addServiceBtn.dataset.addService;
     const s = getAllServices().find((x) => x.id === sId);
     if (s) {
       addItemToInvoice({ title: s.title, price: s.price, meta: s.catTitle });
       toast("به فاکتور اضافه شد 🧾");
     }
+    return;
   }
 
-  if (pId) {
+  if (addProductBtn) {
+    const pId = addProductBtn.dataset.addProduct;
+    const vId = addProductBtn.dataset.variantId;
     addProductToInvoice(store.getProduct(pId), vId || null);
   }
 });
@@ -437,6 +463,43 @@ function initServiceModal() {
       )
       .join("");
   }
+
+  const btnDeleteModalCat = document.getElementById("btn-delete-modal-cat");
+
+  function loadCategoryForEdit(catId) {
+    const cats = store.getServices();
+    const cat = cats.find((c) => c.id === catId);
+    if (!cat) return;
+
+    catTitleInput.value = cat.title || "";
+    currentRows = (cat.items || []).map((it) => ({
+      id: it.id,
+      title: it.title,
+      price: it.price,
+    }));
+    renderRows();
+
+    // اگر دسته جدید/سفارشی است، دکمه حذف نمایش داده شود
+    if (btnDeleteModalCat) {
+      btnDeleteModalCat.classList.toggle("hidden", !cat.custom);
+    }
+  }
+
+  // کلیک روی دکمه حذف دسته از درون مودال
+  btnDeleteModalCat?.addEventListener("click", () => {
+    const catId = catSelect.value;
+    if (!catId) return;
+    if (confirm("⚠️ آیا از حذف کامل این دسته‌بندی اطمینان دارید؟")) {
+      store.deleteCategory(catId);
+      expandedCategories.delete(catId);
+      closeModal();
+      renderItems();
+      autoSaveInvoices();
+      autoPushGitHub();
+      autoPushPublicRepo();
+      toast("دسته‌بندی با موفقیت حذف شد 🗑️");
+    }
+  });
 
   // بارگذاری خدمات یک دسته انتخاب‌شده درون سطرها جهت ادیت
   function loadCategoryForEdit(catId) {

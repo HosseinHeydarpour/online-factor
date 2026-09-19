@@ -3,6 +3,25 @@ import { store, faNum } from "./store.js";
 
 let expandedCats = new Set();
 
+let portalCategories = []; // لیست داینامیک خدمات
+
+// ✅ بارگذاری خدمات هم از حافظه محلی و هم از فایل آنلاین گیت‌هاب
+async function loadPortalCategories() {
+  portalCategories = store.getServices();
+
+  try {
+    const res = await fetch("./data/services.json", { cache: "no-store" });
+    if (res.ok) {
+      const remoteData = await res.json();
+      if (Array.isArray(remoteData) && remoteData.length > 0) {
+        portalCategories = remoteData;
+      }
+    }
+  } catch (_) {
+    // در صورت آفلاین بودن از دیتای محلی استفاده می‌شود
+  }
+}
+
 export function initCustomerPortal() {
   // مخفی‌کردن کامل رابط مدیریت
   document.querySelector(".app-root")?.classList.add("hidden");
@@ -46,15 +65,16 @@ export function initCustomerPortal() {
   const list = document.getElementById("cp-list");
   const countEl = document.getElementById("cp-count");
 
-  /* ---------- رندر آکاردئونی ---------- */
   /* ---------- رندر آکاردئونی با دیتای ادغام‌شده ---------- */
   const render = (q = "") => {
     const query = q.trim().toLowerCase();
-
-    // خواندن دیتای ادغام‌شده (استاتیک + جدید)
-    const categories = store.getServices();
     const cats = [];
-    for (const c of categories) {
+    // خواندن تمام خدمات پایه به همراه خدمات و دسته‌های جدید
+    const sourceCategories = portalCategories.length
+      ? portalCategories
+      : store.getServices();
+
+    for (const c of sourceCategories) {
       const catMatch = c.title.toLowerCase().includes(query);
       const items = query
         ? catMatch
@@ -75,7 +95,6 @@ export function initCustomerPortal() {
       return;
     }
 
-    // هنگام جستجو همه دسته‌های نتیجه باز شوند، وگرنه فقط انتخاب‌شده‌ها
     const isExpanded = (id) => (query ? true : expandedCats.has(id));
 
     list.innerHTML = cats
@@ -115,18 +134,27 @@ export function initCustomerPortal() {
     });
   };
 
-  // ----- باز/بستن همه -----
+  // ----- دکمه‌های باز و بستن همه -----
   document.getElementById("cp-expand-all")?.addEventListener("click", () => {
-    RATE_CATEGORIES.forEach((c) => expandedCats.add(c.id));
+    const sourceCategories = portalCategories.length
+      ? portalCategories
+      : store.getServices();
+    sourceCategories.forEach((c) => expandedCats.add(c.id));
     render(search?.value || "");
   });
+
   document.getElementById("cp-collapse-all")?.addEventListener("click", () => {
     expandedCats.clear();
     render(search?.value || "");
   });
 
+  // جستجوی زنده
   search?.addEventListener("input", () => render(search.value));
-  render();
+
+  // لود دیتای کامل و سپس اولین رندر
+  loadPortalCategories().then(() => {
+    render();
+  });
 
   initPortalTabs();
   initBankCards();
