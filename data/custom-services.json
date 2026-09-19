@@ -1,18 +1,4 @@
 {
-  "newCategories": [
-    {
-      "id": "cat-mu88h52qf7yr0",
-      "title": "دسته تست جدید",
-      "items": [
-        {
-          "id": "srv-mu88h52qscl1g",
-          "title": "پرینت",
-          "price": 500000,
-          "custom": true
-        }
-      ],
-      "custom": true
-    }
-  ],
+  "newCategories": [],
   "addedItems": []
 }
