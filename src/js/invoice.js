@@ -5,6 +5,7 @@ import {
   nowTimeFa,
   numberToWordsFa,
   toJalali,
+  toEnDigits,
 } from "./store.js";
 import { autoSaveInvoices } from "./backup.js";
 import { autoPushGitHub } from "./github.js";
@@ -12,6 +13,7 @@ import {
   openCustomerDetails,
   setCustomerDetailsFormValues,
   hasCustomerExtras,
+  openCustomerChoiceDialog,
 } from "./customers.js";
 
 const EMPTY_CUSTOMER = {
@@ -24,6 +26,7 @@ const EMPTY_CUSTOMER = {
   age: "",
   notes: "",
 };
+
 const state = {
   items: [],
   discount: 0,
@@ -432,6 +435,24 @@ function updateDetailsBadge() {
   if (badge)
     badge.classList.toggle("hidden", !hasCustomerExtras(state.customer));
 }
+
+function custToast(msg) {
+  const t = document.getElementById("toast");
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.remove("hidden");
+  setTimeout(() => t.classList.add("hidden"), 2200);
+}
+
+function loadCustomerIntoInvoice(c) {
+  state.customer = { ...EMPTY_CUSTOMER, ...c };
+  el.custName.value = c.name || "";
+  el.custPhone.value = c.phone || "";
+  setCustomerDetailsFormValues(state.customer);
+  updateDetailsBadge();
+  custToast(`📇 مشتری بارگذاری شد: ${c.name || c.phone}`);
+}
+
 export function initInvoiceEvents() {
   // بیمه احتیاطی: print-area باید فرزند مستقیم body باشد تا CSS چاپ درست کار کند
   if (el.printArea && el.printArea.parentElement !== document.body) {
@@ -523,5 +544,59 @@ export function initInvoiceEvents() {
     setCustomerDetailsFormValues(state.customer);
     updateDetailsBadge();
   });
+
+  // ✅ جستجوی زنده شماره + مدیریت شماره مشترک با نام متفاوت
+  if (!el.custPhone.dataset.lookupBound) {
+    el.custPhone.dataset.lookupBound = "1";
+    let lookupTimer = null;
+    let lastChoiceKey = "";
+    el.custPhone.addEventListener("input", () => {
+      clearTimeout(lookupTimer);
+      lookupTimer = setTimeout(() => {
+        const raw = toEnDigits(el.custPhone.value).replace(/\s/g, "");
+        if (raw.length < 5) return;
+        const matches = store
+          .getCustomers()
+          .filter((c) => c.phone && c.phone === raw);
+        if (!matches.length) return;
+
+        const typedName = el.custName.value.trim();
+
+        // نام دقیقاً匹配 یکی از مشتریان → بارگذاری بی‌صدا
+        if (typedName) {
+          const exact = matches.find((c) => (c.name || "") === typedName);
+          if (exact) return loadCustomerIntoInvoice(exact);
+        } else if (matches.length === 1) {
+          return loadCustomerIntoInvoice(matches[0]);
+        }
+
+        // نام متفاوت یا چند مشتری → دیالوگ انتخاب
+        const key = raw + "|" + typedName;
+        if (key === lastChoiceKey) return;
+        if (document.getElementById("customer-choice-overlay")) return;
+        lastChoiceKey = key;
+
+        openCustomerChoiceDialog(matches, typedName, (picked) => {
+          lastChoiceKey = "";
+          if (picked) {
+            loadCustomerIntoInvoice(picked);
+          } else {
+            // ➕ مشتری جدید با همین شماره
+            state.customer = {
+              ...EMPTY_CUSTOMER,
+              name: el.custName.value.trim(),
+              phone: raw,
+            };
+            setCustomerDetailsFormValues(state.customer);
+            updateDetailsBadge();
+            custToast(
+              "➕ مشتری جدید با همین شماره هنگام ثبت فاکتور ساخته می‌شود",
+            );
+          }
+        });
+      }, 350);
+    });
+  }
+
   render();
 }

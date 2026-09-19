@@ -86,9 +86,18 @@ export const store = {
   saveCustomer(customer) {
     const list = this.getCustomers();
     const phone = (customer.phone || "").trim();
+    const name = (customer.name || "").trim();
+
+    // ✅ تطبیق: اول id، بعد ترکیب شماره+نام، بعد شماره تنها / نام تنها
     let idx = -1;
-    if (phone) idx = list.findIndex((c) => c.phone === phone);
-    else if (customer.id) idx = list.findIndex((c) => c.id === customer.id);
+    if (customer.id) idx = list.findIndex((c) => c.id === customer.id);
+    if (idx < 0 && phone && name)
+      idx = list.findIndex((c) => c.phone === phone && c.name === name);
+    if (idx < 0 && phone && !name)
+      idx = list.findIndex((c) => c.phone === phone);
+    if (idx < 0 && !phone && name)
+      idx = list.findIndex((c) => !c.phone && c.name === name);
+
     const existing = idx >= 0 ? list[idx] : {};
     const FIELDS = [
       "name",
@@ -108,8 +117,9 @@ export const store = {
       record[f] =
         f in customer ? String(customer[f] ?? "").trim() : existing[f] || "";
     });
+
     if (idx >= 0) list[idx] = record;
-    else list.unshift(record);
+    else list.unshift(record); // ✅ مشتری جدید حتی با شماره تکراری
     write(KEYS.CUSTOMERS, list);
     return record;
   },

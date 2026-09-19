@@ -12,11 +12,13 @@ function toast(msg) {
   setTimeout(() => t.classList.add("hidden"), 2200);
 }
 
-// 💾 سینک بک‌آپ بعد از هر تغییر مشتریان
 function syncBackup() {
   autoSaveInvoices();
   autoPushGitHub();
 }
+
+// کلید یکتا: ترکیب شماره + نام
+const keyOf = (phone, name) => `${phone || ""}||${name || ""}`;
 
 /* ============================================================
    دیالوگ اطلاعات تکمیلی مشتری
@@ -106,6 +108,60 @@ export function hasCustomerExtras(c = {}) {
 }
 
 /* ============================================================
+   دیالوگ انتخاب مشتری (شماره مشترک / نام متفاوت)
+============================================================ */
+export function openCustomerChoiceDialog(matches, typedName, onPick) {
+  const overlay = document.createElement("div");
+  overlay.id = "customer-choice-overlay";
+  overlay.className =
+    "fixed inset-0 z-[65] modal-backdrop grid place-items-center p-4";
+  overlay.innerHTML = `
+    <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl shadow-2xl p-5 fade-in">
+      <h3 class="font-extrabold text-sm mb-1">⚠️ شماره مشترک با نام متفاوت</h3>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mb-3 leading-5">
+        با شماره <b>${matches[0].phone}</b> تعداد <b>${faNum(matches.length)}</b> مشتری ثبت شده است.
+        ${typedName ? `نام واردشده «${typedName}» با هیچ‌کدام مطابقت ندارد.` : "لطفاً مشتری موردنظر را انتخاب کنید."}
+      </p>
+      <div class="space-y-2 max-h-56 overflow-auto pl-1">
+        ${matches
+          .map(
+            (c) => `
+          <button data-pick-id="${c.id}"
+            class="w-full flex items-center justify-between gap-2 text-xs border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2.5 hover:border-brand-500 font-bold bg-slate-50 dark:bg-slate-700/50">
+            <span>👤 ${c.name || "بدون نام"}</span>
+            <span class="text-slate-400 font-normal">${[c.gender || "", c.age ? `${faNum(c.age)} سال` : "", c.nationalCode ? `کد ملی: ${c.nationalCode}` : ""].filter(Boolean).join(" · ") || "—"}</span>
+          </button>`,
+          )
+          .join("")}
+        <button data-pick-new="1"
+          class="w-full text-xs border-2 border-dashed border-emerald-400 text-emerald-600 dark:text-emerald-400 rounded-xl px-3 py-2.5 hover:bg-emerald-50 dark:hover:bg-slate-700 font-bold">
+          ➕ ساخت مشتری جدید با همین شماره${typedName ? ` به نام «${typedName}»` : ""}
+        </button>
+      </div>
+      <button data-pick-cancel class="w-full mt-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl py-2 text-xs font-bold">انصراف</button>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) return close();
+    if (e.target.closest("[data-pick-cancel]")) return close();
+    const newBtn = e.target.closest("[data-pick-new]");
+    if (newBtn) {
+      close();
+      onPick(null);
+      return;
+    }
+    const pickBtn = e.target.closest("[data-pick-id]");
+    if (pickBtn) {
+      const c = matches.find((x) => x.id === pickBtn.dataset.pickId);
+      close();
+      if (c) onPick(c);
+    }
+  });
+}
+
+/* ============================================================
    مودال مشتری جدید (بدون فاکتور)
 ============================================================ */
 const formEl = {
@@ -169,16 +225,21 @@ function saveCustomerFromForm() {
   const name = formEl.name?.value.trim() || "";
   const phone = formEl.phone?.value.trim() || "";
   if (!name && !phone) return alert("حداقل نام یا شماره تماس را وارد کنید.");
-  if (phone) {
-    const dup = store.getCustomers().find((c) => c.phone === phone);
+
+  // ✅ تکراری یعنی هم شماره و هم نام یکی باشد
+  if (phone && name) {
+    const dup = store
+      .getCustomers()
+      .find((c) => c.phone === phone && c.name === name);
     if (
       dup &&
       !confirm(
-        `مشتری با شماره ${phone} قبلاً ثبت شده (${dup.name || "بدون نام"}).\nاطلاعات همان مشتری به‌روزرسانی شود؟`,
+        `مشتری با نام «${name}» و شماره ${phone} قبلاً ثبت شده است.\nاطلاعات همان مشتری به‌روزرسانی شود؟`,
       )
     )
       return;
   }
+
   store.saveCustomer({
     name,
     phone,
@@ -196,15 +257,15 @@ function saveCustomerFromForm() {
 }
 
 /* ============================================================
-   فیلتر پیشرفته مشتریان
+   فیلتر پیشرفته
 ============================================================ */
 const DEFAULT_FILTER = {
   gender: "",
   ageMin: 0,
   ageMax: 100,
-  countMode: "all", // all | lt | gt | eq
+  countMode: "all",
   countValue: 0,
-  sort: "none", // none | count-asc | count-desc
+  sort: "none",
 };
 let customerFilter = { ...DEFAULT_FILTER };
 
@@ -244,7 +305,6 @@ function initCustomerFilter() {
     "click",
     (e) => e.target === filterEl.modal && closeCustomerFilter(),
   );
-
   document
     .getElementById("btn-apply-customer-filter")
     .addEventListener("click", () => {
@@ -261,7 +321,6 @@ function initCustomerFilter() {
       renderCustomers(el.search?.value.trim() || "");
       toast("فیلتر اعمال شد 🔍");
     });
-
   document
     .getElementById("btn-reset-customer-filter")
     .addEventListener("click", () => {
@@ -272,7 +331,6 @@ function initCustomerFilter() {
       toast("فیلترها حذف شدند");
     });
 
-  // اسلایدرها: به‌روزرسانی زنده + جلوگیری از عبور از هم
   const onSlide = () => {
     let mn = Number(filterEl.ageMin.value);
     let mx = Number(filterEl.ageMax.value);
@@ -383,20 +441,23 @@ export function renderCustomers(query = "") {
   const customers = store.getCustomers();
   const q = (query || "").toLowerCase();
 
-  // آمار فاکتورها
+  // ✅ آمار فاکتورها بر اساس ترکیب شماره + نام
   const invoices = store.getInvoices();
-  const countByPhone = {};
-  const lastByPhone = {};
+  const countByKey = {};
+  const lastByKey = {};
   invoices.forEach((inv) => {
-    const ph = inv.customer?.phone || "";
-    if (!ph) return;
-    countByPhone[ph] = (countByPhone[ph] || 0) + 1;
-    if (!lastByPhone[ph] || (inv.date && inv.date > lastByPhone[ph].date))
-      lastByPhone[ph] = inv;
+    const k = keyOf(inv.customer?.phone, inv.customer?.name);
+    countByKey[k] = (countByKey[k] || 0) + 1;
+    if (!lastByKey[k] || (inv.date && inv.date > lastByKey[k].date))
+      lastByKey[k] = inv;
   });
-  const countOf = (c) => countByPhone[c.phone] || 0;
 
-  // جستجوی متنی
+  // شمارش شماره‌های مشترک
+  const phoneCounts = {};
+  customers.forEach((c) => {
+    if (c.phone) phoneCounts[c.phone] = (phoneCounts[c.phone] || 0) + 1;
+  });
+
   let filtered = customers.filter(
     (c) =>
       !q ||
@@ -405,11 +466,10 @@ export function renderCustomers(query = "") {
       (c.nationalCode || "").toLowerCase().includes(q),
   );
 
-  // ===== فیلتر پیشرفته =====
   const f = customerFilter;
+  const countOf = (c) => countByKey[keyOf(c.phone, c.name)] || 0;
   if (f.gender)
     filtered = filtered.filter((c) => (c.gender || "") === f.gender);
-
   const ageActive = f.ageMin > 0 || f.ageMax < 100;
   if (ageActive) {
     filtered = filtered.filter((c) => {
@@ -418,7 +478,6 @@ export function renderCustomers(query = "") {
       return age >= f.ageMin && age <= f.ageMax;
     });
   }
-
   if (f.countMode !== "all") {
     filtered = filtered.filter((c) => {
       const n = countOf(c);
@@ -428,7 +487,6 @@ export function renderCustomers(query = "") {
       return true;
     });
   }
-
   if (f.sort === "count-asc") filtered.sort((a, b) => countOf(a) - countOf(b));
   else if (f.sort === "count-desc")
     filtered.sort((a, b) => countOf(b) - countOf(a));
@@ -463,8 +521,8 @@ export function renderCustomers(query = "") {
             ${filtered
               .map((c, idx) => {
                 const count = countOf(c);
-                const lastDate = lastByPhone[c.phone]
-                  ? lastByPhone[c.phone].date
+                const lastDate = lastByKey[keyOf(c.phone, c.name)]
+                  ? lastByKey[keyOf(c.phone, c.name)].date
                   : "—";
                 const initial = (c.name || "؟").charAt(0);
                 const genderAge = [
@@ -473,6 +531,7 @@ export function renderCustomers(query = "") {
                 ]
                   .filter(Boolean)
                   .join(" / ");
+                const shared = phoneCounts[c.phone] > 1;
                 return `
                 <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40 transition">
                   <td class="py-3 px-3">
@@ -482,7 +541,10 @@ export function renderCustomers(query = "") {
                       <span class="font-bold text-slate-800 dark:text-slate-100 truncate">${c.name || "بدون نام"}</span>
                     </div>
                   </td>
-                  <td class="py-3 px-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">${c.phone || "—"}</td>
+                  <td class="py-3 px-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                    ${c.phone || "—"}
+                    ${shared ? `<span class="text-[9px] font-bold text-amber-500 dark:text-amber-400">🔗 شماره مشترک</span>` : ""}
+                  </td>
                   <td class="py-3 px-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">${c.nationalCode || "—"}</td>
                   <td class="py-3 px-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">${genderAge || "—"}</td>
                   <td class="py-3 px-3 max-w-[200px]"><span class="block truncate text-slate-500 dark:text-slate-400" title="${c.address || ""}">${c.address || "—"}</span></td>
@@ -572,33 +634,43 @@ export function renderCustomers(query = "") {
 export function exportCustomersExcel() {
   const customers = store.getCustomers();
   if (!customers.length) return alert("مشتری‌ای برای خروجی وجود ندارد!");
+
   const invoices = store.getInvoices();
-  const countByPhone = {};
-  const sumByPhone = {};
-  const lastByPhone = {};
+  const countByKey = {};
+  const sumByKey = {};
+  const lastByKey = {};
   invoices.forEach((inv) => {
-    const ph = inv.customer?.phone || "";
-    if (!ph) return;
-    countByPhone[ph] = (countByPhone[ph] || 0) + 1;
-    sumByPhone[ph] = (sumByPhone[ph] || 0) + inv.total;
-    if (!lastByPhone[ph] || (inv.date && inv.date > lastByPhone[ph].date))
-      lastByPhone[ph] = inv;
+    const k = keyOf(inv.customer?.phone, inv.customer?.name);
+    countByKey[k] = (countByKey[k] || 0) + 1;
+    sumByKey[k] = (sumByKey[k] || 0) + inv.total;
+    if (!lastByKey[k] || (inv.date && inv.date > lastByKey[k].date))
+      lastByKey[k] = inv;
   });
-  const rows = customers.map((c, i) => ({
-    ردیف: i + 1,
-    "نام مشتری": c.name || "",
-    "شماره تماس": c.phone || "",
-    "کد ملی": c.nationalCode || "",
-    "شماره شناسنامه": c.birthCertNo || "",
-    جنسیت: c.gender || "",
-    سن: c.age || "",
-    آدرس: c.address || "",
-    توضیحات: c.notes || "",
-    "تعداد فاکتورها": countByPhone[c.phone] || 0,
-    "مجموع خرید (تومان)": sumByPhone[c.phone] || 0,
-    "تاریخ آخرین فاکتور": lastByPhone[c.phone]?.date || "",
-    "آخرین مشاهده": c.lastSeen || "",
-  }));
+  const phoneCounts = {};
+  customers.forEach((c) => {
+    if (c.phone) phoneCounts[c.phone] = (phoneCounts[c.phone] || 0) + 1;
+  });
+
+  const rows = customers.map((c, i) => {
+    const k = keyOf(c.phone, c.name);
+    return {
+      ردیف: i + 1,
+      "نام مشتری": c.name || "",
+      "شماره تماس": c.phone || "",
+      "شماره مشترک": phoneCounts[c.phone] > 1 ? "بله" : "خیر",
+      "کد ملی": c.nationalCode || "",
+      "شماره شناسنامه": c.birthCertNo || "",
+      جنسیت: c.gender || "",
+      سن: c.age || "",
+      آدرس: c.address || "",
+      توضیحات: c.notes || "",
+      "تعداد فاکتورها": countByKey[k] || 0,
+      "مجموع خرید (تومان)": sumByKey[k] || 0,
+      "تاریخ آخرین فاکتور": lastByKey[k]?.date || "",
+      "آخرین مشاهده": c.lastSeen || "",
+    };
+  });
+
   const fileName = `customers-${toJalali().full.replaceAll("/", "-")}`;
   if (window.XLSX) {
     const ws = XLSX.utils.json_to_sheet(rows);
@@ -606,6 +678,7 @@ export function exportCustomersExcel() {
       { wch: 6 },
       { wch: 22 },
       { wch: 14 },
+      { wch: 12 },
       { wch: 12 },
       { wch: 14 },
       { wch: 8 },
