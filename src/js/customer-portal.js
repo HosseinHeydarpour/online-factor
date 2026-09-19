@@ -150,6 +150,22 @@ const BANK_THEMES = {
   اقتصاد: "linear-gradient(135deg,#422006 0%,#a16207 55%,#eab308 100%)",
   مهر: "linear-gradient(135deg,#831843 0%,#db2777 55%,#f472b6 100%)",
 };
+
+/* 💳 کارت‌های بانکی هاردکدشده — fallback وقتی localStorage خالی است */
+const DEFAULT_BANK_ACCOUNTS = [
+  {
+    bank: "ملت",
+    holder: "محمدرضا حیدرپور",
+    card: "6104337865051203",
+    sheba: "IR123456123456123212325126",
+  },
+  {
+    bank: "رسالت",
+    holder: "محمدرضا حیدرپور",
+    card: "6104337865051203",
+    sheba: "IR123456123456123212325123",
+  },
+];
 const FALLBACK_THEMES = [
   "linear-gradient(135deg,#0f172a 0%,#334155 55%,#64748b 100%)",
   "linear-gradient(135deg,#134e4a 0%,#0f766e 55%,#14b8a6 100%)",
@@ -283,9 +299,10 @@ function initBankCards() {
 
   shopName = store.getShopInfo()?.name || "کافی‌نت آنلاین";
 
-  const accounts = (store.getShopInfo()?.bankAccounts || []).filter(
-    (b) => (b?.card || "").trim() || (b?.sheba || "").trim(),
-  );
+  const savedAccounts = store.getShopInfo()?.bankAccounts || [];
+  const accounts = (
+    savedAccounts.length ? savedAccounts : DEFAULT_BANK_ACCOUNTS
+  ).filter((b) => (b?.card || "").trim() || (b?.sheba || "").trim());
   const total = accounts.length;
 
   if (!total) {
