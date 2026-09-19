@@ -15,11 +15,18 @@
           "title": "فیلم سینمایی",
           "price": 10000,
           "custom": true
+        },
+        {
+          "id": "srv-mu8am782fdbl0",
+          "title": "فیلم جنایی",
+          "price": 200000,
+          "custom": true
         }
       ],
       "custom": true
     }
   ],
+  "addedItems": [],
   "categoryOverrides": {
     "amlak-maskan": {
       "title": "🏠 سامانه املاک و اسکان",

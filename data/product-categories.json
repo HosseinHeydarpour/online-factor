@@ -1,0 +1,22 @@
+[
+  {
+    "id": "pcat-storage",
+    "name": "ذخیره‌سازی اطلاعات",
+    "icon": "💾"
+  },
+  {
+    "id": "pcat-cables",
+    "name": "کابل و اتصالات",
+    "icon": "🔌"
+  },
+  {
+    "id": "pcat-stationery",
+    "name": "نوشت‌افزار و لوازم اداری",
+    "icon": "✏️"
+  },
+  {
+    "id": "pcat-accessories",
+    "name": "لوازم جانبی کامپیوتر",
+    "icon": "🖱️"
+  }
+]
