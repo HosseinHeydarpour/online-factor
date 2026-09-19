@@ -39,6 +39,20 @@ export function markAnnouncementAsRead(announcementId) {
 }
 
 /**
+ * پاک‌سازی آیدی‌های اعلانات حذف‌شده از LocalStorage
+ */
+export function pruneReadAnnouncementIds(announcements = []) {
+  if (!announcements.length) return;
+  const readIds = getReadAnnouncementIds();
+  const validIds = new Set(announcements.map((a) => a.id));
+  const cleanedIds = readIds.filter((id) => validIds.has(id));
+
+  if (cleanedIds.length !== readIds.length) {
+    localStorage.setItem(STORAGE_KEY_READ_NEWS, JSON.stringify(cleanedIds));
+  }
+}
+
+/**
  * محاسبه تعداد اعلانات منتشرشده و خوانده‌نشده
  */
 export function getUnreadNewsCount(announcements = []) {
@@ -532,8 +546,20 @@ export function initCustomerPortal() {
     renderServices();
     renderCustomerProductChips();
     renderCustomerProducts();
+    // پاک‌سازی اعلان‌های قدیمی حذف‌شده از استوریج
+    pruneReadAnnouncementIds(portalAnnouncements);
     renderCustomerNews();
     updateCustomerNewsBadge();
+  });
+
+  // شنود تغییرات زنده استوریج در صورت ویرایش اخبار
+  window.addEventListener("storage", (e) => {
+    if (e.key === STORAGE_KEY_READ_NEWS) {
+      updateCustomerNewsBadge();
+      renderCustomerNews(
+        document.getElementById("cp-news-search")?.value || "",
+      );
+    }
   });
 
   initPortalTabs();
@@ -580,7 +606,7 @@ const DEFAULT_BANK_ACCOUNTS = [
 const FALLBACK_THEMES = [
   "linear-gradient(135deg,#0f172a 0%,#334155 55%,#64748b 100%)",
   "linear-gradient(135deg,#134e4a 0%,#0f766e 55%,#14b8a6 100%)",
-  "linear-gradient(135deg,#312e81 0%,#4338ca 55%,#6366f1 100%)",
+  "linear-gradient(135deg,#312e81 0%,#4f46e5 55%,#6366f1 100%)",
   "linear-gradient(135deg,#7c2d12 0%,#c2410c 55%,#fb923c 100%)",
 ];
 
