@@ -20,6 +20,69 @@ function syncBackup() {
 // کلید یکتا: ترکیب شماره + نام
 const keyOf = (phone, name) => `${phone || ""}||${name || ""}`;
 
+/* ---------- لیست فیلترشده — مشترک بین جدول و اکسل ---------- */
+function getFilteredCustomers(query = "") {
+  const customers = store.getCustomers();
+  const q = (query || "").toLowerCase();
+
+  const countByKey = {};
+  store.getInvoices().forEach((inv) => {
+    const k = keyOf(inv.customer?.phone, inv.customer?.name);
+    countByKey[k] = (countByKey[k] || 0) + 1;
+  });
+  const countOf = (c) => countByKey[keyOf(c.phone, c.name)] || 0;
+
+  let filtered = customers.filter(
+    (c) =>
+      !q ||
+      (c.name || "").toLowerCase().includes(q) ||
+      (c.phone || "").toLowerCase().includes(q) ||
+      (c.nationalCode || "").toLowerCase().includes(q),
+  );
+
+  const f = customerFilter;
+  if (f.gender)
+    filtered = filtered.filter((c) => (c.gender || "") === f.gender);
+
+  const ageActive = f.ageMin > 0 || f.ageMax < 100;
+  if (ageActive) {
+    filtered = filtered.filter((c) => {
+      const age = Number(c.age);
+      if (!c.age || Number.isNaN(age)) return false;
+      return age >= f.ageMin && age <= f.ageMax;
+    });
+  }
+
+  if (f.countMode !== "all") {
+    filtered = filtered.filter((c) => {
+      const n = countOf(c);
+      if (f.countMode === "lt") return n < f.countValue;
+      if (f.countMode === "gt") return n > f.countValue;
+      if (f.countMode === "eq") return n === f.countValue;
+      return true;
+    });
+  }
+
+  if (f.sort === "count-asc") filtered.sort((a, b) => countOf(a) - countOf(b));
+  else if (f.sort === "count-desc")
+    filtered.sort((a, b) => countOf(b) - countOf(a));
+
+  return filtered;
+}
+
+/* ---------- آیا الان فیلتر/جستجویی فعال است؟ ---------- */
+function isFilterActive() {
+  const f = customerFilter;
+  return !!(
+    (el.search?.value.trim() || "") !== "" ||
+    f.gender ||
+    f.ageMin > 0 ||
+    f.ageMax < 100 ||
+    f.countMode !== "all" ||
+    f.sort !== "none"
+  );
+}
+
 /* ============================================================
    دیالوگ اطلاعات تکمیلی مشتری
 ============================================================ */
@@ -458,38 +521,8 @@ export function renderCustomers(query = "") {
     if (c.phone) phoneCounts[c.phone] = (phoneCounts[c.phone] || 0) + 1;
   });
 
-  let filtered = customers.filter(
-    (c) =>
-      !q ||
-      (c.name || "").toLowerCase().includes(q) ||
-      (c.phone || "").toLowerCase().includes(q) ||
-      (c.nationalCode || "").toLowerCase().includes(q),
-  );
-
-  const f = customerFilter;
+  const filtered = getFilteredCustomers(query);
   const countOf = (c) => countByKey[keyOf(c.phone, c.name)] || 0;
-  if (f.gender)
-    filtered = filtered.filter((c) => (c.gender || "") === f.gender);
-  const ageActive = f.ageMin > 0 || f.ageMax < 100;
-  if (ageActive) {
-    filtered = filtered.filter((c) => {
-      const age = Number(c.age);
-      if (!c.age || Number.isNaN(age)) return false;
-      return age >= f.ageMin && age <= f.ageMax;
-    });
-  }
-  if (f.countMode !== "all") {
-    filtered = filtered.filter((c) => {
-      const n = countOf(c);
-      if (f.countMode === "lt") return n < f.countValue;
-      if (f.countMode === "gt") return n > f.countValue;
-      if (f.countMode === "eq") return n === f.countValue;
-      return true;
-    });
-  }
-  if (f.sort === "count-asc") filtered.sort((a, b) => countOf(a) - countOf(b));
-  else if (f.sort === "count-desc")
-    filtered.sort((a, b) => countOf(b) - countOf(a));
 
   if (el.total) el.total.textContent = faNum(customers.length) + " نفر";
 
@@ -632,7 +665,8 @@ export function renderCustomers(query = "") {
    خروجی اکسل
 ============================================================ */
 export function exportCustomersExcel() {
-  const customers = store.getCustomers();
+  const query = el.search?.value.trim() || "";
+  const customers = getFilteredCustomers(query);
   if (!customers.length) return alert("مشتری‌ای برای خروجی وجود ندارد!");
 
   const invoices = store.getInvoices();
@@ -671,7 +705,9 @@ export function exportCustomersExcel() {
     };
   });
 
-  const fileName = `customers-${toJalali().full.replaceAll("/", "-")}`;
+  const fileName = `customers-${toJalali().full.replaceAll("/", "-")}${
+    isFilterActive() ? "-filtered" : ""
+  }`;
   if (window.XLSX) {
     const ws = XLSX.utils.json_to_sheet(rows);
     ws["!cols"] = [
@@ -711,5 +747,9 @@ export function exportCustomersExcel() {
     a.remove();
     URL.revokeObjectURL(url);
   }
-  toast("خروجی اکسل دانلود شد ⬇️");
+  toast(
+    `خروجی اکسل ${faNum(customers.length)} مشتری${
+      isFilterActive() ? " (فیلترشده)" : ""
+    } دانلود شد ⬇️`,
+  );
 }
