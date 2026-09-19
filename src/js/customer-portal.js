@@ -244,7 +244,7 @@ function cardTemplate(b, i) {
       <div class="absolute -bottom-20 -right-10 w-56 h-56 rounded-full bg-black/25 blur-3xl"></div>
       <div class="absolute inset-0 opacity-[.08]" style="background-image:repeating-linear-gradient(115deg,#fff 0 1px,transparent 1px 14px);"></div>
 
-      <div class="relative h-full flex flex-col justify-between gap-2 p-10 sm:p-12">
+      <div class="relative h-full flex flex-col justify-between gap-2 py-4 px-4 sm:p-12">
         <!-- ردیف ۱: بانک + چیپ -->
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
@@ -263,20 +263,20 @@ function cardTemplate(b, i) {
 
         <!-- ردیف ۲: شماره کارت (کلیک = کپی) -->
         <button type="button" data-copy="${card}" data-label="شماره کارت"
-          class="cp-copy-btn self-start text-right -mx-2 px-2 py-1 rounded-lg hover:bg-white/10 ${off(card)}">
+          class="cp-copy-btn self-start text-right -mx-2 px-2 pr-8 sm:pr-2 sm:px-2 py-1 rounded-lg hover:bg-white/10 ${off(card)}">
           <p class="text-[10px] sm:text-xs opacity-75 font-bold mb-0.5">شماره کارت 📋</p>
           <p class="font-mono text-[21px] leading-8 sm:text-3xl sm:leading-9 font-extrabold tracking-[.06em] sm:tracking-[.12em]" dir="ltr">${fmtCard(card)}</p>
         </button>
 
         <!-- ردیف ۳: شماره شبا (کلیک = کپی) -->
         <button type="button" data-copy="${sheba}" data-label="شماره شبا"
-          class="cp-copy-btn self-start text-right -mx-2 px-2 py-0.5 rounded-lg hover:bg-white/10 ${off(sheba)}">
+          class="cp-copy-btn self-start text-right -mx-2 px-2 pr-8 sm:pr-2 sm:px-2 py-0.5 rounded-lg hover:bg-white/10 ${off(sheba)}">
           <p class="text-[10px] sm:text-xs opacity-75 font-bold mb-0.5">شماره شبا 📋</p>
           <p class="font-mono text-xs sm:text-base font-bold tracking-[.04em] sm:tracking-[.08em] truncate" dir="ltr">${fmtSheba(sheba)}</p>
         </button>
 
         <!-- ردیف ۴: دارنده کارت -->
-        <div class="flex items-end justify-between gap-2 border-t border-white/20 pt-2">
+        <div class="flex items-end justify-between gap-2 px-2 pr-8 sm:pr-0 sm:px-0  border-t border-white/20 pt-2">
           <div class="min-w-0">
             <p class="text-[10px] sm:text-xs opacity-75 font-bold">به نام</p>
             <p class="text-sm sm:text-lg font-extrabold truncate">${holder}</p>
