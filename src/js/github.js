@@ -301,6 +301,10 @@ function collectBackupFiles() {
       content: JSON.stringify(store.getInvoices(), null, 2),
     },
     {
+      path: "backup/proformas.json",
+      content: JSON.stringify(store.getProformas(), null, 2),
+    },
+    {
       path: "backup/announcements.json",
       content: JSON.stringify(store.getAnnouncements(), null, 2),
     },
@@ -335,8 +339,10 @@ function collectBackupFiles() {
         {
           exportedAt: new Date().toISOString(),
           invoiceCount: store.getInvoices().length,
+          proformaCount: store.getProformas().length,
           productCount: store.getProducts().length,
           productCategoryCount: store.getProductCategories().length,
+          customerCount: store.getCustomers().length,
         },
         null,
         2,
@@ -399,6 +405,7 @@ export async function pushCombinedToGitHub(cfg, { silent = false, task = null, t
   }
 
   const invs = store.getInvoices();
+  const pfs = store.getProformas();
   const custs = store.getCustomers();
   const prods = store.getProducts();
 
@@ -437,7 +444,7 @@ export async function pushCombinedToGitHub(cfg, { silent = false, task = null, t
     }
   }
 
-  if (invs.length === 0 && custs.length === 0 && prods.length === 0) {
+  if (invs.length === 0 && pfs.length === 0 && custs.length === 0 && prods.length === 0) {
     currentTask.fail("داده‌های محلی خالی است");
     if (!silent) {
       alert(
@@ -534,6 +541,7 @@ export async function pushCombinedToGitHub(cfg, { silent = false, task = null, t
     const privateFilesToDelete = [
       "data/customers.json",
       "data/invoices.json",
+      "data/proformas.json",
     ];
 
     for (const privPath of privateFilesToDelete) {
@@ -627,6 +635,7 @@ export async function pushBackupToGitHub({
   }
 
   const invs = store.getInvoices();
+  const pfs = store.getProformas();
   const custs = store.getCustomers();
   const prods = store.getProducts();
   const customSrv = store.getCustomServices();
@@ -666,7 +675,7 @@ export async function pushBackupToGitHub({
     }
   }
 
-  if (invs.length === 0 && custs.length === 0 && prods.length === 0) {
+  if (invs.length === 0 && pfs.length === 0 && custs.length === 0 && prods.length === 0) {
     currentTask.fail("داده‌های محلی خالی است");
     if (!silent) {
       alert(
@@ -688,6 +697,7 @@ export async function pushBackupToGitHub({
       `آیا مطمئن هستید که می‌خواهید نسخه فعلی سیستم روی مخزن «${cfg.repo}» ذخیره شود؟\n\n` +
       `📊 اطلاعات:\n` +
       `• فاکتورها: ${invs.length} عدد\n` +
+      `• پیش‌فاکتورها: ${pfs.length} عدد\n` +
       `• مشتریان: ${custs.length} نفر\n` +
       `• محصولات: ${prods.length} مورد\n` +
       `• دسته‌های محصولات: ${store.getProductCategories().length} مورد\n` +
@@ -1000,8 +1010,10 @@ export async function pushToPublicRepo({
     const privateFilesToDelete = [
       "data/customers.json",
       "data/invoices.json",
+      "data/proformas.json",
       "backup/customers.json",
       "backup/invoices.json",
+      "backup/proformas.json",
     ];
 
     for (const privPath of privateFilesToDelete) {
@@ -1138,6 +1150,7 @@ export async function restoreFromGitHub({ replace = false } = {}) {
     };
 
     const invoices = await readJson("backup/invoices.json");
+    const proformas = await readJson("backup/proformas.json");
     let products = await readJson("backup/products.json");
     let productCategories = await readJson("backup/product-categories.json"); // ✅ خواندن دسته‌های محصول از بک‌آپ
     let announcements = await readJson("backup/announcements.json"); // ✅ خواندن اخبار و اعلانات
@@ -1157,11 +1170,12 @@ export async function restoreFromGitHub({ replace = false } = {}) {
       announcements = await readJson("data/announcements.json");
     }
 
-    if (!invoices && !products && !shop && !customServices && !services && !announcements) {
+    if (!invoices && !proformas && !products && !shop && !customServices && !services && !announcements) {
       return alert("هیچ فایل پشتیبانی در پوشه backup/ یا data/ مخزن پیدا نشد!");
     }
 
     const invCount = Array.isArray(invoices) ? invoices.length : 0;
+    const pfCount = Array.isArray(proformas) ? proformas.length : 0;
     const prdCount = Array.isArray(products) ? products.length : 0;
     const pCatCount = Array.isArray(productCategories)
       ? productCategories.length
@@ -1176,6 +1190,7 @@ export async function restoreFromGitHub({ replace = false } = {}) {
       !confirm(
         `📥 بازیابی از گیت‌هاب:\n` +
           `• ${invCount} فاکتور\n` +
+          `• ${pfCount} پیش‌فاکتور\n` +
           `• ${prdCount} محصول در ${pCatCount} دسته‌بندی\n` +
           `• ${cstCount} مشتری\n` +
           `• ${annCount} اعلان و خبر\n` +
@@ -1267,6 +1282,20 @@ export async function restoreFromGitHub({ replace = false } = {}) {
       }
     }
 
+    // بازیابی پیش‌فاکتورها
+    if (Array.isArray(proformas)) {
+      if (replace) {
+        store.setProformas(proformas);
+      } else {
+        const current = store.getProformas();
+        const existing = new Set(current.map((p) => p.number));
+        const added = proformas.filter((p) => p && !existing.has(p.number));
+        store.setProformas(
+          [...current, ...added].sort((a, b) => b.number - a.number),
+        );
+      }
+    }
+
     // بازیابی محصولات
     if (Array.isArray(products)) {
       if (replace) {
@@ -1291,8 +1320,15 @@ export async function restoreFromGitHub({ replace = false } = {}) {
       .reduce((m, i) => Math.max(m, i.number || 0), 0);
     if (maxNum > store.getCounter()) store.setCounter(maxNum);
 
+    const maxPfNum = store
+      .getProformas()
+      .reduce((m, p) => Math.max(m, p.number || 0), 0);
+    if (maxPfNum > store.getProformaCounter()) store.setProformaCounter(maxPfNum);
+
     alert("✅ بازیابی اطلاعات با موفقیت انجام شد. برنامه تازه می‌شود…");
-    location.reload();
+    const u = new URL(window.location.href);
+    u.searchParams.set("_reload", Date.now().toString());
+    window.location.replace(u.toString());
   } catch (err) {
     alert("بازیابی از گیت‌هاب ناموفق بود ❌\n" + err.message);
   }

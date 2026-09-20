@@ -298,6 +298,7 @@ export async function performLocalFolderBackup({
       trigger,
       counts: {
         invoices: datasets.bundle.invoices.length,
+        proformas: datasets.bundle.proformas.length,
         products: datasets.bundle.products.length,
         customers: datasets.bundle.customers.length,
         announcements: datasets.bundle.announcements.length,
@@ -611,6 +612,7 @@ export function exportAllData() {
     version: 4,
     exportedAt: new Date().toISOString(),
     invoices: store.getInvoices(),
+    proformas: store.getProformas(),
     products: store.getProducts(),
     productCategories: store.getProductCategories(),
     announcements: store.getAnnouncements(),
@@ -618,7 +620,12 @@ export function exportAllData() {
     customServices: store.getCustomServices(),
     shop: store.getShopInfo(),
   };
-  if (!data.invoices.length && !data.products.length && !data.customers.length)
+  if (
+    !data.invoices.length &&
+    !data.proformas.length &&
+    !data.products.length &&
+    !data.customers.length
+  )
     return alert("هیچ داده‌ای برای خروجی وجود ندارد!");
 
   const blob = new Blob([JSON.stringify(data, null, 2)], {

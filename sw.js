@@ -1,5 +1,5 @@
 // sw.js - Service Worker برای کارکرد ۱۰۰٪ آفلاین و قابلیت نصب PWA با سرعت حداکثری
-const CACHE_NAME = "cafe-pwa-v3";
+const CACHE_NAME = "cafe-pwa-v5";
 
 const STATIC_ASSETS = [
   "./",
@@ -25,6 +25,7 @@ const STATIC_ASSETS = [
   "./src/js/store.js",
   "./src/js/invoice.js",
   "./src/js/invoices-list.js",
+  "./src/js/proformas-list.js",
   "./src/js/products.js",
   "./src/js/reports.js",
   "./src/js/customers.js",
@@ -38,6 +39,13 @@ const STATIC_ASSETS = [
   "./src/js/price-helper.js",
   "./src/data/rates.js",
 ];
+
+// دریافت پیام از کلاینت جهت فعال‌سازی آنی نسخه جدید بدون معطلی
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -56,7 +64,10 @@ self.addEventListener("activate", (event) => {
       return Promise.all(
         keys
           .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key)),
+          .map((key) => {
+            console.log("حذف کش نسخه قبلی:", key);
+            return caches.delete(key);
+          }),
       );
     }),
   );
@@ -71,14 +82,17 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // استراتژی کش بهینه: برای فایل‌های استاتیک محلی ابتدا کش، برای داده‌های json استراتژی شبکه با فال‌بک به کش
-  const isDataJson = event.request.url.includes("/data/") && event.request.url.endsWith(".json");
+  // ۱. درخواست‌های صفحات و ناوبری HTML: استراتژی Network-First با فال‌بک به کش
+  // این استراتژی باعث می‌شود همیشه آخرین نسخه صفحه وب از سرور بارگذاری شود و در صورت آفلاین بودن از کش استفاده گردد
+  const isHtml =
+    event.request.mode === "navigate" ||
+    event.request.headers.get("accept")?.includes("text/html");
 
-  if (isDataJson) {
+  if (isHtml) {
     event.respondWith(
       fetch(event.request)
         .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200 && event.request.method === "GET") {
+          if (networkResponse && networkResponse.status === 200) {
             const responseClone = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(event.request, responseClone);
@@ -86,18 +100,22 @@ self.addEventListener("fetch", (event) => {
           }
           return networkResponse;
         })
-        .catch(() => caches.match(event.request))
+        .catch(() => {
+          return caches.match(event.request).then((cached) => {
+            return cached || caches.match("./index.html");
+          });
+        }),
     );
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        // بازگشت آنی فایل از کش در کمتر از ۱۰ میلی‌ثانیه
-        return cachedResponse;
-      }
-      return fetch(event.request)
+  // ۲. داده‌های json استخراجی: استراتژی شبکه با فال‌بک به کش
+  const isDataJson =
+    event.request.url.includes("/data/") && event.request.url.endsWith(".json");
+
+  if (isDataJson) {
+    event.respondWith(
+      fetch(event.request)
         .then((networkResponse) => {
           if (
             networkResponse &&
@@ -111,11 +129,32 @@ self.addEventListener("fetch", (event) => {
           }
           return networkResponse;
         })
-        .catch(() => {
-          if (event.request.headers.get("accept")?.includes("text/html")) {
-            return caches.match("./index.html");
+        .catch(() => caches.match(event.request)),
+    );
+    return;
+  }
+
+  // ۳. فایل‌های استاتیک محلی (جاوااسکریپت، استایل، فونت، مدیا): استراتژی Stale-While-Revalidate
+  // کش بلافاصله تحویل داده می‌شود (لود فوق سریع) و در پس‌زمینه نسخه به‌روز از شبکه دریافت و کش را نوسازی می‌کند
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      const fetchPromise = fetch(event.request)
+        .then((networkResponse) => {
+          if (
+            networkResponse &&
+            networkResponse.status === 200 &&
+            event.request.method === "GET"
+          ) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseClone);
+            });
           }
-        });
+          return networkResponse;
+        })
+        .catch(() => cachedResponse);
+
+      return cachedResponse || fetchPromise;
     }),
   );
 });

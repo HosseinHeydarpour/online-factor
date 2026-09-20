@@ -321,6 +321,12 @@ export const store = {
     write(KEYS.PROFORMA_COUNTER, n);
     return n;
   },
+  getProformaCounter() {
+    return read(KEYS.PROFORMA_COUNTER, 5000);
+  },
+  setProformaCounter(val) {
+    write(KEYS.PROFORMA_COUNTER, Number(val) || 5000);
+  },
   saveProforma(proforma) {
     const list = read(KEYS.PROFORMAS, []);
     const idx = list.findIndex((p) => p.number === proforma.number);
@@ -333,6 +339,10 @@ export const store = {
     return proforma;
   },
   saveProformas(list) {
+    write(KEYS.PROFORMAS, list);
+    return list;
+  },
+  setProformas(list) {
     write(KEYS.PROFORMAS, list);
     return list;
   },
