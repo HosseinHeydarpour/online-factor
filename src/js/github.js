@@ -36,6 +36,11 @@ function ghToast(msg) {
   setTimeout(() => t.classList.add("hidden"), 3000);
 }
 
+/* ---------- push خودکار به ریپوی بک‌آپ ---------- */
+export function autoPushGitHub() {
+  syncAllStorages({ showToast: false });
+}
+
 /* ---------- push خودکار به ریپوی پابلیک ---------- */
 export function autoPushPublicRepo() {
   syncAllStorages({ showToast: false });
