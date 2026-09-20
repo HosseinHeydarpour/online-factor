@@ -71,14 +71,14 @@ export function renderCategoryChips() {
       const active = selectedCategoryId === c.id;
       return `
       <button data-chip-cat="${c.id}"
-        class="shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition shadow-sm ${
+        class="shrink-0 flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-bold transition shadow-sm min-h-[38px] ${
           active
-            ? "bg-brand-600 text-white"
+            ? "bg-brand-600 text-white shadow"
             : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
         }">
         <span>${c.icon || "📦"}</span>
         <span>${c.name}</span>
-        <span class="text-[10px] px-1.5 py-0.2 rounded-full ${
+        <span class="text-[11px] px-2 py-0.5 rounded-full font-bold ${
           active
             ? "bg-white/20 text-white"
             : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
@@ -187,10 +187,13 @@ export function renderProducts(filter = "") {
             : ""
         }
         <!-- دکمه‌ها -->
-        <div class="flex gap-1.5 pt-1 mt-auto">
-          <button data-add-product="${p.id}" class="flex-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded-lg font-bold">+ فاکتور</button>
-          <button data-edit="${p.id}" title="ویرایش" class="text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 px-3 py-2 rounded-lg font-bold">✏️</button>
-          <button data-delete="${p.id}" title="حذف" class="text-xs bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 px-3 py-2 rounded-lg font-bold">🗑️</button>
+        <div class="flex gap-2 pt-1.5 mt-auto">
+          <button data-add-product="${p.id}" class="flex-1 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-3 rounded-xl font-bold shadow-sm transition flex items-center justify-center gap-1.5 min-h-[38px]">
+            <span>➕</span>
+            <span>افزودن به فاکتور</span>
+          </button>
+          <button data-edit="${p.id}" title="ویرایش محصول" class="text-xs sm:text-sm bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 px-3.5 py-2.5 rounded-xl font-bold transition min-h-[38px] flex items-center justify-center">✏️</button>
+          <button data-delete="${p.id}" title="حذف محصول" class="text-xs sm:text-sm bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 px-3.5 py-2.5 rounded-xl font-bold transition min-h-[38px] flex items-center justify-center">🗑️</button>
         </div>
       </div>
     </div>`;

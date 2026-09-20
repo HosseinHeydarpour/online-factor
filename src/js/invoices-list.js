@@ -7,6 +7,8 @@ import {
   toEnDigits,
 } from "./store.js";
 import { buildPrintHTML, fitToSinglePage } from "./invoice.js";
+import { autoSaveInvoices } from "./backup.js";
+import { autoPushGitHub } from "./github.js";
 
 function isValidJalaliDate(dateStr) {
   return typeof dateStr === "string" && /^\d{4}\/\d{2}\/\d{2}$/.test(dateStr);
@@ -61,22 +63,22 @@ function getDateRangeForPeriod(period) {
   }
 
   if (period === "month") {
-    const startOfMonth = `${today.year}/${String(today.month).padStart(2, "0")}/01`;
-    return { start: startOfMonth, end: today.full };
+    // ابتدای ماه جاری شمسی تا امروز
+    const ym = today.full.split("/").slice(0, 2).join("/");
+    return { start: `${ym}/01`, end: today.full };
+  }
+
+  if (period === "all") {
+    return { start: "", end: "" };
   }
 
   if (period === "custom") {
     return {
-      start: invoiceFilter.startDate
-        ? toEnDigits(invoiceFilter.startDate).trim()
-        : "",
-      end: invoiceFilter.endDate
-        ? toEnDigits(invoiceFilter.endDate).trim()
-        : "",
+      start: invoiceFilter.startDate || "",
+      end: invoiceFilter.endDate || "",
     };
   }
 
-  // حالت 'all'
   return { start: "", end: "" };
 }
 
@@ -104,10 +106,10 @@ function updatePeriodButtonsUI() {
     const isSelected = btn.dataset.invPeriod === invoiceFilter.period;
     if (isSelected) {
       btn.className =
-        "inv-period-btn shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-brand-600 text-white shadow-sm transition";
+        "inv-period-btn shrink-0 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-brand-600 text-white shadow-sm transition min-h-[38px]";
     } else {
       btn.className =
-        "inv-period-btn shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition";
+        "inv-period-btn shrink-0 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition min-h-[38px]";
     }
   });
 }
@@ -397,8 +399,22 @@ export function renderInvoicesList(query = "") {
                   </td>
                   <td class="py-3 px-3">
                     <div class="flex items-center justify-center gap-1.5 whitespace-nowrap">
-                      <button onclick="window.viewInvoice('${inv.number}')" title="مشاهده جزئیات" class="text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-2.5 py-1.5 rounded-lg font-bold transition">👁️ مشاهده</button>
-                      <button onclick="window.printInvoice('${inv.number}')" title="چاپ فاکتور" class="text-xs bg-brand-600 hover:bg-brand-700 text-white px-2.5 py-1.5 rounded-lg font-bold shadow-sm transition">🖨️ چاپ</button>
+                      <button onclick="window.viewInvoice('${inv.number}')" title="مشاهده جزئیات فاکتور" class="px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl font-bold transition flex items-center gap-1 min-h-[36px]">
+                        <span>👁️</span>
+                        <span class="hidden md:inline">مشاهده</span>
+                      </button>
+                      <button onclick="window.editInvoice('${inv.number}')" title="ویرایش فاکتور" class="px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold shadow-sm transition flex items-center gap-1 min-h-[36px]">
+                        <span>✏️</span>
+                        <span class="hidden md:inline">ویرایش</span>
+                      </button>
+                      <button onclick="window.printInvoice('${inv.number}')" title="چاپ فاکتور" class="px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-bold shadow-sm transition flex items-center gap-1 min-h-[36px]">
+                        <span>🖨️</span>
+                        <span class="hidden md:inline">چاپ</span>
+                      </button>
+                      <button onclick="window.deleteInvoice('${inv.number}')" title="حذف دائمی فاکتور" class="px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-bold shadow-sm transition flex items-center gap-1 min-h-[36px]">
+                        <span>🗑️</span>
+                        <span class="hidden md:inline">حذف</span>
+                      </button>
                     </div>
                   </td>
                 </tr>`;
@@ -416,7 +432,8 @@ let currentViewInvoiceNumber = null;
 
 window.initInvoiceDetailEvents = function () {
   const btnBack = document.getElementById("btn-back-to-invoices");
-  if (btnBack) {
+  if (btnBack && !btnBack.dataset.bound) {
+    btnBack.dataset.bound = "1";
     btnBack.addEventListener("click", () => {
       if (typeof setView === "function") {
         setView("invoices");
@@ -425,10 +442,31 @@ window.initInvoiceDetailEvents = function () {
   }
 
   const btnPrintDetail = document.getElementById("btn-print-from-detail");
-  if (btnPrintDetail) {
+  if (btnPrintDetail && !btnPrintDetail.dataset.bound) {
+    btnPrintDetail.dataset.bound = "1";
     btnPrintDetail.addEventListener("click", () => {
       if (currentViewInvoiceNumber) {
         window.printInvoice(currentViewInvoiceNumber);
+      }
+    });
+  }
+
+  const btnEditDetail = document.getElementById("btn-edit-from-detail");
+  if (btnEditDetail && !btnEditDetail.dataset.bound) {
+    btnEditDetail.dataset.bound = "1";
+    btnEditDetail.addEventListener("click", () => {
+      if (currentViewInvoiceNumber) {
+        window.editInvoice(currentViewInvoiceNumber);
+      }
+    });
+  }
+
+  const btnDeleteDetail = document.getElementById("btn-delete-from-detail");
+  if (btnDeleteDetail && !btnDeleteDetail.dataset.bound) {
+    btnDeleteDetail.dataset.bound = "1";
+    btnDeleteDetail.addEventListener("click", () => {
+      if (currentViewInvoiceNumber) {
+        window.deleteInvoice(currentViewInvoiceNumber);
       }
     });
   }
@@ -580,5 +618,84 @@ window.printInvoice = async function (invNumber) {
   }, 300);
 };
 
+window.editInvoice = function (invNumber) {
+  const numericNumber = Number(invNumber);
+  const invoice = store.getInvoice(numericNumber);
+  if (!invoice) {
+    alert("فاکتور مورد نظر یافت نشد!");
+    return;
+  }
+
+  if (typeof window.loadInvoiceForEdit === "function") {
+    window.loadInvoiceForEdit(invoice);
+  }
+  if (typeof setView === "function") {
+    setView("invoice");
+  }
+};
+
+window.deleteInvoice = function (invNumber) {
+  const numericNumber = Number(invNumber);
+  const invoice = store.getInvoice(numericNumber);
+  if (!invoice) {
+    alert("فاکتور مورد نظر یافت نشد!");
+    return;
+  }
+
+  const confirmMsg = `آیا از حذف فاکتور شماره ${faNum(numericNumber)} اطمینان دارید؟\nاین عملیات دائمی بوده و اطلاعات فاکتور پاک خواهد شد.`;
+  if (!confirm(confirmMsg)) return;
+
+  // بازگرداندن موجودی محصولات فیزیکی به انبار در صورت وجود
+  if (Array.isArray(invoice.items)) {
+    invoice.items.forEach((item) => {
+      if (item.productId) {
+        const product = store.getProduct(item.productId);
+        if (product) {
+          let updated = false;
+          if (item.variantId && product.variants?.length) {
+            const vIdx = product.variants.findIndex(
+              (v) => v.id === item.variantId,
+            );
+            if (vIdx >= 0) {
+              product.variants[vIdx].quantity =
+                (product.variants[vIdx].quantity ?? 0) + item.qty;
+              updated = true;
+            }
+          } else if (!item.variantId) {
+            product.quantity = (product.quantity ?? 0) + item.qty;
+            updated = true;
+          }
+          if (updated) {
+            store.saveProduct(product);
+          }
+        }
+      }
+    });
+  }
+
+  // حذف فاکتور از دیتابیس
+  store.deleteInvoice(numericNumber);
+  autoSaveInvoices();
+  autoPushGitHub(`حذف فاکتور شماره ${faNum(numericNumber)}`);
+
+  // اگر کاربر در صفحه جزئیات بود، بازگشت به لیست
+  if (typeof setView === "function") {
+    setView("invoices");
+  }
+
+  // به‌روزرسانی جدول و آمار
+  renderInvoicesList(
+    document.getElementById("invoice-search")?.value.trim() || "",
+  );
+
+  const toast = document.getElementById("toast");
+  if (toast) {
+    toast.textContent = `🗑️ فاکتور شماره ${faNum(numericNumber)} با موفقیت حذف شد`;
+    toast.classList.remove("hidden");
+    setTimeout(() => toast.classList.add("hidden"), 3000);
+  }
+};
+
 window.initInvoicesList = initInvoicesList;
 window.renderInvoicesList = renderInvoicesList;
+export { initInvoicesList, renderInvoicesList };

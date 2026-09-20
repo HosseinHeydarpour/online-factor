@@ -586,10 +586,10 @@ export function renderCustomers(query = "") {
                   <td class="py-3 px-3 text-slate-500 dark:text-slate-400 whitespace-nowrap">${lastDate}</td>
                   <td class="py-3 px-3">
                     <div class="flex items-center justify-center gap-1.5">
-                      <button data-use-customer="${c.id}" title="افزودن به فاکتور" class="text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-2 rounded-lg font-bold">➕</button>
-                      <button data-details-customer="${c.id}" title="اطلاعات تکمیلی" class="text-xs bg-brand-50 dark:bg-slate-700 hover:bg-brand-100 dark:hover:bg-slate-600 text-brand-700 dark:text-brand-400 px-2.5 py-2 rounded-lg font-bold">📋</button>
-                      <button data-edit-customer="${c.id}" title="ویرایش نام/شماره" class="text-xs bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-2.5 py-2 rounded-lg font-bold">✏️</button>
-                      <button data-delete-customer="${c.id}" title="حذف" class="text-xs bg-rose-50 dark:bg-rose-900/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 px-2.5 py-2 rounded-lg font-bold">🗑️</button>
+                      <button data-use-customer="${c.id}" title="افزودن به فاکتور" class="w-8 h-8 sm:w-9 sm:h-9 text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold flex items-center justify-center shadow-sm transition">➕</button>
+                      <button data-details-customer="${c.id}" title="اطلاعات تکمیلی" class="w-8 h-8 sm:w-9 sm:h-9 text-xs sm:text-sm bg-brand-50 dark:bg-slate-700 hover:bg-brand-100 dark:hover:bg-slate-600 text-brand-700 dark:text-brand-400 rounded-xl font-bold flex items-center justify-center border border-brand-200 dark:border-slate-600 transition">📋</button>
+                      <button data-edit-customer="${c.id}" title="ویرایش نام/شماره" class="w-8 h-8 sm:w-9 sm:h-9 text-xs sm:text-sm bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl font-bold flex items-center justify-center transition">✏️</button>
+                      <button data-delete-customer="${c.id}" title="حذف مشتری" class="w-8 h-8 sm:w-9 sm:h-9 text-xs sm:text-sm bg-rose-50 dark:bg-rose-900/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 rounded-xl font-bold flex items-center justify-center transition">🗑️</button>
                     </div>
                   </td>
                 </tr>`;

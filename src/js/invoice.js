@@ -194,7 +194,87 @@ export function addItemToInvoice({ title, price, meta = "", productId = null, va
   render();
 }
 
+let editingInvoice = null;
+
+export function isInvoiceEditing() {
+  return Boolean(editingInvoice);
+}
+
+export function updateEditModeUI(isEditing) {
+  const asideTitle = document.getElementById("invoice-aside-title");
+  const editBadge = document.getElementById("invoice-edit-badge");
+  const btnCancel = document.getElementById("btn-cancel-edit");
+  const btnSave = document.getElementById("btn-save");
+
+  if (isEditing && editingInvoice) {
+    if (asideTitle) asideTitle.textContent = "✏️ ویرایش فاکتور";
+    if (editBadge) {
+      editBadge.textContent = `#${faNum(editingInvoice.number)}`;
+      editBadge.classList.remove("hidden");
+    }
+    if (btnCancel) btnCancel.classList.remove("hidden");
+    if (btnSave) {
+      btnSave.innerHTML = `<span>💾</span><span>بروزرسانی فاکتور #${faNum(editingInvoice.number)}</span>`;
+      btnSave.classList.remove("bg-emerald-600", "hover:bg-emerald-700");
+      btnSave.classList.add("bg-amber-600", "hover:bg-amber-700");
+    }
+  } else {
+    if (asideTitle) asideTitle.textContent = "🧾 فاکتور جاری";
+    if (editBadge) editBadge.classList.add("hidden");
+    if (btnCancel) btnCancel.classList.add("hidden");
+    if (btnSave) {
+      btnSave.innerHTML = `<span>💾</span><span>ثبت فاکتور</span>`;
+      btnSave.classList.remove("bg-amber-600", "hover:bg-amber-700");
+      btnSave.classList.add("bg-emerald-600", "hover:bg-emerald-700");
+    }
+  }
+}
+
+export function loadInvoiceForEdit(inv) {
+  if (!inv) return;
+
+  editingInvoice = {
+    ...inv,
+    items: JSON.parse(JSON.stringify(inv.items || [])),
+  };
+
+  state.number = inv.number;
+  state.items = JSON.parse(JSON.stringify(inv.items || []));
+  state.discount = inv.discount || 0;
+  state.customer = { ...EMPTY_CUSTOMER, ...(inv.customer || {}) };
+  state.payment = inv.payment || "نقدی";
+  state.date = inv.date || toJalali().full;
+  state.time = inv.time || nowTimeFa();
+
+  if (el.custName) el.custName.value = state.customer.name || "";
+  if (el.custPhone) el.custPhone.value = state.customer.phone || "";
+  if (el.discountInput) el.discountInput.value = state.discount;
+  if (el.customDate) el.customDate.value = state.date;
+  if (el.customTime) el.customTime.value = state.time;
+
+  setCustomerDetailsFormValues(state.customer);
+  updateDetailsBadge();
+
+  const radio = document.querySelector(
+    `input[name="payment-method"][value="${state.payment}"]`,
+  );
+  if (radio) radio.checked = true;
+
+  updateEditModeUI(true);
+  render();
+
+  custToast(`✏️ فاکتور شماره ${faNum(inv.number)} جهت ویرایش باز شد`);
+
+  document.getElementById("invoice-aside")?.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+}
+
 export function clearInvoice() {
+  editingInvoice = null;
+  updateEditModeUI(false);
+
   state.items = [];
   state.discount = 0;
   state.number = null;
@@ -232,22 +312,22 @@ function render() {
         .map(
           (
             i,
-          ) => `<div class="border border-slate-200 rounded-xl p-2.5 text-xs fade-in">
+          ) => `<div class="border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs fade-in bg-white dark:bg-slate-800/80">
             <div class="flex justify-between gap-2">
               <div class="min-w-0">
-                <p class="font-bold truncate">${i.title}</p>
-                ${i.meta ? `<p class="text-slate-400 mt-0.5">${i.meta}</p>` : ""}
-                <p class="text-slate-500 mt-0.5">${faNum(i.price)} تومان</p>
+                <p class="font-bold truncate text-sm text-slate-800 dark:text-slate-100">${i.title}</p>
+                ${i.meta ? `<p class="text-slate-400 mt-0.5 text-xs">${i.meta}</p>` : ""}
+                <p class="text-slate-500 dark:text-slate-400 mt-0.5">${faNum(i.price)} تومان</p>
               </div>
-              <button data-del="${i.rowId}" class="text-rose-400 hover:text-rose-600 shrink-0">✕</button>
+              <button data-del="${i.rowId}" title="حذف ردیف" class="w-7 h-7 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/30 flex items-center justify-center font-bold text-sm shrink-0 transition">✕</button>
             </div>
-            <div class="flex items-center justify-between mt-2">
-              <div class="flex items-center gap-1">
-                <button data-dec="${i.rowId}" class="w-6 h-6 rounded-md bg-slate-100 hover:bg-slate-200 font-bold">−</button>
-                <span class="w-8 text-center font-bold">${faNum(i.qty)}</span>
-                <button data-inc="${i.rowId}" class="w-6 h-6 rounded-md bg-slate-100 hover:bg-slate-200 font-bold">+</button>
+            <div class="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+              <div class="flex items-center gap-1.5">
+                <button data-dec="${i.rowId}" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-extrabold text-sm flex items-center justify-center transition">−</button>
+                <span class="w-8 text-center font-extrabold text-sm text-slate-800 dark:text-slate-100">${faNum(i.qty)}</span>
+                <button data-inc="${i.rowId}" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-extrabold text-sm flex items-center justify-center transition">+</button>
               </div>
-              <b class="text-brand-700">${faNum(i.price * i.qty)} تومان</b>
+              <b class="text-brand-700 dark:text-brand-400 text-sm font-extrabold">${faNum(i.price * i.qty)} تومان</b>
             </div>
           </div>`,
         )
@@ -545,10 +625,8 @@ export async function printInvoice() {
 
 export function saveInvoice() {
   if (!state.items.length) return alert("فاکتور خالی است!");
-  if (!state.number) state.number = store.nextInvoiceNumber();
 
   const t = totals();
-
   const rawDate = el.customDate ? el.customDate.value : "";
   const rawTime = el.customTime ? el.customTime.value : "";
 
@@ -557,28 +635,143 @@ export function saveInvoice() {
     ? toEnDigits(rawTime).trim()
     : state.time || "12:00";
 
-  // کسر موجودی محصولات و واریانت‌ها قبل از ذخیره فاکتور
+  // ========== سناریو ۱: ویرایش فاکتور موجود ==========
+  if (editingInvoice) {
+    const targetNumber = editingInvoice.number;
+    const oldItems = editingInvoice.items || [];
+    const newItems = state.items || [];
+
+    // ۱) تطبیق هوشمند موجودی برای اقلام فیزیکی اضافه/تغییریافته
+    newItems.forEach((newItem) => {
+      if (newItem.productId) {
+        const oldItem = oldItems.find(
+          (o) =>
+            o.productId === newItem.productId &&
+            (o.variantId || null) === (newItem.variantId || null),
+        );
+        const oldQty = oldItem ? oldItem.qty : 0;
+        const diff = newItem.qty - oldQty; // مثبت: کسر از انبار، منفی: بازگشت به انبار
+
+        if (diff !== 0) {
+          const product = store.getProduct(newItem.productId);
+          if (product) {
+            let updated = false;
+            if (newItem.variantId && product.variants?.length) {
+              const vIdx = product.variants.findIndex(
+                (v) => v.id === newItem.variantId,
+              );
+              if (vIdx >= 0) {
+                const currentQty = product.variants[vIdx].quantity ?? 0;
+                product.variants[vIdx].quantity = Math.max(0, currentQty - diff);
+                updated = true;
+              }
+            } else if (!newItem.variantId) {
+              const currentQty = product.quantity ?? 0;
+              product.quantity = Math.max(0, currentQty - diff);
+              updated = true;
+            }
+            if (updated) store.saveProduct(product);
+          }
+        }
+      }
+    });
+
+    // ۲) بازگشت موجودی برای اقلامی که در ویرایش از فاکتور حذف شده‌اند
+    oldItems.forEach((oldItem) => {
+      if (oldItem.productId) {
+        const stillExists = newItems.some(
+          (n) =>
+            n.productId === oldItem.productId &&
+            (n.variantId || null) === (oldItem.variantId || null),
+        );
+        if (!stillExists) {
+          const product = store.getProduct(oldItem.productId);
+          if (product) {
+            let updated = false;
+            if (oldItem.variantId && product.variants?.length) {
+              const vIdx = product.variants.findIndex(
+                (v) => v.id === oldItem.variantId,
+              );
+              if (vIdx >= 0) {
+                product.variants[vIdx].quantity =
+                  (product.variants[vIdx].quantity ?? 0) + oldItem.qty;
+                updated = true;
+              }
+            } else if (!oldItem.variantId) {
+              product.quantity = (product.quantity ?? 0) + oldItem.qty;
+              updated = true;
+            }
+            if (updated) store.saveProduct(product);
+          }
+        }
+      }
+    });
+
+    const updatedInvoice = {
+      number: targetNumber,
+      date: jalaliDate,
+      time: jalaliTime,
+      payment: state.payment,
+      customer: { ...state.customer },
+      items: [...state.items],
+      ...t,
+    };
+
+    if (
+      (state.customer.name || "").trim() ||
+      (state.customer.phone || "").trim()
+    ) {
+      store.saveCustomer({ ...state.customer });
+    }
+
+    // ذخیره فاکتور ویرایش‌شده (جایگزینی در دیتابیس با همان شماره)
+    store.saveInvoice(updatedInvoice);
+    autoSaveInvoices();
+    autoPushGitHub(`ویرایش فاکتور شماره ${faNum(targetNumber)}`);
+
+    alert(
+      `فاکتور شماره ${faNum(targetNumber)} با موفقیت ویرایش و بروزرسانی شد ✅`,
+    );
+
+    clearInvoice();
+
+    if (typeof window.renderInvoicesList === "function") {
+      window.renderInvoicesList();
+    }
+    if (typeof window.setView === "function") {
+      window.setView("invoices");
+    }
+    return;
+  }
+
+  // ========== سناریو ۲: ایجاد فاکتور جدید ==========
+  if (!state.number) state.number = store.nextInvoiceNumber();
+
+  // کسر موجودی محصولات و واریانت‌ها قبل از ذخیره فاکتور جدید
   state.items.forEach((item) => {
     if (item.productId) {
       const product = store.getProduct(item.productId);
       if (product) {
         let updated = false;
-        
+
         if (item.variantId && product.variants?.length) {
-          // کسر از واریانت
-          const variantIdx = product.variants.findIndex(v => v.id === item.variantId);
+          const variantIdx = product.variants.findIndex(
+            (v) => v.id === item.variantId,
+          );
           if (variantIdx >= 0) {
             const currentQty = product.variants[variantIdx].quantity ?? 0;
-            product.variants[variantIdx].quantity = Math.max(0, currentQty - item.qty);
+            product.variants[variantIdx].quantity = Math.max(
+              0,
+              currentQty - item.qty,
+            );
             updated = true;
           }
         } else if (!item.variantId) {
-          // کسر از موجودی پایه
           const currentQty = product.quantity ?? 0;
           product.quantity = Math.max(0, currentQty - item.qty);
           updated = true;
         }
-        
+
         if (updated) {
           store.saveProduct(product);
         }
@@ -603,12 +796,11 @@ export function saveInvoice() {
     store.saveCustomer({ ...state.customer });
   }
 
-  // ۱) ذخیره در دیتابیس
+  // ذخیره در دیتابیس
   store.saveInvoice(invoice);
   autoSaveInvoices();
   autoPushGitHub(`ایجاد فاکتور شماره ${faNum(invoice.number)}`);
 
-  // ۲) حل مشکل عدم نمایش در لیست:
   // اگر تاریخ فاکتور امروز نیست، فیلتر لیست را خودکار روی «همه» می‌گذاریم تا فاکتور مخفی نماند
   const todayStr = toJalali().full;
   if (jalaliDate !== todayStr) {
@@ -617,7 +809,7 @@ export function saveInvoice() {
     }
   }
 
-  // ۳) تازه‌سازی آنی جدول فاکتورها
+  // تازه‌سازی آنی جدول فاکتورها
   if (typeof window.renderInvoicesList === "function") {
     window.renderInvoicesList();
   }
@@ -695,6 +887,14 @@ export function initInvoiceEvents() {
   document.getElementById("btn-save").addEventListener("click", saveInvoice);
   document.getElementById("btn-clear-invoice").addEventListener("click", () => {
     if (confirm("فاکتور پاک شود؟")) clearInvoice();
+  });
+  document.getElementById("btn-cancel-edit")?.addEventListener("click", () => {
+    if (confirm("آیا از انصراف از ویرایش فاکتور اطمینان دارید؟ تغییرات ذخیره نخواهند شد.")) {
+      clearInvoice();
+      if (typeof setView === "function") {
+        setView("invoices");
+      }
+    }
   });
 
   document.querySelectorAll('input[name="payment-method"]').forEach((r) => {
@@ -840,3 +1040,6 @@ export function initInvoiceEvents() {
 
   render();
 }
+
+window.loadInvoiceForEdit = loadInvoiceForEdit;
+

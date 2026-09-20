@@ -289,6 +289,15 @@
         box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25) !important;
       }
 
+      /* ===== ارتقای بصری و لمس‌پذیری سراسری تمام دکمه‌ها (Touch-Friendly Buttons) ===== */
+      button {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+      }
+      button:active:not(:disabled) {
+        transform: scale(0.97);
+      }
+
       /* ===== تب‌های نوبار (واکنش‌گرا + دارک‌مود) ===== */
       .view-tab {
         white-space: nowrap;
@@ -556,72 +565,75 @@
             </div>
             <button
               id="theme-toggle"
-              class="px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition"
+              class="px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition min-h-[38px] flex items-center gap-1.5"
             >
-              🌙 حالت تاریک
+              <span>🌙</span>
+              <span>حالت تاریک</span>
             </button>
             <button
               id="btn-logout"
-              class="px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 transition"
+              class="px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/50 transition min-h-[38px] flex items-center gap-1.5"
             >
-              🚪 خروج
+              <span>🚪</span>
+              <span>خروج</span>
             </button>
 
             <button
               id="btn-install-app"
-              class="hidden px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition"
+              class="hidden px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition min-h-[38px] flex items-center gap-1.5"
             >
-              📲 نصب اپ
+              <span>📲</span>
+              <span>نصب اپ</span>
             </button>
           </div>
         </div>
 
         <!-- تب‌ها -->
         <nav
-          class="max-w-7xl mx-auto px-2 sm:px-4 flex gap-1 text-xs sm:text-sm overflow-x-auto no-scrollbar"
+          class="max-w-7xl mx-auto px-2 sm:px-4 flex gap-1.5 text-xs sm:text-sm overflow-x-auto no-scrollbar"
         >
           <button
             data-view="invoice"
-            class="view-tab px-3 sm:px-4 py-2 sm:py-2.5 rounded-t-xl font-bold border-b-2 border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+            class="view-tab px-4 sm:px-5 py-2.5 sm:py-3 rounded-t-xl font-bold border-b-2 border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition min-h-[42px] flex items-center gap-1.5"
           >
             🧾 صدور فاکتور
           </button>
           <button
             data-view="products"
-            class="view-tab px-3 sm:px-4 py-2 sm:py-2.5 rounded-t-xl font-bold border-b-2 border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+            class="view-tab px-4 sm:px-5 py-2.5 sm:py-3 rounded-t-xl font-bold border-b-2 border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition min-h-[42px] flex items-center gap-1.5"
           >
             📦 محصولات فیزیکی
           </button>
           <button
             data-view="reports"
-            class="view-tab px-3 sm:px-4 py-2 sm:py-2.5 rounded-t-xl font-bold border-b-2 border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+            class="view-tab px-4 sm:px-5 py-2.5 sm:py-3 rounded-t-xl font-bold border-b-2 border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition min-h-[42px] flex items-center gap-1.5"
           >
             📊 گزارش‌گیری درآمد
           </button>
           <button
             data-view="invoices"
-            class="view-tab px-3 sm:px-4 py-2 sm:py-2.5 rounded-t-xl font-bold border-b-2 border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+            class="view-tab px-4 sm:px-5 py-2.5 sm:py-3 rounded-t-xl font-bold border-b-2 border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition min-h-[42px] flex items-center gap-1.5"
           >
             📋 فاکتورهای ثبت شده
           </button>
           <button
             data-view="customers"
-            class="view-tab px-4 py-2.5 rounded-t-xl font-bold border-b-2 border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+            class="view-tab px-4 sm:px-5 py-2.5 sm:py-3 rounded-t-xl font-bold border-b-2 border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition min-h-[42px] flex items-center gap-1.5"
           >
             👥 مشتریان
           </button>
           <button
             data-view="invoice-detail"
-            class="view-tab px-3 sm:px-4 py-2 sm:py-2.5 rounded-t-xl font-bold border-b-2 border-transparent hidden"
+            class="view-tab px-4 sm:px-5 py-2.5 sm:py-3 rounded-t-xl font-bold border-b-2 border-transparent hidden min-h-[42px] items-center gap-1.5"
             id="tab-invoice-detail"
           >
             👁️ مشاهده فاکتور
           </button>
           <button
             data-view="announcements"
-            class="view-tab px-3 sm:px-4 py-2 sm:py-2.5 rounded-t-xl font-bold border-b-2 border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+            class="view-tab px-4 sm:px-5 py-2.5 sm:py-3 rounded-t-xl font-bold border-b-2 border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition min-h-[42px] flex items-center gap-1.5"
           >
-            📢 اعلانات و اخبار
+            <span>📢 اعلانات و اخبار</span>
 
             <!-- بج تعداد پیام‌های خوانده‌نشده -->
             <span
@@ -632,7 +644,7 @@
           </button>
           <button
             data-view="settings"
-            class="view-tab px-3 sm:px-4 py-2 sm:py-2.5 rounded-t-xl font-bold border-b-2 border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
+            class="view-tab px-4 sm:px-5 py-2.5 sm:py-3 rounded-t-xl font-bold border-b-2 border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition min-h-[42px] flex items-center gap-1.5"
           >
             ⚙️ تنظیمات
           </button>
@@ -698,14 +710,27 @@
             id="invoice-aside"
             class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-4 sm:p-5 lg:sticky lg:top-32 min-w-0"
           >
-            <div class="flex items-center justify-between mb-4">
-              <h2 class="font-extrabold">🧾 فاکتور جاری</h2>
-              <button
-                id="btn-clear-invoice"
-                class="text-xs text-rose-600 dark:text-rose-400 font-bold hover:bg-rose-50 dark:hover:bg-slate-700 px-2 py-1 rounded-lg"
-              >
-                پاک کردن
-              </button>
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+              <div class="flex items-center gap-2">
+                <h2 id="invoice-aside-title" class="font-extrabold text-base sm:text-lg">🧾 فاکتور جاری</h2>
+                <span id="invoice-edit-badge" class="hidden text-xs bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 font-extrabold px-2.5 py-1 rounded-lg border border-amber-300 dark:border-amber-700 animate-pulse"></span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <button
+                  id="btn-cancel-edit"
+                  type="button"
+                  class="hidden text-xs sm:text-sm text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 font-bold px-3 py-1.5 rounded-xl transition min-h-[36px]"
+                >
+                  ❌ انصراف
+                </button>
+                <button
+                  id="btn-clear-invoice"
+                  type="button"
+                  class="text-xs sm:text-sm text-rose-600 dark:text-rose-400 font-bold hover:bg-rose-50 dark:hover:bg-slate-700 px-3 py-1.5 rounded-xl transition min-h-[36px]"
+                >
+                  پاک کردن
+                </button>
+              </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
@@ -726,14 +751,15 @@
               <button
                 id="btn-open-customer-details"
                 type="button"
-                class="text-[11px] font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-slate-700 hover:bg-brand-100 dark:hover:bg-slate-600 px-3 py-1.5 rounded-lg transition"
+                class="text-xs sm:text-sm font-bold text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-slate-700 hover:bg-brand-100 dark:hover:bg-slate-600 px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 min-h-[38px]"
               >
-                📋 اطلاعات تکمیلی مشتری
+                <span>📋</span>
+                <span>اطلاعات تکمیلی مشتری</span>
               </button>
 
               <span
                 id="customer-details-badge"
-                class="hidden text-[10px] font-bold text-emerald-600 dark:text-emerald-400"
+                class="hidden text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800"
                 >✅ تکمیل شده</span
               >
             </div>
@@ -869,18 +895,22 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-2 mt-5">
+            <div class="grid grid-cols-2 gap-2.5 mt-5">
               <button
                 id="btn-print"
-                class="bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl text-sm shadow"
+                type="button"
+                class="bg-brand-600 hover:bg-brand-700 text-white font-extrabold py-3 px-4 rounded-xl text-sm sm:text-base shadow-sm transition flex items-center justify-center gap-1.5 min-h-[46px]"
               >
-                🖨️ چاپ فاکتور
+                <span>🖨️</span>
+                <span>چاپ فاکتور</span>
               </button>
               <button
                 id="btn-save"
-                class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm shadow"
+                type="button"
+                class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3 px-4 rounded-xl text-sm sm:text-base shadow-sm transition flex items-center justify-center gap-1.5 min-h-[46px]"
               >
-                💾 ثبت فاکتور
+                <span>💾</span>
+                <span>ثبت فاکتور</span>
               </button>
             </div>
           </aside>
@@ -902,9 +932,11 @@
             </div>
             <button
               id="mobile-show-invoice"
-              class="shrink-0 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow"
+              type="button"
+              class="shrink-0 bg-brand-600 hover:bg-brand-700 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl shadow min-h-[40px] flex items-center gap-1.5"
             >
-              🧾 مشاهده فاکتور
+              <span>🧾</span>
+              <span>مشاهده فاکتور</span>
             </button>
           </div>
         </section>
@@ -1193,13 +1225,14 @@
               <input
                 id="invoice-search"
                 placeholder="جستجوی فاکتور (شماره، نام، تلفن)…"
-                class="flex-1 sm:w-60 rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500"
+                class="flex-1 sm:w-64 rounded-xl border border-slate-300 dark:border-slate-600 px-4 py-2.5 text-xs sm:text-sm outline-none focus:ring-2 focus:ring-brand-500 min-h-[42px]"
               />
               <button
                 id="btn-invoice-advanced-filter"
-                class="relative shrink-0 bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow flex items-center gap-1.5 transition"
+                class="relative shrink-0 bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl shadow flex items-center gap-2 transition min-h-[42px]"
               >
-                <span>🔍 فیلتر پیشرفته</span>
+                <span>🔍</span>
+                <span>فیلتر پیشرفته</span>
                 <span
                   id="invoice-filter-badge"
                   class="hidden w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-bold grid place-items-center"
@@ -1211,39 +1244,39 @@
 
           <!-- دکمه‌های فیلتر سریع بازه زمانی (پیش‌فرض: امروز) -->
           <div
-            class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1"
+            class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1"
           >
             <span
-              class="text-xs font-bold text-slate-500 dark:text-slate-400 shrink-0 ml-1"
+              class="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 shrink-0 ml-1"
               >دوره زمانی:</span
             >
             <button
               data-inv-period="today"
-              class="inv-period-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition"
+              class="inv-period-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition min-h-[38px]"
             >
               امروز
             </button>
             <button
               data-inv-period="yesterday"
-              class="inv-period-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition"
+              class="inv-period-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition min-h-[38px]"
             >
               دیروز
             </button>
             <button
               data-inv-period="week"
-              class="inv-period-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition"
+              class="inv-period-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition min-h-[38px]"
             >
               این هفته
             </button>
             <button
               data-inv-period="month"
-              class="inv-period-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition"
+              class="inv-period-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition min-h-[38px]"
             >
               این ماه
             </button>
             <button
               data-inv-period="all"
-              class="inv-period-btn px-3.5 py-1.5 rounded-xl text-xs font-bold transition"
+              class="inv-period-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition min-h-[38px]"
             >
               همه
             </button>
@@ -1309,26 +1342,49 @@
         </section>
 
         <!-- ============ ویو: مشاهده فاکتور ============ -->
-        <section id="view-invoice-detail" class="view hidden">
+        <section id="view-invoice-detail" class="view hidden space-y-4">
           <div class="max-w-4xl mx-auto">
-            <button
-              id="btn-back-to-invoices"
-              class="mb-4 flex items-center gap-2 text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition"
-            >
-              ← بازگشت به لیست فاکتورها
-            </button>
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-2.5">
+              <button
+                id="btn-back-to-invoices"
+                type="button"
+                class="flex items-center gap-2 text-xs sm:text-sm font-extrabold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm transition min-h-[42px]"
+              >
+                ← بازگشت به لیست فاکتورها
+              </button>
+
+              <div class="flex items-center gap-2 flex-wrap">
+                <button
+                  id="btn-edit-from-detail"
+                  type="button"
+                  class="bg-amber-500 hover:bg-amber-600 text-white font-extrabold py-2.5 sm:py-3 px-4 sm:px-5 rounded-xl text-xs sm:text-sm shadow-sm flex items-center gap-2 transition min-h-[42px]"
+                >
+                  <span>✏️</span>
+                  <span>ویرایش فاکتور</span>
+                </button>
+                <button
+                  id="btn-print-from-detail"
+                  type="button"
+                  class="bg-brand-600 hover:bg-brand-700 text-white font-extrabold py-2.5 sm:py-3 px-4 sm:px-5 rounded-xl text-xs sm:text-sm shadow-sm flex items-center gap-2 transition min-h-[42px]"
+                >
+                  <span>🖨️</span>
+                  <span>چاپ فاکتور</span>
+                </button>
+                <button
+                  id="btn-delete-from-detail"
+                  type="button"
+                  class="bg-rose-500 hover:bg-rose-600 text-white font-extrabold py-2.5 sm:py-3 px-4 sm:px-5 rounded-xl text-xs sm:text-sm shadow-sm flex items-center gap-2 transition min-h-[42px]"
+                >
+                  <span>🗑️</span>
+                  <span>حذف فاکتور</span>
+                </button>
+              </div>
+            </div>
+
             <div
               id="invoice-detail-content"
               class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden"
             ></div>
-            <div class="flex justify-end gap-3 mt-5">
-              <button
-                id="btn-print-from-detail"
-                class="bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 px-6 rounded-xl text-sm shadow flex items-center gap-2"
-              >
-                🖨️ چاپ فاکتور
-              </button>
-            </div>
           </div>
         </section>
 

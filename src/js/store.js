@@ -286,12 +286,31 @@ export const store = {
   },
   saveInvoice(invoice) {
     const list = read(KEYS.INVOICES, []);
-    list.unshift(invoice);
+    const idx = list.findIndex((i) => i.number === invoice.number);
+    if (idx >= 0) {
+      list[idx] = invoice;
+    } else {
+      list.unshift(invoice);
+    }
     write(KEYS.INVOICES, list);
     return invoice;
   },
+  saveInvoices(list) {
+    write(KEYS.INVOICES, list);
+    return list;
+  },
+  deleteInvoice(number) {
+    const numericNumber = Number(number);
+    const list = this.getInvoices().filter((inv) => inv.number !== numericNumber);
+    write(KEYS.INVOICES, list);
+    return list;
+  },
   getInvoices() {
     return read(KEYS.INVOICES, []);
+  },
+  getInvoice(number) {
+    const numericNumber = Number(number);
+    return this.getInvoices().find((inv) => inv.number === numericNumber);
   },
 
   // ---------- مشتریان ----------

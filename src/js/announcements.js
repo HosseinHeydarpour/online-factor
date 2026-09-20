@@ -146,7 +146,7 @@ export function renderAnnouncements(filter = "") {
 
         <div class="flex items-center gap-1.5 shrink-0">
           <button data-ann-pin="${ann.id}" type="button" title="${ann.pin ? "برداشتن سنجاق" : "سنجاق در صدر"}"
-            class="p-2 rounded-xl text-xs font-bold transition ${
+            class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center ${
               ann.pin
                 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
                 : "bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 hover:bg-slate-200"
@@ -154,11 +154,11 @@ export function renderAnnouncements(filter = "") {
             📌
           </button>
           <button data-ann-edit="${ann.id}" type="button" title="ویرایش خبر"
-            class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-xl text-xs font-bold transition">
+            class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 w-9 h-9 sm:w-10 sm:h-10 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center">
             ✏️
           </button>
           <button data-ann-del="${ann.id}" type="button" title="حذف خبر"
-            class="bg-rose-50 hover:bg-rose-100 dark:bg-rose-900/30 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 px-3 py-1.5 rounded-xl text-xs font-bold transition">
+            class="bg-rose-50 hover:bg-rose-100 dark:bg-rose-900/30 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 w-9 h-9 sm:w-10 sm:h-10 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center">
             🗑️
           </button>
         </div>
