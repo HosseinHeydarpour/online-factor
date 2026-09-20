@@ -277,8 +277,7 @@ el.items.addEventListener("click", (e) => {
 
       // همگام‌سازی آنی با فایل و گیت‌هاب (پابلیک و پرایوت)
       autoSaveInvoices();
-      autoPushGitHub();
-      autoPushPublicRepo();
+      autoPushGitHub("حذف دسته‌بندی نرخ‌نامه");
       toast("دسته‌بندی با موفقیت حذف شد 🗑️");
     }
     return;
@@ -292,8 +291,7 @@ el.items.addEventListener("click", (e) => {
       store.deleteServiceItem(catId, itemId);
       renderItems();
       autoSaveInvoices();
-      autoPushGitHub();
-      autoPushPublicRepo();
+      autoPushGitHub("حذف خدمت از نرخ‌نامه");
       toast("خدمت حذف شد 🗑️");
     }
     return;
@@ -407,8 +405,7 @@ function initBankAccounts() {
     if (banks !== null) {
       store.saveShopInfo({ ...store.getShopInfo(), bankAccounts: banks });
       autoSaveInvoices();
-      autoPushGitHub();
-      autoPushPublicRepo(); // 🌐 push خودکار به ریپوی پابلیک
+      autoPushGitHub("حذف کارت بانکی");
     }
   });
 }
@@ -517,8 +514,7 @@ function initServiceModal() {
       closeModal();
       renderItems();
       autoSaveInvoices();
-      autoPushGitHub();
-      autoPushPublicRepo();
+      autoPushGitHub("حذف دسته‌بندی نرخ‌نامه");
       toast("دسته‌بندی با موفقیت حذف شد 🗑️");
     }
   });
@@ -655,8 +651,7 @@ function initServiceModal() {
 
     // بک‌آپ آنی محلی و ارسال به گیت‌هاب (ریپوی خصوصی و پابلیک)
     autoSaveInvoices();
-    autoPushGitHub();
-    autoPushPublicRepo();
+    autoPushGitHub("ویرایش نرخ‌نامه و خدمات");
 
     toast("✅ دسته‌بندی و خدمات با موفقیت ذخیره و همگام شدند");
   });
@@ -696,8 +691,7 @@ function initSettings() {
     store.saveShopInfo({ ...store.getShopInfo(), logo: "" });
     document.getElementById("shop-logo").value = "";
     autoSaveInvoices();
-    autoPushGitHub();
-    autoPushPublicRepo(); // 🌐 push خودکار به ریپوی پابلیک
+    autoPushGitHub("حذف لوگوی کسب‌وکار");
   });
   document.getElementById("btn-save-shop").addEventListener("click", () => {
     const info = {
@@ -719,8 +713,7 @@ function initSettings() {
 
     if (typeof updateNavLogo === "function") updateNavLogo();
     autoSaveInvoices();
-    autoPushGitHub();
-    autoPushPublicRepo(); // 🌐 push خودکار به ریپوی پابلیک
+    autoPushGitHub("بروزرسانی اطلاعات کسب‌وکار");
 
     const toast = document.getElementById("toast");
     toast.textContent = "✅ تنظیمات ذخیره شد + روی ریپوی پابلیک بروزرسانی شد";

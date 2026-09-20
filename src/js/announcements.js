@@ -273,7 +273,8 @@ export function initAnnouncements() {
       renderAnnouncements(el.search?.value || "");
       toast(editingAnnId ? "اعلان ویرایش شد ✅" : "اعلان منتشر شد 📢");
 
-      await syncAllStorages({ showToast: true });
+      const annTitle = editingAnnId ? `ویرایش خبر «${title}»` : `ثبت خبر جدید «${title}»`;
+      await syncAllStorages({ title: annTitle, showToast: true });
     } catch (err) {
       console.error("خطا در ذخیره اعلان:", err);
       toast("❌ خطا در فرآیند ذخیره اعلان", true);
@@ -298,10 +299,12 @@ export function initAnnouncements() {
 
     if (delBtn) {
       if (confirm("آیا از حذف این اعلان اطمینان دارید؟")) {
+        const annToDel = store.getAnnouncement(delBtn.dataset.annDel);
+        const annName = annToDel?.title ? ` «${annToDel.title}»` : "";
         store.deleteAnnouncement(delBtn.dataset.annDel);
         renderAnnouncements(el.search?.value || "");
         toast("اعلان حذف شد 🗑️");
-        await syncAllStorages({ showToast: true });
+        await syncAllStorages({ title: `حذف خبر و اعلان${annName}`, showToast: true });
       }
       return;
     }
@@ -313,7 +316,8 @@ export function initAnnouncements() {
         store.saveAnnouncement(ann);
         renderAnnouncements(el.search?.value || "");
         toast(ann.pin ? "📌 اعلان سنجاق شد" : "📌 سنجاق برداشته شد");
-        await syncAllStorages({ showToast: true });
+        const pinTitle = ann.pin ? `سنجاق کردن خبر «${ann.title}»` : `برداشتن سنجاق خبر «${ann.title}»`;
+        await syncAllStorages({ title: pinTitle, showToast: true });
       }
     }
   });

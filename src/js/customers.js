@@ -12,9 +12,9 @@ function toast(msg) {
   setTimeout(() => t.classList.add("hidden"), 2200);
 }
 
-function syncBackup() {
+function syncBackup(title = "همگام‌سازی اطلاعات مشتریان") {
   autoSaveInvoices();
-  autoPushGitHub();
+  autoPushGitHub(title);
 }
 
 // کلید یکتا: ترکیب شماره + نام
@@ -316,7 +316,7 @@ function saveCustomerFromForm() {
   closeCustomerForm();
   renderCustomers(el.search?.value.trim() || "");
   toast("مشتری ذخیره شد ✅");
-  syncBackup();
+  syncBackup(`ثبت اطلاعات مشتری «${name || phone}»`);
 }
 
 /* ============================================================
@@ -626,7 +626,7 @@ export function renderCustomers(query = "") {
         store.saveCustomer({ ...c, ...data });
         renderCustomers(el.search?.value.trim() || "");
         toast("اطلاعات تکمیلی مشتری ذخیره شد ✅");
-        syncBackup();
+        syncBackup(`ویرایش اطلاعات مشتری «${c.name || c.phone || "بدون نام"}»`);
       });
     });
   });
@@ -645,7 +645,7 @@ export function renderCustomers(query = "") {
       store.saveCustomer({ ...c, name: name.trim(), phone: phone.trim() });
       renderCustomers(el.search?.value.trim() || "");
       toast("مشتری ویرایش شد ✅");
-      syncBackup();
+      syncBackup(`ویرایش مشتری «${name.trim() || phone.trim()}»`);
     });
   });
 
@@ -653,10 +653,14 @@ export function renderCustomers(query = "") {
     btn.addEventListener("click", () => {
       if (!confirm("این مشتری از لیست حذف شود؟ (فاکتورهای او باقی می‌مانند)"))
         return;
+      const c = store
+        .getCustomers()
+        .find((x) => x.id === btn.dataset.deleteCustomer);
+      const custName = c?.name ? ` «${c.name}»` : "";
       store.deleteCustomer(btn.dataset.deleteCustomer);
       renderCustomers(el.search?.value.trim() || "");
       toast("مشتری حذف شد 🗑️");
-      syncBackup();
+      syncBackup(`حذف مشتری${custName}`);
     });
   });
 }

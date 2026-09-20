@@ -606,7 +606,7 @@ export function saveInvoice() {
   // ۱) ذخیره در دیتابیس
   store.saveInvoice(invoice);
   autoSaveInvoices();
-  autoPushGitHub();
+  autoPushGitHub(`ایجاد فاکتور شماره ${faNum(invoice.number)}`);
 
   // ۲) حل مشکل عدم نمایش در لیست:
   // اگر تاریخ فاکتور امروز نیست، فیلتر لیست را خودکار روی «همه» می‌گذاریم تا فاکتور مخفی نماند

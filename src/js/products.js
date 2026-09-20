@@ -444,7 +444,8 @@ function initCategoryModalEvents() {
     renderProducts(el.search?.value.trim() || "");
 
     // 🚀 همگام‌سازی آنی محلی + گیت‌هاب خصوصی و پابلیک
-    syncAllStorages({ showToast: true });
+    const catTitle = editId ? `ویرایش دسته‌بندی «${name}»` : `افزودن دسته‌بندی «${name}»`;
+    syncAllStorages({ title: catTitle, showToast: true });
     toast("✅ دسته‌بندی ذخیره شد 📦");
   });
 
@@ -472,6 +473,8 @@ function initCategoryModalEvents() {
           "این دسته‌بندی حذف شود؟ (محصولات متعلق به این دسته حذف نمی‌شوند و به دسته عمومی منتقل می‌شوند)",
         )
       ) {
+        const catToDel = store.getProductCategory(id);
+        const catName = catToDel?.name ? ` «${catToDel.name}»` : "";
         store.deleteProductCategory(id);
         if (selectedCategoryId === id) selectedCategoryId = "all";
         renderCategoriesListModal();
@@ -479,7 +482,7 @@ function initCategoryModalEvents() {
         renderProducts(el.search?.value.trim() || "");
 
         // 🚀 همگام‌سازی آنی پس از حذف
-        await syncAllStorages({ showToast: true });
+        await syncAllStorages({ title: `حذف دسته‌بندی${catName}`, showToast: true });
         toast("دسته‌بندی حذف شد 🗑️");
       }
     }
@@ -605,7 +608,8 @@ export function initProductEvents() {
     renderProducts(el.search?.value.trim() || "");
     toast(editingId ? "محصول ویرایش شد ✅" : "محصول اضافه شد ✅");
 
-    await syncAllStorages({ showToast: true });
+    const prodTitle = editingId ? `ویرایش محصول «${name}»` : `ساخت محصول «${name}»`;
+    await syncAllStorages({ title: prodTitle, showToast: true });
   });
 
   // کلیک‌های گرید محصولات
@@ -618,11 +622,13 @@ export function initProductEvents() {
     if (edit) openModal(store.getProduct(edit));
 
     if (del && confirm("این محصول حذف شود؟")) {
+      const pToDel = store.getProduct(del);
+      const prodName = pToDel?.name ? ` «${pToDel.name}»` : "";
       store.deleteProduct(del);
       renderCategoryChips();
       renderProducts(el.search?.value.trim() || "");
       toast("محصول حذف شد 🗑️");
-      await syncAllStorages({ showToast: true });
+      await syncAllStorages({ title: `حذف محصول${prodName}`, showToast: true });
     }
 
     if (add) addProductToInvoice(store.getProduct(add));

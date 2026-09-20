@@ -1,5 +1,6 @@
 import { store } from "./store.js";
 import { autoSaveInvoices } from "./backup.js";
+import { startPushTask } from "./progress-indicator.js";
 
 const API = "https://api.github.com";
 
@@ -37,20 +38,20 @@ function ghToast(msg) {
 }
 
 /* ---------- push خودکار به ریپوی بک‌آپ ---------- */
-export function autoPushGitHub() {
-  syncAllStorages({ showToast: false });
+export function autoPushGitHub(title = "پشتیبان‌گیری خودکار") {
+  syncAllStorages({ title, showToast: false });
 }
 
 /* ---------- push خودکار به ریپوی پابلیک ---------- */
-export function autoPushPublicRepo() {
-  syncAllStorages({ showToast: false });
+export function autoPushPublicRepo(title = "همگام‌سازی عمومی") {
+  syncAllStorages({ title, showToast: false });
 }
 
 /* ---------- همگام‌سازی یکپارچه تمام حافظه‌ها (لوکال + گیت‌هاب خصوصی و عمومی) ---------- */
 let isSyncing = false;
 let syncDebounceTimer = null;
 
-export async function syncAllStorages({ showToast = false } = {}) {
+export async function syncAllStorages({ title = "همگام‌سازی گیت‌هاب", showToast = false, _task = null } = {}) {
   try {
     autoSaveInvoices();
   } catch (_) {}
@@ -68,15 +69,14 @@ export async function syncAllStorages({ showToast = false } = {}) {
     return { ok: false, message: "تنظیمات گیت‌هاب یافت نشد" };
   }
 
-  if (showToast) {
-    ghToast("☁️ در حال همگام‌سازی با گیت‌هاب...");
-  }
+  const task = _task || startPushTask(title, "در حال بررسی اتصال به گیت‌هاب...");
 
   if (isSyncing) {
+    task.update(10, "در صف همگام‌سازی...");
     clearTimeout(syncDebounceTimer);
     return new Promise((resolve) => {
       syncDebounceTimer = setTimeout(async () => {
-        resolve(await syncAllStorages({ showToast }));
+        resolve(await syncAllStorages({ title, showToast, _task: task }));
       }, 1000);
     });
   }
@@ -91,14 +91,22 @@ export async function syncAllStorages({ showToast = false } = {}) {
       (backupCfg.branch || "main").trim() === (pubCfg.branch || "main").trim();
 
     if (isSameRepo) {
-      const res = await pushCombinedToGitHub(backupCfg, { silent: true });
+      const res = await pushCombinedToGitHub(backupCfg, { silent: true, task });
       if (typeof window.updatePublicStatusUI === "function") window.updatePublicStatusUI();
       if (typeof window.updateGitHubStatusUI === "function") window.updateGitHubStatusUI();
 
-      if (showToast) {
-        if (res.ok) {
+      if (res.ok) {
+        task.complete("با موفقیت روی گیت‌هاب ذخیره شد ✅");
+        if (showToast) {
           ghToast("✅ همگام‌سازی گیت‌هاب (عمومی و خصوصی) انجام شد ☁️");
+        }
+      } else {
+        if (res.blockedByGuard) {
+          task.fail("سد ضد تخریب: پوش لغو شد");
         } else {
+          task.fail(res.message || "خطا در همگام‌سازی");
+        }
+        if (showToast) {
           ghToast(`❌ خطا در همگام‌سازی گیت‌هاب: ${res.message || ""}`);
         }
       }
@@ -108,38 +116,32 @@ export async function syncAllStorages({ showToast = false } = {}) {
       let publicRes = { ok: false };
 
       if (hasBackup) {
-        backupRes = await pushBackupToGitHub({ silent: true });
+        backupRes = await pushBackupToGitHub({ silent: true, task });
       }
       if (hasPublic) {
-        publicRes = await pushToPublicRepo({ silent: true });
+        publicRes = await pushToPublicRepo({ silent: true, task });
       }
 
       if (typeof window.updatePublicStatusUI === "function") window.updatePublicStatusUI();
       if (typeof window.updateGitHubStatusUI === "function") window.updateGitHubStatusUI();
 
-      if (showToast) {
-        if (hasBackup && hasPublic) {
-          if (backupRes.ok && publicRes.ok) {
-            ghToast("✅ همگام‌سازی ریپوی عمومی و خصوصی انجام شد ☁️");
-          } else if (backupRes.ok) {
-            ghToast("✅ ریپوی خصوصی همگام شد (خطا در ریپوی عمومی)");
-          } else if (publicRes.ok) {
-            ghToast("✅ ریپوی عمومی همگام شد (خطا در ریپوی خصوصی)");
-          } else {
-            ghToast("❌ خطا در همگام‌سازی با گیت‌هاب");
-          }
-        } else if (hasBackup) {
-          if (backupRes.ok) ghToast("✅ همگام‌سازی ریپوی بک‌آپ انجام شد ☁️");
-          else ghToast(`❌ خطا در ریپوی بک‌آپ: ${backupRes.message || ""}`);
-        } else if (hasPublic) {
-          if (publicRes.ok) ghToast("✅ همگام‌سازی ریپوی عمومی انجام شد ☁️");
-          else ghToast(`❌ خطا در ریپوی عمومی: ${publicRes.message || ""}`);
+      const allOk = (hasBackup ? backupRes.ok : true) && (hasPublic ? publicRes.ok : true);
+      if (allOk) {
+        task.complete("با موفقیت روی گیت‌هاب ذخیره شد ✅");
+        if (showToast) {
+          ghToast("✅ همگام‌سازی ریپوی عمومی و خصوصی انجام شد ☁️");
+        }
+      } else {
+        task.fail("خطا در همگام‌سازی گیت‌هاب");
+        if (showToast) {
+          ghToast("❌ خطا در همگام‌سازی با گیت‌هاب");
         }
       }
       return { ok: backupRes.ok || publicRes.ok };
     }
   } catch (err) {
     console.error("خطا در syncAllStorages:", err);
+    task.fail(err.message || "خطا در همگام‌سازی");
     if (showToast) ghToast(`❌ خطا در همگام‌سازی: ${err.message}`);
     return { ok: false, error: err.message };
   } finally {
@@ -376,8 +378,11 @@ function collectPublicFiles() {
 }
 
 /* ---------- همگام‌سازی کامل یکپارچه برای زمانی که هر دو ریپو یکسان هستند ---------- */
-export async function pushCombinedToGitHub(cfg, { silent = false } = {}) {
+export async function pushCombinedToGitHub(cfg, { silent = false, task = null, title = "همگام‌سازی عمومی و پشتیبان" } = {}) {
+  const currentTask = task || startPushTask(title, "بررسی اطلاعات اتصال به گیت‌هاب...");
+
   if (!cfg.owner || !cfg.repo || !cfg.token) {
+    currentTask.fail("تنظیمات گیت‌هاب ناقص است");
     if (!silent) alert("ابتدا تنظیمات گیت‌هاب (مالک / ریپو / توکن) را کامل کنید.");
     return { ok: false, message: "تنظیمات گیت‌هاب ناقص است" };
   }
@@ -386,10 +391,12 @@ export async function pushCombinedToGitHub(cfg, { silent = false } = {}) {
   const custs = store.getCustomers();
   const prods = store.getProducts();
 
+  currentTask.update(12, "بررسی سد ضد تخریب داده‌ها...");
   // 🛡️ سد امنیتی ضد تخریب: اگر محصولات لوکال خالی باشد اما در ریپو دیتا وجود داشته باشد
   if (prods.length === 0) {
     const remoteData = await checkRemotePublicData(cfg);
     if (remoteData.hasData) {
+      currentTask.fail("سد ضد تخریب: پوش لغو شد");
       if (!silent) {
         const shouldRestore = confirm(
           "⛔ عملیات متوقف شد (سد امنیتی ضد تخریب)!\n\n" +
@@ -420,6 +427,7 @@ export async function pushCombinedToGitHub(cfg, { silent = false } = {}) {
   }
 
   if (invs.length === 0 && custs.length === 0 && prods.length === 0) {
+    currentTask.fail("داده‌های محلی خالی است");
     if (!silent) {
       alert(
         "⛔ عملیات متوقف شد (سد امنیتی ضد تخریب)!\n\n" +
@@ -431,6 +439,7 @@ export async function pushCombinedToGitHub(cfg, { silent = false } = {}) {
   }
 
   try {
+    currentTask.update(22, "آماده‌سازی فایل‌های داده...");
     const backupFiles = collectBackupFiles();
     const publicFiles = collectPublicFiles();
     const files = [...backupFiles, ...publicFiles];
@@ -440,6 +449,7 @@ export async function pushCombinedToGitHub(cfg, { silent = false } = {}) {
     let baseTree = null;
     let existingPaths = new Set();
 
+    currentTask.update(30, "واکشی شاخه اصلی...");
     try {
       const ref = await gh(
         `/repos/${cfg.owner}/${cfg.repo}/git/ref/heads/${branch}`,
@@ -489,8 +499,12 @@ export async function pushCombinedToGitHub(cfg, { silent = false } = {}) {
       baseTree = lastCommit.tree.sha;
     }
 
+    currentTask.update(35, "ارسال فایل‌های داده...");
     const treeItems = [];
-    for (const f of files) {
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      const p = Math.round(35 + ((i + 1) / files.length) * 45);
+      currentTask.update(p, `ارسال داده‌ها (${i + 1} از ${files.length})...`);
       const blob = await gh(`/repos/${cfg.owner}/${cfg.repo}/git/blobs`, cfg, {
         method: "POST",
         body: JSON.stringify({
@@ -522,6 +536,7 @@ export async function pushCombinedToGitHub(cfg, { silent = false } = {}) {
       }
     }
 
+    currentTask.update(82, "ایجاد ساختار درختی (Tree)...");
     const tree = await gh(`/repos/${cfg.owner}/${cfg.repo}/git/trees`, cfg, {
       method: "POST",
       body: JSON.stringify(
@@ -531,6 +546,7 @@ export async function pushCombinedToGitHub(cfg, { silent = false } = {}) {
       ),
     });
 
+    currentTask.update(89, "ثبت کامیت در ریپازیتوری...");
     const message = `🤖 همگام‌سازی کامل محصولات و پشتیبان (عمومی و خصوصی) — ${new Date().toLocaleString("fa-IR")}`;
     const commit = await gh(
       `/repos/${cfg.owner}/${cfg.repo}/git/commits`,
@@ -545,6 +561,7 @@ export async function pushCombinedToGitHub(cfg, { silent = false } = {}) {
       },
     );
 
+    currentTask.update(95, "نهایی‌سازی شاخه در گیت‌هاب...");
     if (latestSha) {
       await gh(
         `/repos/${cfg.owner}/${cfg.repo}/git/refs/heads/${branch}`,
@@ -567,9 +584,11 @@ export async function pushCombinedToGitHub(cfg, { silent = false } = {}) {
       lastPush: { at: now, ok: true },
       lastPublicPush: { at: now, ok: true },
     });
+    if (!task) currentTask.complete("با موفقیت روی گیت‌هاب ذخیره شد ✅");
     if (!silent) alert("پشتیبان و دیتای عمومی با موفقیت روی گیت‌هاب push شد ✅");
     return { ok: true, sha: commit.sha };
   } catch (err) {
+    currentTask.fail(err.message);
     const now = Date.now();
     store.saveSettings({
       ...store.getSettings(),
@@ -581,9 +600,15 @@ export async function pushCombinedToGitHub(cfg, { silent = false } = {}) {
   }
 }
 
-export async function pushBackupToGitHub({ silent = false } = {}) {
+export async function pushBackupToGitHub({
+  silent = false,
+  task = null,
+  title = "پشتیبان‌گیری در گیت‌هاب",
+} = {}) {
+  const currentTask = task || startPushTask(title, "بررسی اطلاعات اتصال به گیت‌هاب...");
   const cfg = getGitHubConfig();
   if (!cfg.owner || !cfg.repo || !cfg.token) {
+    currentTask.fail("تنظیمات گیت‌هاب ناقص است");
     if (!silent)
       alert("ابتدا تنظیمات گیت‌هاب (مالک / ریپو / توکن) را کامل کنید.");
     return { ok: false };
@@ -594,10 +619,12 @@ export async function pushBackupToGitHub({ silent = false } = {}) {
   const prods = store.getProducts();
   const customSrv = store.getCustomServices();
 
+  currentTask.update(12, "بررسی سد ضد تخریب داده‌ها...");
   // 🛡️ سد امنیتی ضد تخریب: اگر محصولات لوکال خالی باشد اما در ریپو دیتای محصولات وجود داشته باشد
   if (prods.length === 0) {
     const remoteData = await checkRemotePublicData(cfg);
     if (remoteData.hasData) {
+      currentTask.fail("سد ضد تخریب: پوش لغو شد");
       if (!silent) {
         const shouldRestore = confirm(
           "⛔ عملیات متوقف شد (سد امنیتی ضد تخریب بک‌آپ)!\n\n" +
@@ -628,6 +655,7 @@ export async function pushBackupToGitHub({ silent = false } = {}) {
   }
 
   if (invs.length === 0 && custs.length === 0 && prods.length === 0) {
+    currentTask.fail("داده‌های محلی خالی است");
     if (!silent) {
       alert(
         "⛔ عملیات متوقف شد (سد امنیتی ضد تخریب)!\n\n" +
@@ -654,15 +682,20 @@ export async function pushBackupToGitHub({ silent = false } = {}) {
       `• خدمات سفارشی: ${srvCount} مورد\n\n` +
       "برای تأیید، OK را بزنید.";
 
-    if (!confirm(confirmMsg)) return { ok: false, message: "لغو توسط کاربر" };
+    if (!confirm(confirmMsg)) {
+      currentTask.fail("عملیات لغو شد");
+      return { ok: false, message: "لغو توسط کاربر" };
+    }
   }
 
   try {
+    currentTask.update(22, "آماده‌سازی فایل‌های پشتیبان...");
     const files = collectBackupFiles();
     const branch = cfg.branch || "main";
 
     let latestSha = null;
     let baseTree = null;
+    currentTask.update(30, "واکشی شاخه اصلی...");
     try {
       const ref = await gh(
         `/repos/${cfg.owner}/${cfg.repo}/git/ref/heads/${branch}`,
@@ -705,8 +738,12 @@ export async function pushBackupToGitHub({ silent = false } = {}) {
       baseTree = lastCommit.tree.sha;
     }
 
+    currentTask.update(35, "ارسال فایل‌های پشتیبان...");
     const treeItems = [];
-    for (const f of files) {
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      const p = Math.round(35 + ((i + 1) / files.length) * 45);
+      currentTask.update(p, `ارسال پشتیبان (${i + 1} از ${files.length})...`);
       const blob = await gh(`/repos/${cfg.owner}/${cfg.repo}/git/blobs`, cfg, {
         method: "POST",
         body: JSON.stringify({
@@ -722,6 +759,7 @@ export async function pushBackupToGitHub({ silent = false } = {}) {
       });
     }
 
+    currentTask.update(82, "ایجاد ساختار درختی (Tree)...");
     const tree = await gh(`/repos/${cfg.owner}/${cfg.repo}/git/trees`, cfg, {
       method: "POST",
       body: JSON.stringify(
@@ -731,6 +769,7 @@ export async function pushBackupToGitHub({ silent = false } = {}) {
       ),
     });
 
+    currentTask.update(89, "ثبت کامیت در ریپازیتوری...");
     const message = `🤖 بک‌آپ خودکار: ${store.getInvoices().length} فاکتور، ${store.getProductCategories().length} دسته محصول — ${new Date().toLocaleString("fa-IR")}`;
     const commit = await gh(
       `/repos/${cfg.owner}/${cfg.repo}/git/commits`,
@@ -745,6 +784,7 @@ export async function pushBackupToGitHub({ silent = false } = {}) {
       },
     );
 
+    currentTask.update(95, "نهایی‌سازی شاخه در گیت‌هاب...");
     if (latestSha) {
       await gh(
         `/repos/${cfg.owner}/${cfg.repo}/git/refs/heads/${branch}`,
@@ -765,9 +805,11 @@ export async function pushBackupToGitHub({ silent = false } = {}) {
       ...store.getSettings(),
       lastPush: { at: Date.now(), ok: true },
     });
+    if (!task) currentTask.complete("پشتیبان‌گیری با موفقیت انجام شد ✅");
     if (!silent) alert("پشتیبان با موفقیت روی گیت‌هاب push شد ✅");
     return { ok: true, sha: commit.sha };
   } catch (err) {
+    currentTask.fail(err.message);
     store.saveSettings({
       ...store.getSettings(),
       lastPush: { at: Date.now(), ok: false, error: err.message },
@@ -777,10 +819,16 @@ export async function pushBackupToGitHub({ silent = false } = {}) {
   }
 }
 
-export async function pushToPublicRepo({ silent = false } = {}) {
+export async function pushToPublicRepo({
+  silent = false,
+  task = null,
+  title = "ارسال به پورتال مشتری",
+} = {}) {
+  const currentTask = task || startPushTask(title, "بررسی اطلاعات پورتال مشتری...");
   const cfg = getPublicRepoConfig();
 
   if (!cfg.owner || !cfg.repo || !cfg.token) {
+    currentTask.fail("تنظیمات ریپوی پابلیک ناقص است");
     if (!silent) {
       alert("ابتدا تنظیمات ریپوی پابلیک (مالک / ریپو / توکن) را کامل کنید.");
     }
@@ -789,10 +837,12 @@ export async function pushToPublicRepo({ silent = false } = {}) {
 
   const prods = store.getProducts();
 
+  currentTask.update(12, "بررسی سد ضد تخریب...");
   // 🛡️ سد امنیتی ضد تخریب ریپوی پابلیک: اگر لوکال خالی باشد و در ریپوی پابلیک دیتا باشد
   if (prods.length === 0) {
     const remoteData = await checkRemotePublicData(cfg);
     if (remoteData.hasData) {
+      currentTask.fail("سد ضد تخریب: پوش لغو شد");
       if (!silent) {
         const shouldRestore = confirm(
           "⛔ عملیات متوقف شد (سد امنیتی ضد تخریب ریپوی پابلیک)!\n\n" +
@@ -820,6 +870,7 @@ export async function pushToPublicRepo({ silent = false } = {}) {
         message: "داده‌های محلی خالی است در حالی که مخزن پابلیک حاوی اطلاعات است؛ پوش لغو شد.",
       };
     } else {
+      currentTask.fail("هیچ محصولی یافت نشد");
       if (!silent) {
         alert(
           "⚠️ هیچ محصولی در حافظه محلی برای ارسال وجود ندارد.\n\n" +
@@ -835,7 +886,10 @@ export async function pushToPublicRepo({ silent = false } = {}) {
       "🌐 تأیید ارسال اطلاعات به ریپوی پابلیک (سایت مشتری):\n\n" +
         "آیا مایلید اطلاعات محصولات، دسته‌بندی‌ها و خدمات روی سایت مشتری به‌روزرسانی شوند؟",
     );
-    if (!ok) return { ok: false, message: "لغو توسط کاربر" };
+    if (!ok) {
+      currentTask.fail("عملیات لغو شد");
+      return { ok: false, message: "لغو توسط کاربر" };
+    }
   }
 
   if (!cfg.enabled && !cfg.repo) {
@@ -845,11 +899,13 @@ export async function pushToPublicRepo({ silent = false } = {}) {
       const pubEnabledEl = document.getElementById("pub-gh-enabled");
       if (pubEnabledEl) pubEnabledEl.checked = true;
     } else {
+      currentTask.fail("ریپوی پابلیک فعال نیست");
       return { ok: false, message: "ریپوی پابلیک فعال نیست" };
     }
   }
 
   try {
+    currentTask.update(22, "آماده‌سازی فایل‌های عمومی...");
     const files = collectPublicFiles();
     const branch = cfg.branch || "main";
 
@@ -857,6 +913,7 @@ export async function pushToPublicRepo({ silent = false } = {}) {
     let baseTree = null;
     let existingPaths = new Set();
 
+    currentTask.update(30, "واکشی شاخه اصلی...");
     try {
       const ref = await gh(
         `/repos/${cfg.owner}/${cfg.repo}/git/ref/heads/${branch}`,
@@ -906,8 +963,12 @@ export async function pushToPublicRepo({ silent = false } = {}) {
       baseTree = lastCommit.tree.sha;
     }
 
+    currentTask.update(35, "ارسال داده‌های عمومی...");
     const treeItems = [];
-    for (const f of files) {
+    for (let i = 0; i < files.length; i++) {
+      const f = files[i];
+      const p = Math.round(35 + ((i + 1) / files.length) * 45);
+      currentTask.update(p, `ارسال داده‌های عمومی (${i + 1} از ${files.length})...`);
       const blob = await gh(`/repos/${cfg.owner}/${cfg.repo}/git/blobs`, cfg, {
         method: "POST",
         body: JSON.stringify({
@@ -941,6 +1002,7 @@ export async function pushToPublicRepo({ silent = false } = {}) {
       }
     }
 
+    currentTask.update(82, "ایجاد ساختار درختی (Tree)...");
     const tree = await gh(`/repos/${cfg.owner}/${cfg.repo}/git/trees`, cfg, {
       method: "POST",
       body: JSON.stringify(
@@ -950,6 +1012,7 @@ export async function pushToPublicRepo({ silent = false } = {}) {
       ),
     });
 
+    currentTask.update(89, "ثبت کامیت در ریپازیتوری...");
     const message = `📤 بروزرسانی محصولات و دسته‌بندی‌ها (عمومی) — ${new Date().toLocaleString("fa-IR")}`;
     const commit = await gh(
       `/repos/${cfg.owner}/${cfg.repo}/git/commits`,
@@ -964,6 +1027,7 @@ export async function pushToPublicRepo({ silent = false } = {}) {
       },
     );
 
+    currentTask.update(95, "نهایی‌سازی شاخه عمومی...");
     if (latestSha) {
       await gh(
         `/repos/${cfg.owner}/${cfg.repo}/git/refs/heads/${branch}`,
@@ -984,9 +1048,11 @@ export async function pushToPublicRepo({ silent = false } = {}) {
       ...store.getSettings(),
       lastPublicPush: { at: Date.now(), ok: true },
     });
+    if (!task) currentTask.complete("پورتال مشتری با موفقیت به‌روزرسانی شد ✅");
     if (!silent) alert("اطلاعات با موفقیت روی ریپوی پابلیک push شد ✅");
     return { ok: true, sha: commit.sha };
   } catch (err) {
+    currentTask.fail(err.message);
     store.saveSettings({
       ...store.getSettings(),
       lastPublicPush: { at: Date.now(), ok: false, error: err.message },
@@ -1308,7 +1374,7 @@ export function initGitHubUI() {
 
   $("btn-gh-push").addEventListener("click", async () => {
     saveBackupRepoConfig(readBackupFormConfig());
-    await pushBackupToGitHub();
+    await pushBackupToGitHub({ title: "پشتیبان‌گیری دستی در گیت‌هاب" });
     updateStatus();
   });
 
@@ -1341,7 +1407,7 @@ export function initGitHubUI() {
     btnPubPush.addEventListener("click", async () => {
       const cfg = readPublicFormConfig();
       savePublicRepoConfig(cfg);
-      await pushToPublicRepo();
+      await pushToPublicRepo({ title: "همگام‌سازی دستی پورتال مشتری" });
       updatePublicStatus();
     });
   }
