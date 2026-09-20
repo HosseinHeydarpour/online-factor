@@ -698,4 +698,3 @@ window.deleteInvoice = function (invNumber) {
 
 window.initInvoicesList = initInvoicesList;
 window.renderInvoicesList = renderInvoicesList;
-export { initInvoicesList, renderInvoicesList };
