@@ -1184,21 +1184,27 @@ export async function executeLocalRestore(data, replace = false) {
           categoryOverrides: mergedOverrides,
         });
       }
-    }
-
-    // ۴. لیست خدمات
-    if (Array.isArray(data.services) && data.services.length) {
-      if (replace) {
-        store.setServices(data.services);
-      } else {
-        const current = store.getServices();
-        const curIds = new Set(current.map((s) => s.id));
-        const added = data.services.filter((s) => s && s.id && !curIds.has(s.id));
-        store.setServices([...current, ...added]);
+    } else if (Array.isArray(data.services) && data.services.length) {
+      // در صورتی که فقط services.json در بک‌آپ موجود بود، دسته‌های سفارشی آن را به customServices منتقل کن
+      const customCats = data.services.filter((s) => s && s.custom);
+      if (customCats.length) {
+        const current = store.getCustomServices();
+        const currentNewCatIds = new Set(
+          (current.newCategories || []).map((c) => c.id),
+        );
+        const addedNewCats = customCats.filter(
+          (c) => c && !currentNewCatIds.has(c.id),
+        );
+        store.saveCustomServices({
+          newCategories: replace
+            ? customCats
+            : [...(current.newCategories || []), ...addedNewCats],
+          categoryOverrides: current.categoryOverrides || {},
+        });
       }
     }
 
-    // ۵. مشتریان
+    // ۴. مشتریان
     if (Array.isArray(data.customers)) {
       if (replace) {
         store.saveCustomers(data.customers);
