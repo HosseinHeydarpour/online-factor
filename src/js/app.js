@@ -589,22 +589,6 @@ function initServiceModal() {
     }
   });
 
-  // بارگذاری خدمات یک دسته انتخاب‌شده درون سطرها جهت ادیت
-  function loadCategoryForEdit(catId) {
-    const cats = store.getServices();
-    const cat = cats.find((c) => c.id === catId);
-    if (!cat) return;
-
-    catTitleInput.value = cat.title || "";
-    // کپی خدمات دسته جهت ویرایش
-    currentRows = (cat.items || []).map((it) => ({
-      id: it.id,
-      title: it.title,
-      price: it.price,
-    }));
-    renderRows();
-  }
-
   function setMode(newMode) {
     isNewCategoryMode = newMode;
     if (isNewCategoryMode) {
@@ -616,6 +600,7 @@ function initServiceModal() {
       catTitleInput.value = "";
       currentRows = [{ id: "", title: "", price: "" }];
       renderRows();
+      if (btnDeleteModalCat) btnDeleteModalCat.classList.add("hidden");
     } else {
       tabExisting.className =
         "flex-1 py-2 rounded-lg bg-white dark:bg-slate-800 text-brand-700 dark:text-brand-400 shadow-sm transition";
@@ -628,14 +613,30 @@ function initServiceModal() {
 
   function fillSelect(preselectedId = "") {
     const cats = store.getServices();
-    catSelect.innerHTML = cats
-      .map(
-        (c) =>
-          `<option value="${c.id}" ${c.id === preselectedId ? "selected" : ""}>${c.title}</option>`,
-      )
-      .join("");
-    const activeId = preselectedId || catSelect.value;
-    if (activeId) loadCategoryForEdit(activeId);
+    catSelect.innerHTML = `
+      <option value="">-- انتخاب دسته‌بندی --</option>
+      ${cats
+        .map(
+          (c) =>
+            `<option value="${c.id}" ${c.id === preselectedId ? "selected" : ""}>${c.title}</option>`,
+        )
+        .join("")}
+    `;
+
+    if (preselectedId) {
+      catSelect.value = preselectedId;
+      loadCategoryForEdit(preselectedId);
+    } else {
+      catSelect.value = "";
+      catTitleInput.value = "";
+      currentRows = [{ id: "", title: "", price: "" }];
+      renderRows();
+      if (btnDeleteModalCat) btnDeleteModalCat.classList.add("hidden");
+    }
+
+    if (typeof enhanceAllSelects === "function") {
+      enhanceAllSelects(selectCatWrapper);
+    }
   }
 
   window.openAddServiceModal = function (preselectedCatId = "") {
@@ -644,11 +645,26 @@ function initServiceModal() {
     if (preselectedCatId) {
       catSelect.value = preselectedCatId;
       loadCategoryForEdit(preselectedCatId);
+    } else {
+      catSelect.value = "";
+      catTitleInput.value = "";
+      currentRows = [{ id: "", title: "", price: "" }];
+      renderRows();
+      if (btnDeleteModalCat) btnDeleteModalCat.classList.add("hidden");
     }
     modal.classList.remove("hidden");
+    if (typeof enhanceAllSelects === "function") {
+      setTimeout(() => enhanceAllSelects(modal), 40);
+    }
   };
 
-  const closeModal = () => modal.classList.add("hidden");
+  const closeModal = () => {
+    modal.classList.add("hidden");
+    catTitleInput.value = "";
+    catSelect.value = "";
+    currentRows = [{ id: "", title: "", price: "" }];
+    renderRows();
+  };
 
   btnOpen?.addEventListener("click", () => window.openAddServiceModal());
   btnClose?.addEventListener("click", closeModal);
@@ -660,7 +676,14 @@ function initServiceModal() {
 
   // با تغییر انتخاب دراپ‌داون، خدمات آن دسته بارگذاری می‌شوند
   catSelect?.addEventListener("change", () => {
-    loadCategoryForEdit(catSelect.value);
+    if (catSelect.value) {
+      loadCategoryForEdit(catSelect.value);
+    } else {
+      catTitleInput.value = "";
+      currentRows = [{ id: "", title: "", price: "" }];
+      renderRows();
+      if (btnDeleteModalCat) btnDeleteModalCat.classList.add("hidden");
+    }
   });
 
   // دکمه افزودن سطر جدید

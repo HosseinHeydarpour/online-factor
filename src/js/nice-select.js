@@ -205,6 +205,17 @@ export class NiceSelect {
       this.syncFromSelect();
     };
     this.element.addEventListener("change", this.onSelectChange);
+
+    // شنود خودکار تغییرات در گزینه‌های سلکت با MutationObserver
+    if (typeof MutationObserver !== "undefined") {
+      this.observer = new MutationObserver(() => {
+        this.update();
+      });
+      this.observer.observe(this.element, {
+        childList: true,
+        subtree: true,
+      });
+    }
   }
 
   filterOptions(query) {
@@ -265,10 +276,40 @@ export class NiceSelect {
   }
 
   update() {
+    const shouldBeSearchable = this.element.options.length > 5;
+    if (shouldBeSearchable && !this.searchContainer) {
+      this.searchContainer = document.createElement("div");
+      this.searchContainer.className = "p-1.5 border-b border-slate-100 dark:border-slate-700/60 mb-1";
+
+      this.searchInput = document.createElement("input");
+      this.searchInput.type = "text";
+      this.searchInput.placeholder = this.options.searchPlaceholder;
+      this.searchInput.className =
+        "w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-900 " +
+        "border border-slate-200 dark:border-slate-700 rounded-lg " +
+        "text-slate-800 dark:text-slate-100 placeholder-slate-400 outline-none " +
+        "focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition";
+
+      this.searchInput.addEventListener("input", (e) => {
+        this.filterOptions(e.target.value.trim());
+      });
+      this.searchInput.addEventListener("click", (e) => {
+        e.stopPropagation();
+      });
+
+      this.searchContainer.appendChild(this.searchInput);
+      this.dropdown.insertBefore(this.searchContainer, this.optionsList);
+    } else if (!shouldBeSearchable && this.searchContainer) {
+      this.searchContainer.remove();
+      this.searchContainer = null;
+      this.searchInput = null;
+    }
+
     this.syncFromSelect();
   }
 
   destroy() {
+    this.observer?.disconnect();
     document.removeEventListener("click", this.onDocClick);
     this.element.removeEventListener("change", this.onSelectChange);
     this.wrapper?.remove();
