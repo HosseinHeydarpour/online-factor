@@ -781,6 +781,24 @@ export async function pushBackupToGitHub({
       });
     }
 
+    // دریافت مجدد آخرین وضعیت شاخه جهت جلوگیری از تداخل و بازنویسی کامیت‌های کد
+    try {
+      const freshRef = await gh(
+        `/repos/${cfg.owner}/${cfg.repo}/git/ref/heads/${branch}`,
+        cfg,
+      );
+      if (freshRef?.object?.sha) {
+        latestSha = freshRef.object.sha;
+        const freshCommit = await gh(
+          `/repos/${cfg.owner}/${cfg.repo}/git/commits/${latestSha}`,
+          cfg,
+        );
+        if (freshCommit?.tree?.sha) {
+          baseTree = freshCommit.tree.sha;
+        }
+      }
+    } catch {}
+
     currentTask.update(82, "ایجاد ساختار درختی (Tree)...");
     const tree = await gh(`/repos/${cfg.owner}/${cfg.repo}/git/trees`, cfg, {
       method: "POST",
@@ -1026,6 +1044,24 @@ export async function pushToPublicRepo({
         });
       }
     }
+
+    // دریافت مجدد آخرین وضعیت شاخه جهت جلوگیری از تداخل و بازنویسی کامیت‌های کد
+    try {
+      const freshRef = await gh(
+        `/repos/${cfg.owner}/${cfg.repo}/git/ref/heads/${branch}`,
+        cfg,
+      );
+      if (freshRef?.object?.sha) {
+        latestSha = freshRef.object.sha;
+        const freshCommit = await gh(
+          `/repos/${cfg.owner}/${cfg.repo}/git/commits/${latestSha}`,
+          cfg,
+        );
+        if (freshCommit?.tree?.sha) {
+          baseTree = freshCommit.tree.sha;
+        }
+      }
+    } catch {}
 
     currentTask.update(82, "ایجاد ساختار درختی (Tree)...");
     const tree = await gh(`/repos/${cfg.owner}/${cfg.repo}/git/trees`, cfg, {
