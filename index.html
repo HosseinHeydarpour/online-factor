@@ -1842,14 +1842,21 @@
                 <button
                   id="btn-local-backup-now"
                   type="button"
-                  class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm shadow flex items-center gap-1.5 transition"
+                  class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm shadow flex items-center gap-1.5 transition cursor-pointer"
                 >
                   <span>💾 ذخیره بک‌آپ محلی (همین حالا)</span>
                 </button>
                 <button
+                  id="btn-local-restore-folder"
+                  type="button"
+                  class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm shadow flex items-center gap-1.5 transition cursor-pointer"
+                >
+                  <span>📥 بازیابی از پوشه تاریخ بک‌آپ (آفلاین)</span>
+                </button>
+                <button
                   id="btn-local-dir-disconnect"
                   type="button"
-                  class="hidden bg-slate-200 dark:bg-slate-700 hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-950 dark:hover:text-rose-400 text-slate-700 dark:text-slate-200 font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm transition"
+                  class="hidden bg-slate-200 dark:bg-slate-700 hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-950 dark:hover:text-rose-400 text-slate-700 dark:text-slate-200 font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm transition cursor-pointer"
                 >
                   قطع اتصال پوشه
                 </button>
@@ -2516,6 +2523,133 @@
         </div>
       </div>
     </div>
+
+    <!-- ===================== مودال بازیابی آفلاین از پوشه تاریخ بک‌آپ ===================== -->
+    <div
+      id="local-restore-modal"
+      class="hidden fixed inset-0 z-[95] modal-backdrop grid place-items-center p-3 sm:p-4 overflow-y-auto"
+    >
+      <div
+        class="bg-white dark:bg-slate-800 w-full max-w-lg rounded-2xl shadow-2xl p-5 sm:p-6 fade-in border border-amber-300 dark:border-amber-600/50 space-y-4 text-right my-auto"
+      >
+        <!-- هدر مودال -->
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 grid place-items-center text-xl shrink-0">
+              📥
+            </div>
+            <div>
+              <h3 class="font-black text-sm sm:text-base text-slate-800 dark:text-slate-100">
+                بازیابی اطلاعات از پوشه تاریخ (آفلاین)
+              </h3>
+              <p class="text-[11px] text-slate-400">بدون نیاز به اینترنت و از روی فایل‌های محلی</p>
+            </div>
+          </div>
+          <button
+            id="btn-close-local-restore-modal"
+            type="button"
+            class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg text-lg cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- مرحله ۱: انتخاب پوشه تاریخ -->
+        <div id="local-restore-step-select" class="space-y-3">
+          <div id="local-restore-saved-folders-container" class="space-y-2">
+            <p class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <span>📅</span>
+              <span>پوشه‌های تاریخ موجود در پوشه بک‌آپ:</span>
+            </p>
+            <div
+              id="local-restore-folders-list"
+              class="max-h-48 overflow-y-auto space-y-1.5 p-1 bg-slate-50 dark:bg-slate-700/40 rounded-xl border border-slate-200 dark:border-slate-600 text-xs custom-scrollbar"
+            >
+              <!-- لیست پوشه‌ها به صورت داینامیک اضافه می‌شود -->
+            </div>
+          </div>
+
+          <div class="pt-2 border-t border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row gap-2">
+            <button
+              id="btn-local-restore-pick-other"
+              type="button"
+              class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 px-3 rounded-xl text-xs sm:text-sm shadow flex items-center justify-center gap-1.5 transition cursor-pointer"
+            >
+              <span>📂</span>
+              <span>انتخاب پوشه تاریخ از مسیر دیگر (فلش یا هارد)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- مرحله ۲: پیش‌نمایش و تایید بازیابی -->
+        <div id="local-restore-step-confirm" class="hidden space-y-3">
+          <div class="bg-amber-50/70 dark:bg-slate-700/50 p-3.5 rounded-xl border border-amber-200/80 dark:border-slate-600 space-y-2.5 text-xs sm:text-sm text-slate-700 dark:text-slate-200">
+            <div class="flex items-center justify-between border-b border-amber-200/60 dark:border-slate-600 pb-2">
+              <span class="text-slate-500 dark:text-slate-400">پوشه انتخابی:</span>
+              <b id="lr-confirm-folder-name" class="font-mono text-brand-600 dark:text-brand-400 font-bold">-</b>
+            </div>
+            <p class="font-bold text-xs text-slate-600 dark:text-slate-300">
+              📊 اطلاعات یافت‌شده در این پوشه:
+            </p>
+            <div class="grid grid-cols-2 gap-2 text-xs font-bold">
+              <div class="flex justify-between bg-white/70 dark:bg-slate-800/70 p-2 rounded-lg border border-slate-200/60 dark:border-slate-700">
+                <span>📋 فاکتورها:</span>
+                <span id="lr-count-invoices" class="text-brand-600 dark:text-brand-400">۰</span>
+              </div>
+              <div class="flex justify-between bg-white/70 dark:bg-slate-800/70 p-2 rounded-lg border border-slate-200/60 dark:border-slate-700">
+                <span>📑 پیش‌فاکتورها:</span>
+                <span id="lr-count-proformas" class="text-amber-600 dark:text-amber-400">۰</span>
+              </div>
+              <div class="flex justify-between bg-white/70 dark:bg-slate-800/70 p-2 rounded-lg border border-slate-200/60 dark:border-slate-700">
+                <span>📦 محصولات:</span>
+                <span id="lr-count-products" class="text-blue-600 dark:text-blue-400">۰</span>
+              </div>
+              <div class="flex justify-between bg-white/70 dark:bg-slate-800/70 p-2 rounded-lg border border-slate-200/60 dark:border-slate-700">
+                <span>👥 مشتریان:</span>
+                <span id="lr-count-customers" class="text-emerald-600 dark:text-emerald-400">۰</span>
+              </div>
+            </div>
+            <div id="lr-extra-counts" class="text-[11px] text-slate-500 dark:text-slate-400 leading-5"></div>
+          </div>
+
+          <label class="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer pt-1">
+            <input
+              id="lr-replace-checkbox"
+              type="checkbox"
+              class="w-4 h-4 accent-amber-600 rounded cursor-pointer"
+            />
+            <span>⚠️ داده‌های این پوشه <b>کاملاً جایگزین</b> داده‌های فعلی برنامه شوند (به‌جای ادغام)</span>
+          </label>
+
+          <div class="flex gap-2 justify-end pt-2 border-t border-slate-100 dark:border-slate-700">
+            <button
+              id="btn-local-restore-back"
+              type="button"
+              class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer"
+            >
+              بازگشت
+            </button>
+            <button
+              id="btn-local-restore-execute"
+              type="button"
+              class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-5 py-2.5 rounded-xl text-xs sm:text-sm shadow-md transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <span>🚀 شروع بازیابی اطلاعات</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- اینپوت فایل پنهان برای پشتیبانی از انتخاب پوشه در تمام مرورگرها -->
+    <input
+      type="file"
+      id="input-local-restore-fallback"
+      webkitdirectory
+      directory
+      multiple
+      class="hidden"
+    />
 
     <!-- ===================== مودال: مدیریت دسته‌بندی محصولات ===================== -->
     <div
@@ -3950,7 +4084,7 @@
       // ============================================================
       // نسخه اپلیکیشن و سیستم هوشمند اعلان نسخه جدید (سرویس ورکر)
       // ============================================================
-      const CURRENT_APP_VERSION = "cafe-pwa-v5";
+      const CURRENT_APP_VERSION = "cafe-pwa-v6";
       window.APP_VERSION = CURRENT_APP_VERSION;
 
       let waitingWorker = null;
