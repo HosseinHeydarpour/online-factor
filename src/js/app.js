@@ -15,6 +15,40 @@ import { initCustomers, renderCustomers } from "./customers.js";
 import { initCustomerPortal } from "./customer-portal.js";
 import { autoPushPublicRepo } from "./github.js";
 import { initAnnouncements, renderAnnouncements } from "./announcements.js";
+import { enhanceAllSelects } from "./nice-select.js";
+
+// لیست رسمی بانک‌های کشور جهت دراپ‌داون کارت‌های بانکی
+export const IRANIAN_BANKS = [
+  { name: "بانک ملی ایران", icon: "🏛️" },
+  { name: "بانک ملت", icon: "🔴" },
+  { name: "بانک صادرات ایران", icon: "🔵" },
+  { name: "بانک تجارت", icon: "🔷" },
+  { name: "بانک سپه", icon: "🟡" },
+  { name: "بانک کشاورزی", icon: "🌾" },
+  { name: "بانک مسکن", icon: "🏠" },
+  { name: "بانک پاسارگاد", icon: "💛" },
+  { name: "بانک سامان", icon: "🌐" },
+  { name: "بانک پارسیان", icon: "🟣" },
+  { name: "بانک اقتصاد نوین", icon: "🏢" },
+  { name: "بانک آینده", icon: "💠" },
+  { name: "بانک شهر", icon: "🏙️" },
+  { name: "بانک قرض‌الحسنه رسالت", icon: "🌿" },
+  { name: "بانک قرض‌الحسنه مهر ایران", icon: "☀️" },
+  { name: "بانک رفاه کارگران", icon: "👥" },
+  { name: "بانک سینا", icon: "🏛️" },
+  { name: "بانک دی", icon: "🔶" },
+  { name: "بانک گردشگری", icon: "✈️" },
+  { name: "بانک ایران‌زمین", icon: "🌏" },
+  { name: "بانک کارآفرین", icon: "💼" },
+  { name: "بانک سرمایه", icon: "🪙" },
+  { name: "بانک خاورمیانه", icon: "🌐" },
+  { name: "بانک توسعه تعاون", icon: "🤝" },
+  { name: "بانک صنعت و معدن", icon: "🏭" },
+  { name: "پست بانک ایران", icon: "📬" },
+  { name: "موسسه اعتباری ملل", icon: "🏦" },
+  { name: "موسسه اعتباری نور", icon: "🏦" },
+  { name: "سایر بانک‌ها و موسسات", icon: "💳" },
+];
 
 const el = {
   tabs: document.querySelectorAll(".view-tab"),
@@ -63,6 +97,9 @@ function setView(view) {
   if (view === "invoices") initInvoicesList();
   if (view === "customers") renderCustomers();
   if (view === "announcements") renderAnnouncements();
+  if (el.views[view]) {
+    setTimeout(() => enhanceAllSelects(el.views[view]), 60);
+  }
 }
 
 window.setView = setView;
@@ -354,24 +391,55 @@ function renderBankAccounts() {
   list.innerHTML = bankAccounts
     .map(
       (b, i) => `
-      <div class="border border-slate-200 dark:border-slate-600 rounded-xl p-3 space-y-2 bg-slate-50 dark:bg-slate-700/40 fade-in">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-slate-600 dark:text-slate-300">💳 کارت ${faNum(i + 1)}</span>
-          <button type="button" data-bank-del="${i}" class="text-xs text-rose-600 dark:text-rose-400 font-bold hover:bg-rose-50 dark:hover:bg-slate-700 px-2 py-1 rounded-lg">🗑️ حذف</button>
+      <div class="border border-slate-200 dark:border-slate-700 rounded-2xl p-3.5 space-y-3 bg-white dark:bg-slate-800/90 shadow-sm fade-in" data-bank-row="${i}">
+        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60 pb-2">
+          <span class="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center gap-1.5">
+            <span class="text-base">💳</span> کارت ${faNum(i + 1)}
+          </span>
+          <button type="button" data-bank-del="${i}" class="text-xs text-rose-600 dark:text-rose-400 font-bold hover:bg-rose-50 dark:hover:bg-slate-700 px-2.5 py-1 rounded-xl transition">
+            🗑️ حذف کارت
+          </button>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <input data-bank-field="bank" data-bank-i="${i}" value="${b.bank || ""}" placeholder="نام بانک (مثلاً ملت)"
-            class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500" />
-          <input data-bank-field="holder" data-bank-i="${i}" value="${b.holder || ""}" placeholder="نام صاحب حساب"
-            class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500" />
-          <input data-bank-field="card" data-bank-i="${i}" value="${b.card || ""}" inputmode="numeric" dir="ltr" placeholder="6037 9912 3456 7890"
-            class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs text-left outline-none focus:ring-2 focus:ring-brand-500" />
-          <input data-bank-field="sheba" data-bank-i="${i}" value="${b.sheba || ""}" dir="ltr" placeholder="IR000000000000000000000000"
-            class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs text-left outline-none focus:ring-2 focus:ring-brand-500" />
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">نام بانک:</label>
+            <select data-bank-field="bank" data-bank-i="${i}"
+              class="w-full rounded-xl border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500 bg-white dark:bg-slate-800 font-medium">
+              <option value="">🏦 انتخاب نام بانک...</option>
+              ${IRANIAN_BANKS.map((bank) => {
+                const isSelected =
+                  b.bank === bank.name ||
+                  (b.bank && (bank.name.includes(b.bank) || b.bank.includes(bank.name.replace("بانک ", ""))));
+                return `<option value="${bank.name}" ${isSelected ? "selected" : ""}>${bank.icon} ${bank.name}</option>`;
+              }).join("")}
+              ${
+                b.bank && !IRANIAN_BANKS.some((x) => x.name === b.bank || b.bank.includes(x.name.replace("بانک ", "")))
+                  ? `<option value="${b.bank}" selected>💳 ${b.bank}</option>`
+                  : ""
+              }
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">نام صاحب حساب:</label>
+            <input data-bank-field="holder" data-bank-i="${i}" value="${b.holder || ""}" placeholder="مثال: محمد رضایی"
+              class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-slate-50/50 dark:bg-slate-900/60 text-slate-800 dark:text-slate-100 transition" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">شماره کارت (۱۶ رقم):</label>
+            <input data-bank-field="card" data-bank-i="${i}" value="${b.card || ""}" inputmode="numeric" dir="ltr" placeholder="6037 9912 3456 7890"
+              class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-xs text-left font-mono outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-slate-50/50 dark:bg-slate-900/60 text-slate-800 dark:text-slate-100 transition" />
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">شماره شبا (با IR):</label>
+            <input data-bank-field="sheba" data-bank-i="${i}" value="${b.sheba || ""}" dir="ltr" placeholder="IR000000000000000000000000"
+              class="w-full rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-xs text-left font-mono outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 bg-slate-50/50 dark:bg-slate-900/60 text-slate-800 dark:text-slate-100 transition" />
+          </div>
         </div>
       </div>`,
     )
     .join("");
+
+  enhanceAllSelects(list);
 }
 
 function initBankAccounts() {
@@ -386,12 +454,14 @@ function initBankAccounts() {
   });
 
   const list = document.getElementById("bank-accounts-list");
-  list?.addEventListener("input", (e) => {
+  const handleBankFieldUpdate = (e) => {
     const i = e.target.dataset.bankI;
     const field = e.target.dataset.bankField;
     if (i === undefined || !field) return;
     bankAccounts[Number(i)][field] = e.target.value;
-  });
+  };
+  list?.addEventListener("input", handleBankFieldUpdate);
+  list?.addEventListener("change", handleBankFieldUpdate);
 
   list?.addEventListener("click", (e) => {
     const del = e.target.dataset.bankDel;
@@ -847,4 +917,5 @@ if (APP_ROLE === "customer") {
   window.initInvoiceDetailEvents();
   setView("invoice");
   setSource("services");
+  enhanceAllSelects();
 }

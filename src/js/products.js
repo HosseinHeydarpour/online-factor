@@ -357,6 +357,9 @@ function fillCategorySelect(selectedId = "") {
       )
       .join("")}
   `;
+  if (typeof window !== "undefined" && typeof window.enhanceAllSelects === "function") {
+    window.enhanceAllSelects(el.category.parentElement);
+  }
 }
 
 function initProductQuillEditor() {
