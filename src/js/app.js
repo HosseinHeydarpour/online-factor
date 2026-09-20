@@ -207,18 +207,29 @@ function renderItems() {
                 : ""
             }
           </div>
-          <p class="text-[11px] text-slate-400 mt-0.5">${faNum(p.price)} تومان</p>
-          ${p.variants?.length ? `<p class="text-[10px] text-slate-400">${p.variants.map((v) => v.name).join(" | ")}</p>` : ""}
+          <div class="flex items-center gap-2 mt-0.5">
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">${faNum(p.price)} تومان</p>
+            ${
+              (p.quantity ?? 0) > 0
+                ? `<span class="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.2 rounded border border-emerald-200 dark:border-emerald-800">موجودی: ${faNum(p.quantity)}</span>`
+                : `<span class="text-[9px] font-bold text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-1.5 py-0.2 rounded border border-rose-200 dark:border-rose-800">ناموجود</span>`
+            }
+          </div>
+          ${p.variants?.length ? `<p class="text-[10px] text-slate-400 mt-1">${p.variants.map((v) => `${v.name} (${(v.quantity ?? 0) > 0 ? faNum(v.quantity) : "ناموجود"})`).join(" | ")}</p>` : ""}
         </div>
         <div class="shrink-0 flex flex-col gap-1">
           <button data-add-product="${p.id}" class="text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded-lg font-bold">+ فاکتور</button>
           ${
             p.variants?.length
               ? p.variants
-                  .map(
-                    (v) =>
-                      `<button data-add-product="${p.id}" data-variant-id="${v.id}" class="text-[10px] bg-brand-50 text-brand-700 px-2 py-1 rounded-lg border border-brand-100 hover:bg-brand-100">${v.name} · ${faNum(v.price)}</button>`,
-                  )
+                  .map((v) => {
+                    const vInStock = (v.quantity ?? 0) > 0;
+                    return `<button data-add-product="${p.id}" data-variant-id="${v.id}" class="text-[10px] ${
+                      vInStock
+                        ? "bg-brand-50 text-brand-700 border-brand-100 hover:bg-brand-100"
+                        : "bg-rose-50 text-rose-500 border-rose-200 opacity-75"
+                    } px-2 py-1 rounded-lg border flex items-center justify-between gap-1"><span>${v.name} · ${faNum(v.price)}</span><span class="text-[9px] font-mono">(${vInStock ? faNum(v.quantity) : "۰"})</span></button>`;
+                  })
                   .join("")
               : ""
           }

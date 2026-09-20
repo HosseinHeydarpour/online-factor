@@ -291,15 +291,35 @@ function initNewsModalCloseHandlers() {
 /* ============================================================
    رندر چیپ‌ها و گرید محصولات در پورتال مشتری
    ============================================================ */
+
+/**
+ * بررسی موجود بودن محصول جهت نمایش به مشتری
+ * اگر محصول هیچ واریانتی ندارد: باید موجودی پایه > 0 باشد
+ * اگر محصول واریانت دارد: باید موجودی پایه > 0 باشد یا حداقل یکی از واریانت‌ها موجودی > 0 داشته باشد
+ */
+function isProductAvailableForCustomer(p) {
+  if (!p) return false;
+  const baseQty = Math.max(0, parseInt(p.quantity, 10) || 0);
+  if (Array.isArray(p.variants) && p.variants.length > 0) {
+    const hasVariantStock = p.variants.some(
+      (v) => Math.max(0, parseInt(v.quantity, 10) || 0) > 0,
+    );
+    return baseQty > 0 || hasVariantStock;
+  }
+  return baseQty > 0;
+}
+
 function renderCustomerProductChips() {
   const container = document.getElementById("cp-product-chips");
   if (!container) return;
 
+  const availableProducts = portalProducts.filter(isProductAvailableForCustomer);
+
   const chips = [
-    { id: "all", name: "همه کالاها", icon: "🌐", count: portalProducts.length },
+    { id: "all", name: "همه کالاها", icon: "🌐", count: availableProducts.length },
     ...portalProductCategories.map((c) => ({
       ...c,
-      count: portalProducts.filter((p) => p.categoryId === c.id).length,
+      count: availableProducts.filter((p) => p.categoryId === c.id).length,
     })),
   ];
 
@@ -341,7 +361,7 @@ function renderCustomerProducts(q = "") {
   if (!listEl) return;
 
   const query = q.trim().toLowerCase();
-  let list = portalProducts;
+  let list = portalProducts.filter(isProductAvailableForCustomer);
 
   if (selectedCustomerCatId !== "all") {
     list = list.filter((p) => p.categoryId === selectedCustomerCatId);
@@ -350,17 +370,6 @@ function renderCustomerProducts(q = "") {
   if (query) {
     list = list.filter((p) => (p.name || "").toLowerCase().includes(query));
   }
-
-  // فیلتر محصولاتی که موجودی ندارند (هم پایه هم واریانت‌ها) - فقط برای پرتال مشتری
-  list = list.filter((p) => {
-    const baseQty = p.quantity ?? 0;
-    // اگر واریانت دارد، حداقل یکی باید موجودی داشته باشد
-    if (p.variants?.length) {
-      const hasVariantStock = p.variants.some((v) => (v.quantity ?? 0) > 0);
-      return baseQty > 0 || hasVariantStock;
-    }
-    return baseQty > 0;
-  });
 
   emptyEl?.classList.toggle("hidden", list.length > 0);
 
@@ -374,6 +383,10 @@ function renderCustomerProducts(q = "") {
       const category = portalProductCategories.find(
         (c) => c.id === p.categoryId,
       );
+      const activeVariants = (p.variants || []).filter(
+        (v) => Math.max(0, parseInt(v.quantity, 10) || 0) > 0,
+      );
+
       return `
       <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden fade-in flex flex-col">
         <div class="h-36 sm:h-40 bg-slate-100 dark:bg-slate-700/70 grid place-items-center relative overflow-hidden shrink-0">
@@ -395,12 +408,11 @@ function renderCustomerProducts(q = "") {
             </p>
           </div>
           ${
-            p.variants?.length
+            activeVariants.length
               ? `<div class="pt-2 border-t border-slate-100 dark:border-slate-700">
                   <p class="text-[10px] font-bold text-slate-400 mb-1">مدل‌ها و واریانت‌ها:</p>
                   <div class="flex flex-wrap gap-1">
-                    ${p.variants
-                      .filter((v) => (v.quantity ?? 0) > 0)
+                    ${activeVariants
                       .map(
                         (v) => `
                       <span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 px-2 py-0.5 rounded-full font-bold">

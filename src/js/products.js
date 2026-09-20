@@ -23,6 +23,7 @@ const el = {
   name: document.getElementById("p-name"),
   price: document.getElementById("p-price"),
   pricePreview: document.getElementById("p-price-preview"),
+  quantity: document.getElementById("p-quantity"),
   image: document.getElementById("p-image"),
   preview: document.getElementById("p-preview"),
   variants: document.getElementById("variants-list"),
@@ -105,21 +106,11 @@ export function renderProducts(filter = "") {
     list = list.filter((p) => (p.name || "").includes(filter));
   }
 
-  // فیلتر محصولاتی که موجودی ندارند (هم پایه هم واریانت‌ها)
-  list = list.filter((p) => {
-    const baseQty = p.quantity ?? 0;
-    // اگر واریانت دارد، حداقل یکی باید موجودی داشته باشد
-    if (p.variants?.length) {
-      const hasVariantStock = p.variants.some((v) => (v.quantity ?? 0) > 0);
-      return baseQty > 0 || hasVariantStock;
-    }
-    return baseQty > 0;
-  });
-
   el.empty?.classList.toggle("hidden", list.length > 0);
   el.grid.innerHTML = list
     .map((p) => {
       const category = store.getProductCategory(p.categoryId);
+      const baseInStock = (p.quantity ?? 0) > 0;
       return `
     <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden fade-in flex flex-col">
       <!-- تصویر -->
@@ -145,21 +136,31 @@ export function renderProducts(filter = "") {
       <!-- بدنه -->
       <div class="p-3 space-y-2 flex-1 flex flex-col">
         <h3 class="font-bold text-sm truncate" title="${p.name}">${p.name}</h3>
-        <p class="text-xs text-slate-500 dark:text-slate-400">
-          قیمت پایه: <b class="text-brand-700 dark:text-brand-400">${faNum(p.price)}</b> تومان
-        </p>
+        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+          <span>قیمت پایه: <b class="text-brand-700 dark:text-brand-400">${faNum(p.price)}</b> تومان</span>
+          ${
+            baseInStock
+              ? `<span class="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded-full">موجودی: ${faNum(p.quantity)}</span>`
+              : `<span class="text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-900/40 px-2 py-0.5 rounded-full">ناموجود</span>`
+          }
+        </div>
         ${
           p.variants?.length
             ? `<div class="flex flex-wrap gap-1">
                 ${p.variants
-                  .filter((v) => (v.quantity ?? 0) > 0)
-                  .map(
-                    (v) => `
+                  .map((v) => {
+                    const vInStock = (v.quantity ?? 0) > 0;
+                    return `
                   <button data-add-variant="${p.id}" data-variant-id="${v.id}"
-                    class="text-[10px] bg-brand-50 dark:bg-slate-700 text-brand-700 dark:text-brand-400 border border-brand-100 dark:border-slate-600 px-2 py-1 rounded-full hover:bg-brand-100 dark:hover:bg-slate-600 transition">
-                    ${v.name} · ${faNum(v.price)}
-                  </button>`,
-                  )
+                    class="text-[10px] ${
+                      vInStock
+                        ? "bg-brand-50 dark:bg-slate-700 text-brand-700 dark:text-brand-400 border-brand-100 dark:border-slate-600 hover:bg-brand-100 dark:hover:bg-slate-600"
+                        : "bg-rose-50 dark:bg-rose-900/30 text-rose-500 border-rose-200 dark:border-rose-900/40"
+                    } border px-2 py-1 rounded-full transition flex items-center gap-1">
+                    <span>${v.name} · ${faNum(v.price)}</span>
+                    <span class="text-[9px] opacity-75">(${vInStock ? `${faNum(v.quantity)} عدد` : "ناموجود"})</span>
+                  </button>`;
+                  })
                   .join("")}
                </div>`
             : ""
@@ -194,22 +195,33 @@ function openVariantPicker(product, preselectId = null, onConfirm = null) {
               ? "border-brand-500 ring-1 ring-brand-500"
               : "border-slate-200 dark:border-slate-600"
           } rounded-xl px-3 py-2.5 hover:border-brand-500 font-bold bg-slate-50 dark:bg-slate-700/50">
-          <span>بدون واریانت (قیمت پایه)</span>
-          <span class="text-brand-700 dark:text-brand-400 shrink-0">${faNum(product.price)} تومان</span>
+          <div class="flex items-center gap-1.5 min-w-0">
+            <span class="truncate">بدون واریانت (قیمت پایه)</span>
+            <span class="text-[10px] shrink-0 ${(product.quantity ?? 0) > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500"}">
+              (${ (product.quantity ?? 0) > 0 ? `موجودی: ${faNum(product.quantity)}` : "ناموجود" })
+            </span>
+          </div>
+          <span class="text-brand-700 dark:text-brand-400 shrink-0 font-mono">${faNum(product.price)} تومان</span>
         </button>
         ${(product.variants || [])
-          .map(
-            (v) => `
+          .map((v) => {
+            const vInStock = (v.quantity ?? 0) > 0;
+            return `
           <button data-pick="${v.id}"
             class="w-full flex items-center justify-between gap-2 text-xs border ${
               preselectId === v.id
                 ? "border-brand-500 ring-1 ring-brand-500"
                 : "border-slate-200 dark:border-slate-600"
             } rounded-xl px-3 py-2.5 hover:border-brand-500 font-bold bg-slate-50 dark:bg-slate-700/50">
-            <span>${v.name}</span>
-            <span class="text-brand-700 dark:text-brand-400 shrink-0">${faNum(v.price)} تومان</span>
-          </button>`,
-          )
+            <div class="flex items-center gap-1.5 min-w-0">
+              <span class="truncate">${v.name}</span>
+              <span class="text-[10px] shrink-0 ${vInStock ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500"}">
+                (${ vInStock ? `موجودی: ${faNum(v.quantity)}` : "ناموجود" })
+              </span>
+            </div>
+            <span class="text-brand-700 dark:text-brand-400 shrink-0 font-mono">${faNum(v.price)} تومان</span>
+          </button>`;
+          })
           .join("")}
       </div>
       <button data-pick-cancel
@@ -293,7 +305,7 @@ function renderVariantsForm() {
             class="flex-1 rounded-lg border border-slate-300 dark:border-slate-600 px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-brand-500" />
           <input data-vprice="${i}" type="number" min="0" value="${v.price || ""}" placeholder="قیمت"
             class="w-28 rounded-lg border border-slate-300 dark:border-slate-600 px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-brand-500 text-left font-mono" />
-          <input data-vqty="${i}" type="number" min="0" value="${v.quantity ?? ""}" placeholder="موجودی"
+          <input data-vqty="${i}" type="number" min="0" value="${v.quantity ?? 0}" placeholder="موجودی"
             class="w-20 rounded-lg border border-slate-300 dark:border-slate-600 px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-brand-500 text-left font-mono" />
           <button type="button" data-vdel="${i}" class="text-rose-500 hover:bg-rose-50 dark:hover:bg-slate-600 w-7 h-7 rounded-lg font-bold">✕</button>
         </div>
@@ -333,6 +345,7 @@ function openModal(product = null) {
   el.title.textContent = product ? "ویرایش محصول" : "محصول جدید";
   el.name.value = product?.name ?? "";
   el.price.value = product?.price ?? "";
+  if (el.quantity) el.quantity.value = product ? (product.quantity ?? 0) : "";
   el.preview.src = tempImage;
   el.preview.classList.toggle("hidden", !tempImage);
   el.image.value = "";
@@ -425,12 +438,12 @@ function initCategoryModalEvents() {
     renderProducts(el.search?.value.trim() || "");
 
     // 🚀 همگام‌سازی آنی محلی + گیت‌هاب خصوصی و پابلیک
-    syncAllStorages();
-    toast("✅ دسته‌بندی ذخیره شد و روی گیت‌هاب همگام‌سازی شد ☁️");
+    syncAllStorages({ showToast: true });
+    toast("✅ دسته‌بندی ذخیره شد 📦");
   });
 
   // کلیک روی ویرایش یا حذف دسته
-  el.catList?.addEventListener("click", (e) => {
+  el.catList?.addEventListener("click", async (e) => {
     const editBtn = e.target.closest("[data-pcat-edit]");
     const delBtn = e.target.closest("[data-pcat-del]");
 
@@ -460,7 +473,7 @@ function initCategoryModalEvents() {
         renderProducts(el.search?.value.trim() || "");
 
         // 🚀 همگام‌سازی آنی پس از حذف
-        syncAllStorages();
+        await syncAllStorages({ showToast: true });
         toast("دسته‌بندی حذف شد 🗑️");
       }
     }
@@ -522,7 +535,7 @@ export function initProductEvents() {
     }
     if (qi !== undefined) {
       const idx = Number(qi);
-      tempVariants[idx].quantity = Number(e.target.value) || 0;
+      tempVariants[idx].quantity = Math.max(0, parseInt(e.target.value, 10) || 0);
     }
   });
 
@@ -536,19 +549,27 @@ export function initProductEvents() {
   });
 
   // ذخیره محصول
-  document.getElementById("btn-save-product")?.addEventListener("click", () => {
+  document.getElementById("btn-save-product")?.addEventListener("click", async () => {
     const name = el.name.value.trim();
     const price = Number(el.price.value) || 0;
     const categoryId = el.category?.value || "";
+    const quantity = Math.max(0, parseInt(el.quantity?.value, 10) || 0);
 
     if (!name || price <= 0) return alert("نام و قیمت محصول الزامی است.");
-    const variants = tempVariants.filter((v) => v.name.trim());
+    const variants = tempVariants
+      .filter((v) => v.name.trim())
+      .map((v) => ({
+        ...v,
+        price: Number(v.price) || 0,
+        quantity: Math.max(0, parseInt(v.quantity, 10) || 0),
+      }));
 
     store.saveProduct({
       id: editingId ?? uid(),
       name,
       categoryId,
       price,
+      quantity,
       image: tempImage,
       variants,
     });
@@ -558,11 +579,11 @@ export function initProductEvents() {
     renderProducts(el.search?.value.trim() || "");
     toast(editingId ? "محصول ویرایش شد ✅" : "محصول اضافه شد ✅");
 
-    syncAllStorages();
+    await syncAllStorages({ showToast: true });
   });
 
   // کلیک‌های گرید محصولات
-  el.grid?.addEventListener("click", (e) => {
+  el.grid?.addEventListener("click", async (e) => {
     const edit = e.target.dataset.edit;
     const del = e.target.dataset.delete;
     const add = e.target.dataset.addProduct;
@@ -575,7 +596,7 @@ export function initProductEvents() {
       renderCategoryChips();
       renderProducts(el.search?.value.trim() || "");
       toast("محصول حذف شد 🗑️");
-      syncAllStorages();
+      await syncAllStorages({ showToast: true });
     }
 
     if (add) addProductToInvoice(store.getProduct(add));
