@@ -1,8 +1,19 @@
 import { store } from "./store.js";
-import { autoSaveInvoices } from "./backup.js";
+import { autoSaveInvoices, performLocalFolderBackup } from "./backup.js";
 import { startPushTask } from "./progress-indicator.js";
 
 const API = "https://api.github.com";
+
+function triggerLocalBackupOnPush() {
+  try {
+    const s = store.getSettings();
+    if (s.localFolderBackup?.onPush !== false) {
+      performLocalFolderBackup({ trigger: "push", showToast: true });
+    }
+  } catch (e) {
+    console.warn("خطا در همگام‌سازی بک‌آپ محلی هنگام push:", e);
+  }
+}
 
 export function getBackupRepoConfig() {
   const s = store.getSettings();
@@ -584,6 +595,7 @@ export async function pushCombinedToGitHub(cfg, { silent = false, task = null, t
       lastPush: { at: now, ok: true },
       lastPublicPush: { at: now, ok: true },
     });
+    triggerLocalBackupOnPush();
     if (!task) currentTask.complete("با موفقیت روی گیت‌هاب ذخیره شد ✅");
     if (!silent) alert("پشتیبان و دیتای عمومی با موفقیت روی گیت‌هاب push شد ✅");
     return { ok: true, sha: commit.sha };
@@ -805,6 +817,7 @@ export async function pushBackupToGitHub({
       ...store.getSettings(),
       lastPush: { at: Date.now(), ok: true },
     });
+    triggerLocalBackupOnPush();
     if (!task) currentTask.complete("پشتیبان‌گیری با موفقیت انجام شد ✅");
     if (!silent) alert("پشتیبان با موفقیت روی گیت‌هاب push شد ✅");
     return { ok: true, sha: commit.sha };
@@ -1048,6 +1061,7 @@ export async function pushToPublicRepo({
       ...store.getSettings(),
       lastPublicPush: { at: Date.now(), ok: true },
     });
+    triggerLocalBackupOnPush();
     if (!task) currentTask.complete("پورتال مشتری با موفقیت به‌روزرسانی شد ✅");
     if (!silent) alert("اطلاعات با موفقیت روی ریپوی پابلیک push شد ✅");
     return { ok: true, sha: commit.sha };

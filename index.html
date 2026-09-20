@@ -1473,59 +1473,149 @@
               </button>
             </div>
 
-            <!-- پشتیبان‌گیری JSON -->
+            <!-- پشتیبان‌گیری محلی هوشمند در پوشه سیستم (Local Folder Backup) -->
             <div
               class="mt-4 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 space-y-4"
             >
-              <h3 class="font-extrabold text-base mb-1">
-                💾 پشتیبان‌گیری فایل JSON
-              </h3>
-              <p class="text-xs text-slate-500 dark:text-slate-400 leading-6">
-                با اتصال یک فایل، از این به بعد <b>لحظه ثبت هر فاکتور</b> کل
-                لیست فاکتورها به‌صورت خودکار داخل همان فایل (مثلاً در پوشه
-                پروژه) نوشته می‌شود. این قابلیت در Chrome و Edge در دسترس است.
-              </p>
-              <div
-                class="flex items-center justify-between flex-wrap gap-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl px-4 py-3"
-              >
-                <span class="text-xs text-slate-600 dark:text-slate-300"
-                  >وضعیت ذخیره خودکار:
-                  <b id="backup-status">قطع — ذخیره خودکار غیرفعال</b></span
-                >
-                <div class="flex gap-2">
-                  <button
-                    id="btn-backup-connect"
-                    class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg shadow"
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-2xl">📁</span>
+                  <div>
+                    <h3 class="font-extrabold text-base text-slate-800 dark:text-slate-100">
+                      پشتیبان‌گیری محلی هوشمند در پوشه سیستم
+                    </h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                      ذخیره روزانه به تفکیک تاریخ شمسی + زمان‌بندی خودکار + همگام‌سازی با Push
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span
+                    id="local-dir-status"
+                    class="text-xs font-bold px-3 py-1 rounded-full bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-900 flex items-center gap-1.5"
                   >
-                    🔗 اتصال فایل پشتیبان
-                  </button>
-                  <button
-                    id="btn-backup-disconnect"
-                    class="hidden text-xs bg-slate-200 dark:bg-slate-600 hover:bg-slate-300 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-100 font-bold px-4 py-2 rounded-lg"
-                  >
-                    قطع اتصال
-                  </button>
+                    <span class="w-2 h-2 rounded-full bg-rose-500"></span> قطع — پوشه‌ای انتخاب نشده
+                  </span>
                 </div>
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+
+              <p class="text-xs text-slate-500 dark:text-slate-400 leading-6">
+                با انتخاب یک پوشه در هارد دیسک (مثلاً <code class="bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-brand-600 dark:text-brand-400 font-mono">D:\FactorBackups</code>)، سیستم هر روز به صورت خودکار یک پوشه با تاریخ شمسی همان روز (مانند <code class="bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-emerald-600 dark:text-emerald-400 font-mono">1405-06-29</code>) می‌سازد و کلیه فایل‌های پشتیبان خصوصی (<code class="font-mono text-[11px]">backup/</code>) و عمومی (<code class="font-mono text-[11px]">data/</code>) را در آن قرار می‌دهد.
+              </p>
+
+              <!-- نوار مشخصات پوشه متصل و زمان‌ها -->
+              <div
+                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-50 dark:bg-slate-700/40 p-3.5 rounded-xl border border-slate-200/70 dark:border-slate-600 text-xs"
+              >
+                <div>
+                  <span class="text-slate-400 block mb-0.5">پوشه اصلی انتخاب‌شده:</span>
+                  <b id="local-dir-name" class="text-slate-700 dark:text-slate-200 font-bold truncate block">انتخاب نشده</b>
+                </div>
+                <div>
+                  <span class="text-slate-400 block mb-0.5">تاریخ شمسی امروز:</span>
+                  <b id="local-today-date" class="text-emerald-600 dark:text-emerald-400 font-bold font-mono block">-</b>
+                </div>
+                <div>
+                  <span class="text-slate-400 block mb-0.5">پوشه آخرین بک‌آپ:</span>
+                  <b id="local-last-folder-date" class="text-slate-700 dark:text-slate-200 font-bold font-mono block">هنوز ساخته نشده</b>
+                </div>
+                <div>
+                  <span class="text-slate-400 block mb-0.5">آخرین ذخیره موفق:</span>
+                  <b id="local-last-backup-time" class="text-slate-700 dark:text-slate-200 font-bold block">هیچ</b>
+                </div>
+              </div>
+
+              <!-- تنظیمات زمان‌بندی و رفتارها -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label class="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
+                    ⏱️ بازه زمانی پشتیبان‌گیری خودکار:
+                  </label>
+                  <select
+                    id="local-backup-interval"
+                    class="w-full rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 px-3 py-2 text-xs sm:text-sm outline-none focus:ring-2 focus:ring-brand-500"
+                  >
+                    <option value="0">غیرفعال (فقط دستی و با Push)</option>
+                    <option value="15">هر ۱۵ دقیقه</option>
+                    <option value="30">هر ۳۰ دقیقه</option>
+                    <option value="60" selected>هر ۱ ساعت (پیشنهادی)</option>
+                    <option value="180">هر ۳ ساعت</option>
+                    <option value="360">هر ۶ ساعت</option>
+                    <option value="720">هر ۱۲ ساعت</option>
+                    <option value="1440">هر ۲۴ ساعت (یک‌بار در روز)</option>
+                  </select>
+                </div>
+                <div class="space-y-2 pt-1 sm:pt-4">
+                  <label class="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
+                    <input
+                      id="local-backup-on-push"
+                      type="checkbox"
+                      checked
+                      class="w-4 h-4 accent-brand-600 rounded"
+                    />
+                    <span>🚀 به‌روزرسانی خودکار دیتای لوکال هنگام هر Push به گیت‌هاب</span>
+                  </label>
+                  <label class="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
+                    <input
+                      id="local-backup-auto-confirm-new-day"
+                      type="checkbox"
+                      class="w-4 h-4 accent-brand-600 rounded"
+                    />
+                    <span>⚡ تأیید خودکار ساخت پوشه جدید در تغییر روز (بدون نیاز به هشدار)</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- دکمه‌های عملیاتی -->
+              <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-100 dark:border-slate-700">
                 <button
-                  id="btn-export-json"
-                  class="bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl text-sm shadow"
+                  id="btn-local-dir-select"
+                  type="button"
+                  class="bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm shadow flex items-center gap-1.5 transition"
                 >
-                  ⬇️ خروجی JSON (اکسپورت)
+                  <span>📁 انتخاب پوشه ذخیره بک‌آپ</span>
                 </button>
                 <button
-                  id="btn-import-json"
-                  class="bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500 text-white font-bold py-2.5 rounded-xl text-sm shadow"
+                  id="btn-local-backup-now"
+                  type="button"
+                  class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm shadow flex items-center gap-1.5 transition"
                 >
-                  ⬆️ ورودی JSON (ایمپورت)
+                  <span>💾 ذخیره بک‌آپ محلی (همین حالا)</span>
                 </button>
-                <input
-                  id="import-file"
-                  type="file"
-                  accept=".json,application/json"
-                  class="hidden"
-                />
+                <button
+                  id="btn-local-dir-disconnect"
+                  type="button"
+                  class="hidden bg-slate-200 dark:bg-slate-700 hover:bg-rose-100 hover:text-rose-600 dark:hover:bg-rose-950 dark:hover:text-rose-400 text-slate-700 dark:text-slate-200 font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm transition"
+                >
+                  قطع اتصال پوشه
+                </button>
+              </div>
+
+              <!-- بخش پشتیبان تک‌فایلی قدیمی جهت سازگاری -->
+              <div class="pt-3 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between flex-wrap gap-2">
+                <div class="text-[11px] text-slate-400">
+                  خروجی / ورودی فایل تک‌تکه (Legacy JSON):
+                </div>
+                <div class="flex gap-2">
+                  <button
+                    id="btn-export-json"
+                    class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold py-1.5 px-3 rounded-lg text-xs transition"
+                  >
+                    ⬇️ خروجی JSON
+                  </button>
+                  <button
+                    id="btn-import-json"
+                    class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold py-1.5 px-3 rounded-lg text-xs transition"
+                  >
+                    ⬆️ ورودی JSON
+                  </button>
+                  <input
+                    id="import-file"
+                    type="file"
+                    accept=".json,application/json"
+                    class="hidden"
+                  />
+                </div>
               </div>
             </div>
 
@@ -2100,6 +2190,64 @@
             class="bg-brand-600 hover:bg-brand-700 text-white font-bold py-2 px-6 rounded-xl text-xs sm:text-sm shadow transition"
           >
             بستن پنجره
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== مودال هشدار عدم همخوانی تاریخ پوشه بک‌آپ ===================== -->
+    <div
+      id="local-backup-day-modal"
+      class="hidden fixed inset-0 z-[90] modal-backdrop grid place-items-center p-3 sm:p-4"
+    >
+      <div
+        class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl p-5 sm:p-6 fade-in border border-amber-300 dark:border-amber-600/50 space-y-4 text-right"
+      >
+        <div class="flex items-center gap-3 border-b border-slate-100 dark:border-slate-700 pb-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 grid place-items-center text-xl flex-shrink-0">
+            ⚠️
+          </div>
+          <div>
+            <h3 class="font-black text-sm sm:text-base text-slate-800 dark:text-slate-100">
+              تغییر تاریخ روز — ساخت پوشه جدید بک‌آپ
+            </h3>
+            <p class="text-[11px] text-slate-400">سیستم پشتیبان‌گیری محلی هوشمند</p>
+          </div>
+        </div>
+
+        <div class="space-y-2.5 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-6 bg-amber-50/60 dark:bg-slate-700/40 p-3.5 rounded-xl border border-amber-200/60 dark:border-slate-600">
+          <p class="font-bold text-slate-700 dark:text-slate-200">
+            تاریخ پوشه قبلی با تاریخ امروز همخوانی ندارد!
+          </p>
+          <div class="space-y-1 text-xs">
+            <div class="flex justify-between">
+              <span class="text-slate-400">تاریخ آخرین پوشه بک‌آپ:</span>
+              <b id="lb-modal-prev-date" class="font-mono text-rose-500 font-bold">-</b>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">تاریخ شمسی امروز:</span>
+              <b id="lb-modal-today-date" class="font-mono text-emerald-600 dark:text-emerald-400 font-bold">-</b>
+            </div>
+          </div>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 pt-1">
+            آیا مایلید پوشه جدیدی برای تاریخ امروز در پوشه انتخاب‌شده ساخته شود و داده‌های پشتیبان در آن قرار گیرند؟
+          </p>
+        </div>
+
+        <div class="flex gap-2 justify-end pt-2">
+          <button
+            id="btn-cancel-create-today-folder"
+            type="button"
+            class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+          >
+            انصراف
+          </button>
+          <button
+            id="btn-confirm-create-today-folder"
+            type="button"
+            class="bg-brand-600 hover:bg-brand-700 text-white font-bold px-5 py-2 rounded-xl text-xs sm:text-sm shadow-md transition flex items-center gap-1.5"
+          >
+            <span>📁 بله، ساخت پوشه امروز و ذخیره</span>
           </button>
         </div>
       </div>
