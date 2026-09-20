@@ -1,4 +1,4 @@
-import { store, faNum, uid } from "./store.js";
+import { store, faNum, uid, toEnDigits } from "./store.js";
 import { addItemToInvoice } from "./invoice.js";
 import { autoSaveInvoices } from "./backup.js";
 import {
@@ -305,7 +305,7 @@ function renderVariantsForm() {
             class="flex-1 rounded-lg border border-slate-300 dark:border-slate-600 px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-brand-500" />
           <input data-vprice="${i}" type="number" min="0" value="${v.price || ""}" placeholder="قیمت"
             class="w-28 rounded-lg border border-slate-300 dark:border-slate-600 px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-brand-500 text-left font-mono" />
-          <input data-vqty="${i}" type="number" min="0" value="${v.quantity ?? 0}" placeholder="موجودی"
+          <input data-vqty="${i}" type="number" min="0" value="${v.quantity !== undefined && v.quantity !== null ? v.quantity : 1}" placeholder="موجودی"
             class="w-20 rounded-lg border border-slate-300 dark:border-slate-600 px-2 py-1.5 text-xs outline-none focus:ring-2 focus:ring-brand-500 text-left font-mono" />
           <button type="button" data-vdel="${i}" class="text-rose-500 hover:bg-rose-50 dark:hover:bg-slate-600 w-7 h-7 rounded-lg font-bold">✕</button>
         </div>
@@ -345,7 +345,13 @@ function openModal(product = null) {
   el.title.textContent = product ? "ویرایش محصول" : "محصول جدید";
   el.name.value = product?.name ?? "";
   el.price.value = product?.price ?? "";
-  if (el.quantity) el.quantity.value = product ? (product.quantity ?? 0) : "";
+  if (el.quantity) {
+    el.quantity.value = product
+      ? product.quantity !== undefined && product.quantity !== null
+        ? product.quantity
+        : 1
+      : 1;
+  }
   el.preview.src = tempImage;
   el.preview.classList.toggle("hidden", !tempImage);
   el.image.value = "";
@@ -516,7 +522,7 @@ export function initProductEvents() {
   });
 
   document.getElementById("btn-add-variant")?.addEventListener("click", () => {
-    tempVariants.push({ id: uid(), name: "", price: 0, quantity: 0 });
+    tempVariants.push({ id: uid(), name: "", price: 0, quantity: 1 });
     renderVariantsForm();
   });
 
@@ -527,7 +533,7 @@ export function initProductEvents() {
     if (ni !== undefined) tempVariants[Number(ni)].name = e.target.value;
     if (pi !== undefined) {
       const idx = Number(pi);
-      tempVariants[idx].price = Number(e.target.value) || 0;
+      tempVariants[idx].price = Number(toEnDigits(e.target.value)) || 0;
       const previewBox = el.variants.querySelector(`[data-vpreview="${idx}"]`);
       if (previewBox) {
         previewBox.innerHTML = createPricePreviewHTML(e.target.value);
@@ -535,7 +541,8 @@ export function initProductEvents() {
     }
     if (qi !== undefined) {
       const idx = Number(qi);
-      tempVariants[idx].quantity = Math.max(0, parseInt(e.target.value, 10) || 0);
+      const parsed = parseInt(toEnDigits(e.target.value), 10);
+      tempVariants[idx].quantity = isNaN(parsed) ? 1 : Math.max(0, parsed);
     }
   });
 
@@ -551,18 +558,37 @@ export function initProductEvents() {
   // ذخیره محصول
   document.getElementById("btn-save-product")?.addEventListener("click", async () => {
     const name = el.name.value.trim();
-    const price = Number(el.price.value) || 0;
+    const price = Number(toEnDigits(el.price.value)) || 0;
     const categoryId = el.category?.value || "";
-    const quantity = Math.max(0, parseInt(el.quantity?.value, 10) || 0);
+
+    let quantity = 1;
+    if (el.quantity) {
+      const qVal = el.quantity.value.trim();
+      if (qVal !== "") {
+        const parsed = parseInt(toEnDigits(qVal), 10);
+        quantity = isNaN(parsed) ? 1 : Math.max(0, parsed);
+      }
+    }
 
     if (!name || price <= 0) return alert("نام و قیمت محصول الزامی است.");
     const variants = tempVariants
       .filter((v) => v.name.trim())
-      .map((v) => ({
-        ...v,
-        price: Number(v.price) || 0,
-        quantity: Math.max(0, parseInt(v.quantity, 10) || 0),
-      }));
+      .map((v) => {
+        let vQty = 1;
+        if (
+          v.quantity !== undefined &&
+          v.quantity !== null &&
+          String(v.quantity).trim() !== ""
+        ) {
+          const parsed = parseInt(toEnDigits(String(v.quantity)), 10);
+          vQty = isNaN(parsed) ? 1 : Math.max(0, parsed);
+        }
+        return {
+          ...v,
+          price: Number(toEnDigits(String(v.price))) || 0,
+          quantity: vQty,
+        };
+      });
 
     store.saveProduct({
       id: editingId ?? uid(),

@@ -107,19 +107,98 @@ async function loadPortalData() {
 
     if (resServices.status === "fulfilled" && resServices.value.ok) {
       const data = await resServices.value.json();
-      if (Array.isArray(data) && data.length) portalCategories = data;
+      if (Array.isArray(data) && data.length) {
+        const localServices = store.getServices() || [];
+        if (!localServices.length) {
+          portalCategories = data;
+        } else {
+          const servMap = new Map();
+          data.forEach((s) => {
+            if (s && s.id) servMap.set(s.id, s);
+          });
+          localServices.forEach((s) => {
+            if (s && s.id) {
+              const remote = servMap.get(s.id);
+              servMap.set(s.id, remote ? { ...remote, ...s } : s);
+            }
+          });
+          portalCategories = Array.from(servMap.values());
+        }
+      }
     }
+
     if (resProducts.status === "fulfilled" && resProducts.value.ok) {
-      const data = await resProducts.value.json();
-      if (Array.isArray(data) && data.length) portalProducts = data;
+      const remoteProds = await resProducts.value.json();
+      if (Array.isArray(remoteProds)) {
+        const localProds = store.getProducts() || [];
+        const mergedMap = new Map();
+
+        // ۱. ابتدا داده‌های واکشی‌شده از فایل استاتیک/گیت‌هاب اضافه می‌شوند
+        remoteProds.forEach((p) => {
+          if (p && p.id) mergedMap.set(p.id, p);
+        });
+
+        // ۲. سپس داده‌های محلی (محصولات جدید یا ویرایش‌شده در ادمین) تلفیق می‌شوند
+        localProds.forEach((p) => {
+          if (p && p.id) {
+            const existing = mergedMap.get(p.id);
+            mergedMap.set(p.id, existing ? { ...existing, ...p } : p);
+          }
+        });
+
+        portalProducts = Array.from(mergedMap.values());
+
+        // اگر لوکال استورج خالی بود، کش شود
+        if (!localProds.length && portalProducts.length) {
+          store.setProducts(portalProducts);
+        }
+      }
     }
+
     if (resCats.status === "fulfilled" && resCats.value.ok) {
-      const data = await resCats.value.json();
-      if (Array.isArray(data) && data.length) portalProductCategories = data;
+      const remoteCats = await resCats.value.json();
+      if (Array.isArray(remoteCats)) {
+        const localCats = store.getProductCategories() || [];
+        const catMap = new Map();
+
+        remoteCats.forEach((c) => {
+          if (c && c.id) catMap.set(c.id, c);
+        });
+
+        localCats.forEach((c) => {
+          if (c && c.id) {
+            const existing = catMap.get(c.id);
+            catMap.set(c.id, existing ? { ...existing, ...c } : c);
+          }
+        });
+
+        portalProductCategories = Array.from(catMap.values());
+
+        if (!localCats.length && portalProductCategories.length) {
+          store.setProductCategories(portalProductCategories);
+        }
+      }
     }
+
     if (resAnnouncements.status === "fulfilled" && resAnnouncements.value.ok) {
-      const data = await resAnnouncements.value.json();
-      if (Array.isArray(data) && data.length) portalAnnouncements = data;
+      const remoteAnn = await resAnnouncements.value.json();
+      if (Array.isArray(remoteAnn)) {
+        const localAnn = store.getAnnouncements() || [];
+        const annMap = new Map();
+
+        remoteAnn.forEach((a) => {
+          if (a && a.id) annMap.set(a.id, a);
+        });
+
+        localAnn.forEach((a) => {
+          if (a && a.id) {
+            const existing = annMap.get(a.id);
+            annMap.set(a.id, existing ? { ...existing, ...a } : a);
+          }
+        });
+
+        portalAnnouncements = Array.from(annMap.values());
+      }
     }
   } catch (_) {}
 }
@@ -296,14 +375,24 @@ function initNewsModalCloseHandlers() {
  * بررسی موجود بودن محصول جهت نمایش به مشتری
  * اگر محصول هیچ واریانتی ندارد: باید موجودی پایه > 0 باشد
  * اگر محصول واریانت دارد: باید موجودی پایه > 0 باشد یا حداقل یکی از واریانت‌ها موجودی > 0 داشته باشد
+ * اگر فیلد موجودی تعریف نشده باشد (محصولات قدیمی)، به صورت پیش‌فرض ۱ (موجود) در نظر گرفته می‌شود
  */
 function isProductAvailableForCustomer(p) {
   if (!p) return false;
-  const baseQty = Math.max(0, parseInt(p.quantity, 10) || 0);
+
+  const rawQty = p.quantity;
+  const hasBaseQty =
+    rawQty !== undefined && rawQty !== null && String(rawQty).trim() !== "";
+  const baseQty = hasBaseQty ? Math.max(0, parseInt(rawQty, 10) || 0) : 1;
+
   if (Array.isArray(p.variants) && p.variants.length > 0) {
-    const hasVariantStock = p.variants.some(
-      (v) => Math.max(0, parseInt(v.quantity, 10) || 0) > 0,
-    );
+    const hasVariantStock = p.variants.some((v) => {
+      const vRaw = v.quantity;
+      const vHasQty =
+        vRaw !== undefined && vRaw !== null && String(vRaw).trim() !== "";
+      const vQty = vHasQty ? Math.max(0, parseInt(vRaw, 10) || 0) : 1;
+      return vQty > 0;
+    });
     return baseQty > 0 || hasVariantStock;
   }
   return baseQty > 0;
@@ -383,9 +472,13 @@ function renderCustomerProducts(q = "") {
       const category = portalProductCategories.find(
         (c) => c.id === p.categoryId,
       );
-      const activeVariants = (p.variants || []).filter(
-        (v) => Math.max(0, parseInt(v.quantity, 10) || 0) > 0,
-      );
+      const activeVariants = (p.variants || []).filter((v) => {
+        const vRaw = v.quantity;
+        const vHasQty =
+          vRaw !== undefined && vRaw !== null && String(vRaw).trim() !== "";
+        const vQty = vHasQty ? Math.max(0, parseInt(vRaw, 10) || 0) : 1;
+        return vQty > 0;
+      });
 
       return `
       <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden fade-in flex flex-col">
@@ -576,13 +669,60 @@ export function initCustomerPortal() {
     updateCustomerNewsBadge();
   });
 
-  // شنود تغییرات زنده استوریج در صورت ویرایش اخبار
+  function syncWithLocalProducts() {
+    const localProds = store.getProducts() || [];
+    const localCats = store.getProductCategories() || [];
+
+    if (localProds.length) {
+      const prodMap = new Map();
+      portalProducts.forEach((p) => {
+        if (p && p.id) prodMap.set(p.id, p);
+      });
+      localProds.forEach((p) => {
+        if (p && p.id) {
+          const existing = prodMap.get(p.id);
+          prodMap.set(p.id, existing ? { ...existing, ...p } : p);
+        }
+      });
+      portalProducts = Array.from(prodMap.values());
+    }
+
+    if (localCats.length) {
+      const catMap = new Map();
+      portalProductCategories.forEach((c) => {
+        if (c && c.id) catMap.set(c.id, c);
+      });
+      localCats.forEach((c) => {
+        if (c && c.id) {
+          const existing = catMap.get(c.id);
+          catMap.set(c.id, existing ? { ...existing, ...c } : c);
+        }
+      });
+      portalProductCategories = Array.from(catMap.values());
+    }
+  }
+
+  // شنود تغییرات زنده استوریج در صورت ویرایش اخبار یا کالاها
   window.addEventListener("storage", (e) => {
     if (e.key === STORAGE_KEY_READ_NEWS) {
       updateCustomerNewsBadge();
       renderCustomerNews(
         document.getElementById("cp-news-search")?.value || "",
       );
+    }
+    if (e.key === "cafe_products" || e.key === "cafe_product_categories") {
+      syncWithLocalProducts();
+      renderCustomerProductChips();
+      renderCustomerProducts(
+        document.getElementById("cp-product-search")?.value || "",
+      );
+    }
+    if (e.key === "cafe_announcements") {
+      portalAnnouncements = store.getAnnouncements();
+      renderCustomerNews(
+        document.getElementById("cp-news-search")?.value || "",
+      );
+      updateCustomerNewsBadge();
     }
   });
 
@@ -934,6 +1074,26 @@ function initPortalTabs() {
     Object.entries(panels).forEach(([k, el]) =>
       el?.classList.toggle("hidden", k !== key),
     );
+    if (key === "products") {
+      const localProds = store.getProducts() || [];
+      if (localProds.length) {
+        const prodMap = new Map();
+        portalProducts.forEach((p) => {
+          if (p && p.id) prodMap.set(p.id, p);
+        });
+        localProds.forEach((p) => {
+          if (p && p.id) {
+            const existing = prodMap.get(p.id);
+            prodMap.set(p.id, existing ? { ...existing, ...p } : p);
+          }
+        });
+        portalProducts = Array.from(prodMap.values());
+      }
+      renderCustomerProductChips();
+      renderCustomerProducts(
+        document.getElementById("cp-product-search")?.value || "",
+      );
+    }
     if (key === "cards" && cardSlider) {
       requestAnimationFrame(() => cardSlider.goTo(cardSlider.index, false));
     }
