@@ -1,6 +1,19 @@
 {
   "newCategories": [
     {
+      "id": "cat-mu9rsmfq57czh",
+      "title": "نصب نرم افزار موبایل",
+      "items": [
+        {
+          "id": "srv-mu9rsmfrrplo5",
+          "title": "نصب نرم افزار موبایل",
+          "price": 80000,
+          "custom": true
+        }
+      ],
+      "custom": true
+    },
+    {
       "id": "cat-mu9p4kpoe037t",
       "title": "صحافی و فنری کتاب",
       "items": [
