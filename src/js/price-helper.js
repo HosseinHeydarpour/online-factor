@@ -7,10 +7,11 @@ export function getPricePreviewData(rawVal) {
   const cleanStr = toEnDigits(String(rawVal ?? "")).replace(/\D/g, "");
   const num = Number(cleanStr);
   if (!cleanStr || isNaN(num) || num <= 0) {
-    return { num: 0, formatted: "", words: "", active: false };
+    return { num: 0, formatted: "", formattedNumber: "", words: "", active: false };
   }
   return {
     num,
+    formattedNumber: faNum(num),
     formatted: faNum(num) + " تومان",
     words: numberToWordsFa(num) + " تومان",
     active: true,
@@ -18,20 +19,32 @@ export function getPricePreviewData(rawVal) {
 }
 
 /**
- * ساخت HTML باکس زیر فیلد با طراحی شکیل، دارک‌مود و انیمیشن Fade-In
+ * ساخت HTML باکس جداکننده قیمت و تبدیل به حروف با طراحی شکیل، مدرن و وضوح کامل در دارک‌مود
  */
 export function createPricePreviewHTML(rawVal) {
   const data = getPricePreviewData(rawVal);
   if (!data.active) return "";
   return `
-    <div class="fade-in mt-1.5 p-2.5 bg-brand-50/90 dark:bg-slate-700/80 border border-brand-200 dark:border-slate-600 rounded-xl text-xs space-y-1 shadow-sm">
-      <div class="flex items-center justify-between font-bold text-brand-800 dark:text-brand-300">
-        <span class="text-[10px] text-slate-500 dark:text-slate-400 font-normal">جداکننده ارقام:</span>
-        <span class="font-mono text-sm tracking-wide text-brand-700 dark:text-brand-400">${data.formatted}</span>
+    <div class="fade-in mt-2 p-2.5 sm:p-3 bg-gradient-to-br from-sky-50/90 via-sky-50/40 to-blue-50/70 dark:from-slate-800 dark:via-slate-800/95 dark:to-slate-900 border border-sky-200/90 dark:border-sky-500/30 rounded-xl text-xs space-y-2.5 shadow-sm transition-all duration-200">
+      <!-- ردیف جداکننده ارقام -->
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="flex items-center gap-1.5 text-slate-600 dark:text-slate-200 font-medium text-[11px]">
+          <span class="inline-block w-2 h-2 rounded-full bg-sky-500 dark:bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.7)]"></span>
+          <span class="font-bold">جداکننده ارقام:</span>
+        </div>
+        <div class="inline-flex items-center gap-1.5 bg-white/95 dark:bg-slate-950/90 px-3 py-1 rounded-lg border border-sky-200 dark:border-sky-500/40 shadow-xs">
+          <span class="font-mono text-sm sm:text-base font-extrabold tracking-wider text-sky-700 dark:text-sky-300 select-all">${data.formattedNumber}</span>
+          <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400">تومان</span>
+        </div>
       </div>
-      <div class="text-[11px] text-slate-700 dark:text-slate-200 pt-1 border-t border-brand-100 dark:border-slate-600/70 flex items-start gap-1">
-        <span class="shrink-0 text-slate-400 text-[10px]">به حروف:</span>
-        <span class="font-extrabold text-brand-900 dark:text-brand-200 leading-5">${data.words}</span>
+      <!-- ردیف تبدیل به حروف -->
+      <div class="pt-2 border-t border-sky-100 dark:border-slate-700/80 flex items-start gap-2">
+        <span class="shrink-0 text-[10px] font-extrabold bg-sky-100/90 dark:bg-sky-950/90 text-sky-700 dark:text-sky-300 border border-sky-200/90 dark:border-sky-800/80 px-2 py-0.5 rounded-md mt-0.5">
+          به حروف:
+        </span>
+        <span class="font-bold text-slate-800 dark:text-emerald-300 text-xs sm:text-[13px] leading-relaxed select-all">
+          ${data.words}
+        </span>
       </div>
     </div>
   `;
