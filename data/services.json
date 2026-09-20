@@ -1,49 +1,12 @@
 [
   {
-    "id": "cat-mu9eit4g891y5",
-    "title": "وام فرزند آوری",
+    "id": "cat-mu9mgq9vg35g3",
+    "title": "منگنه کتاب",
     "items": [
       {
-        "id": "srv-mu9eit4g38lle",
-        "title": "ثبت برای هر فرزند (ثبت نام + ۶ صفحه اضافه)",
-        "price": 395200,
-        "custom": true
-      },
-      {
-        "id": "srv-mu9eit4gg5g36",
-        "title": "پیگیری ثبت نام همراه با پرینت",
-        "price": 71000,
-        "custom": true
-      },
-      {
-        "id": "srv-mu9eit4gh3e0d",
-        "title": "ویرایش شعبه (نصف ثبت نام + ۲ صفحه اضافه)",
-        "price": 162400,
-        "custom": true
-      },
-      {
-        "id": "srv-mu9eit4gkbv3p",
-        "title": "پرینت نتیجه نهایی",
-        "price": 21000,
-        "custom": true
-      }
-    ],
-    "custom": true
-  },
-  {
-    "id": "cat-mu9eb89bf11et",
-    "title": "فیلم و سریال",
-    "items": [
-      {
-        "id": "srv-mu9eb89br8qel",
-        "title": "سریال",
-        "price": 5000,
-        "custom": true
-      },
-      {
-        "id": "srv-mu9eb89b269gx",
-        "title": "فیلم",
-        "price": 5000,
+        "id": "srv-mu9mgq9vfxtdc",
+        "title": "هر کتاب",
+        "price": 15000,
         "custom": true
       }
     ],
@@ -492,6 +455,16 @@
         "id": "prn-17",
         "title": "پرینت از شبکه‌های اجتماعی (به ازای هر صفحه)",
         "price": 21000
+      },
+      {
+        "id": "srv-mu9k8bl7yk7tr",
+        "title": "پرینت لیزری سیاه و سفید A5 – متن یک‌رو",
+        "price": 9000
+      },
+      {
+        "id": "srv-mu9k8bl7kig1h",
+        "title": "پرینت لیزری سیاه و سفید A5 – متن دورو",
+        "price": 10000
       }
     ]
   },
