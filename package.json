@@ -4,6 +4,24 @@
   "description": "سیستم صدور فاکتور کافی‌نت",
   "type": "module",
   "scripts": {
-    "dev": "npx serve ."
+    "dev": "npx serve .",
+    "build:css": "tailwindcss -i ./src/css/input.css -o ./assets/css/tailwind.css --minify",
+    "setup:vendor": "node ./scripts/copy-vendor.cjs",
+    "build": "npm run setup:vendor && npm run build:css"
+  },
+  "dependencies": {
+    "chart.js": "^4.4.1",
+    "jquery": "^3.7.1",
+    "persian-date": "^1.1.0",
+    "persian-datepicker": "^1.2.0",
+    "qrcode": "^1.5.3",
+    "quill": "^2.0.2",
+    "vazirmatn": "^33.0.3",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "serve": "^14.2.4",
+    "tailwindcss": "^3.4.17"
   }
 }

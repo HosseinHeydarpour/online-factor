@@ -38,71 +38,33 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <title>کافی‌نت آنلاین | فاکتورساز</title>
 
-    <!-- Tailwind -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            fontFamily: { vazir: ["Vazirmatn", "sans-serif"] },
-            colors: {
-              brand: {
-                50: "#f0f9ff",
-                100: "#e0f2fe",
-                200: "#bae6fd",
-                300: "#7dd3fc",
-                400: "#38bdf8",
-                500: "#0ea5e9",
-                600: "#0284c7",
-                700: "#0369a1",
-                800: "#075985",
-                900: "#0c4a6e",
-                950: "#082f49",
-              },
-            },
-          },
-        },
-      };
-    </script>
+    <!-- استایل اختصاصی و بهینه‌شده Tailwind (کامپایل‌شده محلی، بدون نیاز به CDN) -->
+    <link rel="stylesheet" href="./assets/css/tailwind.css" />
 
-    <!-- فونت وزیر -->
-    <link
-      href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css"
-      rel="stylesheet"
-    />
-
-    <!-- Flatpickr + Jalali Plugin -->
+    <!-- فونت وزیرمتن محلی با font-display: swap برای لود فوری متن -->
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+      href="./assets/vendor/vazirmatn/Vazirmatn-font-face.css"
     />
+
+    <!-- استایل تقویم شمسی محلی -->
     <link
       rel="stylesheet"
-      id="flatpickr-theme"
-      href="https://npmcdn.com/flatpickr/dist/themes/light.css"
+      href="./assets/vendor/persian-datepicker/persian-datepicker.min.css"
     />
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
-    <!-- jQuery (required for persian-datepicker) -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
-    <!-- Persian Datepicker -->
-    <script src="https://cdn.jsdelivr.net/npm/persian-date@1.1.0/dist/persian-date.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/js/persian-datepicker.min.js"></script>
+    <!-- استایل ادیتور Quill محلی -->
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/persian-datepicker@1.2.0/dist/css/persian-datepicker.min.css"
+      href="./assets/vendor/quill/quill.snow.css"
     />
 
-    <link
-      href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css"
-      rel="stylesheet"
-    />
-    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+    <!-- کتابخانه‌های جاوااسکریپت محلی با قابلیت defer جهت جلوگیری از بلاک شدن رندر اولیه -->
+    <script defer src="./assets/vendor/jquery.min.js"></script>
+    <script defer src="./assets/vendor/persian-date/persian-date.min.js"></script>
+    <script defer src="./assets/vendor/persian-datepicker/persian-datepicker.min.js"></script>
+    <script defer src="./assets/vendor/chart.umd.min.js"></script>
+    <script defer src="./assets/vendor/quill/quill.js"></script>
 
     <style>
       /* گارد ضدپرش (Anti-Flicker Guard) */
@@ -3566,21 +3528,17 @@
       </form>
     </div>
 
-    <!-- QR Code -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <!-- QR Code محلی -->
+    <script defer src="./assets/vendor/qrcode.min.js"></script>
 
-    <!-- Dark Mode Script -->
+    <!-- Dark Mode Script (سریع و محلی بدون نیاز به لود فایل‌های خارجی) -->
     <script>
       (function () {
         const html = document.documentElement;
         const themeToggle = document.getElementById("theme-toggle");
-        const flatpickrTheme = document.getElementById("flatpickr-theme");
         const savedTheme = localStorage.getItem("theme") || "light";
         if (savedTheme === "dark") {
           html.classList.add("dark");
-          if (flatpickrTheme)
-            flatpickrTheme.href =
-              "https://npmcdn.com/flatpickr/dist/themes/dark.css";
           if (themeToggle) themeToggle.innerHTML = "☀️ حالت روشن";
         }
         if (themeToggle) {
@@ -3588,17 +3546,13 @@
             html.classList.toggle("dark");
             const isDark = html.classList.contains("dark");
             localStorage.setItem("theme", isDark ? "dark" : "light");
-            if (flatpickrTheme) {
-              flatpickrTheme.href = isDark
-                ? "https://npmcdn.com/flatpickr/dist/themes/dark.css"
-                : "https://npmcdn.com/flatpickr/dist/themes/light.css";
-            }
             this.innerHTML = isDark ? "☀️ حالت روشن" : "🌙 حالت تاریک";
           });
         }
       })();
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- کتابخانه اکسل XLSX محلی -->
+    <script defer src="./assets/vendor/xlsx.full.min.js"></script>
     <script type="module" src="./src/js/app.js"></script>
     <!-- اسکریپت گفتینو (فقط در حالت پورتال مشتری) -->
     <script type="text/javascript">
