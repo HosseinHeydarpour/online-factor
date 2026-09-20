@@ -195,9 +195,14 @@ export function addItemToInvoice({ title, price, meta = "", productId = null, va
 }
 
 let editingInvoice = null;
+let editingProforma = null;
 
 export function isInvoiceEditing() {
-  return Boolean(editingInvoice);
+  return Boolean(editingInvoice || editingProforma);
+}
+
+export function isProformaEditing() {
+  return Boolean(editingProforma);
 }
 
 export function updateEditModeUI(isEditing) {
@@ -205,11 +210,32 @@ export function updateEditModeUI(isEditing) {
   const editBadge = document.getElementById("invoice-edit-badge");
   const btnCancel = document.getElementById("btn-cancel-edit");
   const btnSave = document.getElementById("btn-save");
+  const btnSaveProforma = document.getElementById("btn-save-proforma");
 
-  if (isEditing && editingInvoice) {
+  if (isEditing && editingProforma) {
+    if (asideTitle) asideTitle.textContent = "✏️ ویرایش پیش‌فاکتور";
+    if (editBadge) {
+      editBadge.textContent = `پیش‌فاکتور #${faNum(editingProforma.number)}`;
+      editBadge.className =
+        "text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300";
+      editBadge.classList.remove("hidden");
+    }
+    if (btnCancel) btnCancel.classList.remove("hidden");
+    if (btnSave) {
+      btnSave.innerHTML = `<span>✅</span><span>تایید و صدور فاکتور نهایی</span>`;
+      btnSave.classList.remove("bg-amber-600", "hover:bg-amber-700");
+      btnSave.classList.add("bg-emerald-600", "hover:bg-emerald-700");
+    }
+    if (btnSaveProforma) {
+      btnSaveProforma.innerHTML = `<span>📑</span><span>بروزرسانی پیش‌فاکتور</span>`;
+      btnSaveProforma.classList.remove("hidden");
+    }
+  } else if (isEditing && editingInvoice) {
     if (asideTitle) asideTitle.textContent = "✏️ ویرایش فاکتور";
     if (editBadge) {
       editBadge.textContent = `#${faNum(editingInvoice.number)}`;
+      editBadge.className =
+        "text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-brand-100 text-brand-800 dark:bg-brand-900/40 dark:text-brand-300";
       editBadge.classList.remove("hidden");
     }
     if (btnCancel) btnCancel.classList.remove("hidden");
@@ -217,6 +243,9 @@ export function updateEditModeUI(isEditing) {
       btnSave.innerHTML = `<span>💾</span><span>بروزرسانی فاکتور #${faNum(editingInvoice.number)}</span>`;
       btnSave.classList.remove("bg-emerald-600", "hover:bg-emerald-700");
       btnSave.classList.add("bg-amber-600", "hover:bg-amber-700");
+    }
+    if (btnSaveProforma) {
+      btnSaveProforma.classList.add("hidden");
     }
   } else {
     if (asideTitle) asideTitle.textContent = "🧾 فاکتور جاری";
@@ -226,6 +255,10 @@ export function updateEditModeUI(isEditing) {
       btnSave.innerHTML = `<span>💾</span><span>ثبت فاکتور</span>`;
       btnSave.classList.remove("bg-amber-600", "hover:bg-amber-700");
       btnSave.classList.add("bg-emerald-600", "hover:bg-emerald-700");
+    }
+    if (btnSaveProforma) {
+      btnSaveProforma.classList.remove("hidden");
+      btnSaveProforma.innerHTML = `<span>📑</span><span>ثبت پیش‌فاکتور</span>`;
     }
   }
 }
@@ -237,6 +270,7 @@ export function loadInvoiceForEdit(inv) {
     ...inv,
     items: JSON.parse(JSON.stringify(inv.items || [])),
   };
+  editingProforma = null;
 
   state.number = inv.number;
   state.items = JSON.parse(JSON.stringify(inv.items || []));
@@ -271,8 +305,51 @@ export function loadInvoiceForEdit(inv) {
   });
 }
 
+export function loadProformaForEdit(pf) {
+  if (!pf) return;
+
+  editingInvoice = null;
+  editingProforma = {
+    ...pf,
+    items: JSON.parse(JSON.stringify(pf.items || [])),
+  };
+
+  state.number = pf.number;
+  state.items = JSON.parse(JSON.stringify(pf.items || []));
+  state.discount = pf.discount || 0;
+  state.customer = { ...EMPTY_CUSTOMER, ...(pf.customer || {}) };
+  state.payment = pf.payment || "نقدی";
+  state.date = pf.date || toJalali().full;
+  state.time = pf.time || nowTimeFa();
+
+  if (el.custName) el.custName.value = state.customer.name || "";
+  if (el.custPhone) el.custPhone.value = state.customer.phone || "";
+  if (el.discountInput) el.discountInput.value = state.discount;
+  if (el.customDate) el.customDate.value = state.date;
+  if (el.customTime) el.customTime.value = state.time;
+
+  setCustomerDetailsFormValues(state.customer);
+  updateDetailsBadge();
+
+  const radio = document.querySelector(
+    `input[name="payment-method"][value="${state.payment}"]`,
+  );
+  if (radio) radio.checked = true;
+
+  updateEditModeUI(true);
+  render();
+
+  custToast(`✏️ پیش‌فاکتور شماره ${faNum(pf.number)} جهت ویرایش باز شد`);
+
+  document.getElementById("invoice-aside")?.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+}
+
 export function clearInvoice() {
   editingInvoice = null;
+  editingProforma = null;
   updateEditModeUI(false);
 
   state.items = [];
@@ -344,8 +421,9 @@ function render() {
 /* ============================================================
    ساخت HTML فاکتور — چیدمان افقی (Landscape A4)
    ============================================================ */
-export async function buildPrintHTML(number, invoiceData = null) {
+export async function buildPrintHTML(number, invoiceData = null, isProforma = false) {
   const shop = store.getShopInfo();
+  const isPf = isProforma || Boolean(invoiceData?.isProforma);
 
   // اگر invoiceData داده شده، از آن استفاده کن، در غیر این صورت از state فعلی
   const items = invoiceData ? invoiceData.items : state.items;
@@ -371,8 +449,8 @@ export async function buildPrintHTML(number, invoiceData = null) {
   try {
     if (window.QRCode) {
       qr = await window.QRCode.toDataURL(
-        `INV:${number}|TOTAL:${total}|DATE:${dateVal}|CUST:${customer.name || "-"}`,
-        { width: 120, margin: 1, color: { dark: "#0c4a6e", light: "#ffffff" } },
+        `TYPE:${isPf ? "PROFORMA" : "INV"}:${number}|TOTAL:${total}|DATE:${dateVal}|CUST:${customer.name || "-"}`,
+        { width: 120, margin: 1, color: { dark: isPf ? "#b45309" : "#0c4a6e", light: "#ffffff" } },
       );
     }
   } catch (e) {
@@ -402,19 +480,22 @@ export async function buildPrintHTML(number, invoiceData = null) {
   return `
 <div dir="rtl" style="font-family:'Vazirmatn',Tahoma,sans-serif;color:#0f172a;background:#ffffff;width:100%;">
   <!-- نوار رنگی بالا -->
-  <div style="height:7px;background:linear-gradient(90deg,#0ea5e9,#0284c7,#0369a1);border-radius:0 0 8px 8px;"></div>
+  <div style="height:7px;background:${isPf ? "linear-gradient(90deg,#f59e0b,#d97706,#b45309)" : "linear-gradient(90deg,#0ea5e9,#0284c7,#0369a1)"};border-radius:0 0 8px 8px;"></div>
 
   <!-- ===== هدر ===== -->
-  <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 30px 16px;border-bottom:2px solid #0ea5e9;">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 30px 16px;border-bottom:2px solid ${isPf ? "#f59e0b" : "#0ea5e9"};">
     <div style="display:flex;align-items:center;gap:16px;">
       ${
         shop.logo
           ? `<img src="${shop.logo}" style="width:66px;height:66px;object-fit:contain;border-radius:12px;" />`
-          : `<div style="width:66px;height:66px;border-radius:14px;background:linear-gradient(135deg,#0ea5e9,#0369a1);color:#fff;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;">ک</div>`
+          : `<div style="width:66px;height:66px;border-radius:14px;background:${isPf ? "linear-gradient(135deg,#f59e0b,#b45309)" : "linear-gradient(135deg,#0ea5e9,#0369a1)"};color:#fff;display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:900;">ک</div>`
       }
       
       <div>
-        <div style="font-size:23px;font-weight:900;color:#0c4a6e;line-height:1.5;">${shop.name || "کافی‌نت آنلاین"}</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:23px;font-weight:900;color:#0c4a6e;line-height:1.5;">${shop.name || "کافی‌نت آنلاین"}</div>
+          ${isPf ? `<span style="background:#fef3c7;color:#b45309;border:1px solid #fde68a;font-size:11px;font-weight:800;padding:2px 8px;border-radius:6px;">پیش‌فاکتور</span>` : ""}
+        </div>
         <div style="font-size:11px;color:#64748b;margin-top:3px;line-height:1.7;">${shop.slogan || "ارائه‌دهنده خدمات اینترنتی و ثبت‌نام‌های دولتی"}</div>
         ${
           shop.phone || shop.address
@@ -427,8 +508,8 @@ export async function buildPrintHTML(number, invoiceData = null) {
       </div>
     </div>
     <div style="text-align:center;">
-      <div style="background:linear-gradient(135deg,#0284c7,#0c4a6e);color:#fff;border-radius:12px;padding:9px 26px;box-shadow:0 4px 10px rgba(2,132,199,.25);">
-        <div style="font-size:9.5px;opacity:.9;">شماره فاکتور</div>
+      <div style="background:${isPf ? "linear-gradient(135deg,#d97706,#b45309)" : "linear-gradient(135deg,#0284c7,#0c4a6e)"};color:#fff;border-radius:12px;padding:9px 26px;box-shadow:0 4px 10px rgba(2,132,199,.25);">
+        <div style="font-size:9.5px;opacity:.9;">${isPf ? "شماره پیش‌فاکتور" : "شماره فاکتور"}</div>
         <div style="font-size:21px;font-weight:900;letter-spacing:.5px;margin-top:1px;">${faNum(number)}</div>
       </div>
       <div style="font-size:10.5px;color:#64748b;margin-top:9px;line-height:1.9;">
@@ -456,14 +537,14 @@ export async function buildPrintHTML(number, invoiceData = null) {
   <!-- ===== جدول اقلام ===== -->
   <table style="width:100%;border-collapse:collapse;margin-top:16px;">
    <thead>
-  <tr style="background:#0c4a6e;color:#ffffff;">
+  <tr style="background:${isPf ? "#78350f" : "#0c4a6e"};color:#ffffff;">
     <th style="padding:11px 8px;width:48px;font-size:11px;font-weight:800;text-align:center;">ردیف</th>
     <th style="padding:11px 14px;font-size:11px;font-weight:800;text-align:right;">شرح خدمت / کالا</th>
     <th style="padding:11px 8px;width:66px;font-size:11px;font-weight:800;text-align:center;">تعداد</th>
     <th style="padding:11px 10px;width:125px;font-size:11px;font-weight:800;text-align:center;">فی (تومان)</th>
     <th style="padding:11px 10px;width:135px;font-size:11px;font-weight:800;text-align:center;">جمع (تومان)</th>
   </tr>
-</thead>
+ </thead>
     <tbody>${rows}</tbody>
   </table>
 
@@ -498,24 +579,27 @@ export async function buildPrintHTML(number, invoiceData = null) {
         ? `
     <div style="text-align:center;">
       <img src="${qr}" style="width:86px;height:86px;border:1px solid #e2e8f0;border-radius:8px;padding:3px;" />
-      <div style="font-size:9px;color:#94a3b8;margin-top:5px;font-weight:600;">کد اصالت فاکتور</div>
+      <div style="font-size:9px;color:#94a3b8;margin-top:5px;font-weight:600;">کد اصالت سند</div>
     </div>`
         : ""
     }
     <!-- محل مهر -->
     <div style="width:100px;height:100px;border:2px dashed #cbd5e1;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:9.5px;color:#94a3b8;font-weight:600;line-height:1.7;">
-      محل مهر<br/>و امضا
+      ${isPf ? "محل مهر و امضا<br/>پیش‌فاکتور" : "محل مهر<br/>و امضا"}
     </div>
   </div>
 
   <!-- ===== پاورقی ===== -->
   <div style="text-align:center;font-size:10.5px;color:#64748b;padding:16px 30px 14px;line-height:1.9;">
-    <b style="color:#0c4a6e;font-size:12px;">از خرید شما متشکریم 🌷</b><br/>
-    این فاکتور به‌صورت الکترونیکی صادر شده و معتبر می‌باشد. کالاها و خدمات ارائه‌شده مشمول شرایط و ضوابط کافی‌نت هستند.
+    ${
+      isPf
+        ? `<b style="color:#b45309;font-size:12px;">پیش‌فاکتور فروش (غیر قطعی) 📑</b><br/>این سند صرفاً پیش‌فاکتور استعلام قیمت بوده و قبل از ثبت نهایی فاقد بار مالیاتی یا تعهد قطعی تحویل کالا/خدمات می‌باشد.`
+        : `<b style="color:#0c4a6e;font-size:12px;">از خرید شما متشکریم 🌷</b><br/>این فاکتور به‌صورت الکترونیکی صادر شده و معتبر می‌باشد. کالاها و خدمات ارائه‌شده مشمول شرایط و ضوابط کافی‌نت هستند.`
+    }
   </div>
 
   <!-- نوار رنگی پایین -->
-  <div style="height:6px;background:linear-gradient(90deg,#0369a1,#0284c7,#0ea5e9);border-radius:8px 8px 0 0;"></div>
+  <div style="height:6px;background:${isPf ? "linear-gradient(90deg,#b45309,#d97706,#f59e0b)" : "linear-gradient(90deg,#0369a1,#0284c7,#0ea5e9)"};border-radius:8px 8px 0 0;"></div>
 </div>`;
 }
 /* ============================================================
@@ -634,6 +718,104 @@ export function saveInvoice() {
   const jalaliTime = rawTime
     ? toEnDigits(rawTime).trim()
     : state.time || "12:00";
+
+  // ========== سناریو ۰: تبدیل پیش‌فاکتور به فاکتور نهایی فروش ==========
+  if (editingProforma) {
+    const oldPfNumber = editingProforma.number;
+
+    // بررسی موجودی کالاها
+    for (const item of state.items) {
+      if (item.productId) {
+        const product = store.getProduct(item.productId);
+        if (product) {
+          let currentStock = product.quantity ?? 0;
+          if (item.variantId && product.variants?.length) {
+            const v = product.variants.find((v) => v.id === item.variantId);
+            if (v) currentStock = v.quantity ?? 0;
+          }
+          if (currentStock < item.qty) {
+            alert(
+              `⚠️ موجودی کالا «${item.title}» برای صدور قطعی کافی نیست!\nموجودی فعلی انبار: ${faNum(currentStock)} عدد\nتعداد در فاکتور: ${faNum(item.qty)} عدد`,
+            );
+            return;
+          }
+        }
+      }
+    }
+
+    // کسر از انبار
+    state.items.forEach((item) => {
+      if (item.productId) {
+        const product = store.getProduct(item.productId);
+        if (product) {
+          let updated = false;
+          if (item.variantId && product.variants?.length) {
+            const vIdx = product.variants.findIndex(
+              (v) => v.id === item.variantId,
+            );
+            if (vIdx >= 0) {
+              const currentQty = product.variants[vIdx].quantity ?? 0;
+              product.variants[vIdx].quantity = Math.max(
+                0,
+                currentQty - item.qty,
+              );
+              updated = true;
+            }
+          } else if (!item.variantId) {
+            const currentQty = product.quantity ?? 0;
+            product.quantity = Math.max(0, currentQty - item.qty);
+            updated = true;
+          }
+          if (updated) store.saveProduct(product);
+        }
+      }
+    });
+
+    const newInvoiceNumber = store.nextInvoiceNumber();
+    const invoice = {
+      number: newInvoiceNumber,
+      date: jalaliDate,
+      time: jalaliTime,
+      payment: state.payment,
+      customer: { ...state.customer },
+      items: [...state.items],
+      ...t,
+    };
+
+    if (
+      (state.customer.name || "").trim() ||
+      (state.customer.phone || "").trim()
+    ) {
+      store.saveCustomer({ ...state.customer });
+    }
+
+    store.saveInvoice(invoice);
+    store.deleteProforma(oldPfNumber);
+    autoSaveInvoices();
+    autoPushGitHub(
+      `تبدیل پیش‌فاکتور #${faNum(oldPfNumber)} به فاکتور فروش #${faNum(newInvoiceNumber)}`,
+    );
+
+    alert(
+      `پیش‌فاکتور شماره ${faNum(oldPfNumber)} با موفقیت به فاکتور فروش شماره ${faNum(newInvoiceNumber)} تبدیل و صادر شد ✅`,
+    );
+
+    clearInvoice();
+
+    if (typeof window.updateProformaBadge === "function") {
+      window.updateProformaBadge();
+    }
+    if (typeof window.renderProformasList === "function") {
+      window.renderProformasList();
+    }
+    if (typeof window.renderInvoicesList === "function") {
+      window.renderInvoicesList();
+    }
+    if (typeof window.setView === "function") {
+      window.setView("invoices");
+    }
+    return;
+  }
 
   // ========== سناریو ۱: ویرایش فاکتور موجود ==========
   if (editingInvoice) {
@@ -819,6 +1001,72 @@ export function saveInvoice() {
   );
   clearInvoice();
 }
+
+export function saveProforma() {
+  if (!state.items.length) {
+    alert("پیش‌فاکتور خالی است! لطفاً ابتدا اقلامی به فاکتور اضافه کنید.");
+    return;
+  }
+
+  const t = totals();
+  const rawDate = el.customDate ? el.customDate.value : "";
+  const rawTime = el.customTime ? el.customTime.value : "";
+
+  const jalaliDate = normalizeJalaliDate(rawDate || state.date);
+  const jalaliTime = rawTime
+    ? toEnDigits(rawTime).trim()
+    : state.time || "12:00";
+
+  let proformaNumber;
+  if (editingProforma) {
+    proformaNumber = editingProforma.number;
+  } else {
+    proformaNumber = store.nextProformaNumber();
+  }
+
+  const proforma = {
+    number: proformaNumber,
+    date: jalaliDate,
+    time: jalaliTime,
+    payment: state.payment,
+    customer: { ...state.customer },
+    items: [...state.items],
+    isProforma: true,
+    status: "pending",
+    ...t,
+  };
+
+  if (
+    (state.customer.name || "").trim() ||
+    (state.customer.phone || "").trim()
+  ) {
+    store.saveCustomer({ ...state.customer });
+  }
+
+  store.saveProforma(proforma);
+  autoSaveInvoices();
+  autoPushGitHub(
+    editingProforma
+      ? `ویرایش پیش‌فاکتور شماره ${faNum(proformaNumber)}`
+      : `ایجاد پیش‌فاکتور شماره ${faNum(proformaNumber)}`,
+  );
+
+  alert(
+    `پیش‌فاکتور شماره ${faNum(proformaNumber)} با تاریخ ${jalaliDate} و ساعت ${jalaliTime} ثبت شد ✅`,
+  );
+
+  clearInvoice();
+
+  if (typeof window.updateProformaBadge === "function") {
+    window.updateProformaBadge();
+  }
+  if (typeof window.renderProformasList === "function") {
+    window.renderProformasList();
+  }
+  if (typeof window.setView === "function") {
+    window.setView("proformas");
+  }
+}
 function updateDetailsBadge() {
   const badge = document.getElementById("customer-details-badge");
   if (badge)
@@ -885,14 +1133,22 @@ export function initInvoiceEvents() {
     });
   document.getElementById("btn-print").addEventListener("click", printInvoice);
   document.getElementById("btn-save").addEventListener("click", saveInvoice);
+  document
+    .getElementById("btn-save-proforma")
+    ?.addEventListener("click", saveProforma);
   document.getElementById("btn-clear-invoice").addEventListener("click", () => {
     if (confirm("فاکتور پاک شود؟")) clearInvoice();
   });
   document.getElementById("btn-cancel-edit")?.addEventListener("click", () => {
-    if (confirm("آیا از انصراف از ویرایش فاکتور اطمینان دارید؟ تغییرات ذخیره نخواهند شد.")) {
+    const isPf = Boolean(editingProforma);
+    if (
+      confirm(
+        `آیا از انصراف از ویرایش ${isPf ? "پیش‌فاکتور" : "فاکتور"} اطمینان دارید؟ تغییرات ذخیره نخواهند شد.`,
+      )
+    ) {
       clearInvoice();
       if (typeof setView === "function") {
-        setView("invoices");
+        setView(isPf ? "proformas" : "invoices");
       }
     }
   });
@@ -1042,4 +1298,6 @@ export function initInvoiceEvents() {
 }
 
 window.loadInvoiceForEdit = loadInvoiceForEdit;
+window.loadProformaForEdit = loadProformaForEdit;
+window.saveProforma = saveProforma;
 

@@ -617,6 +617,17 @@
             📋 فاکتورهای ثبت شده
           </button>
           <button
+            data-view="proformas"
+            class="view-tab px-4 sm:px-5 py-2.5 sm:py-3 rounded-t-xl font-bold border-b-2 border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition min-h-[42px] flex items-center gap-1.5"
+          >
+            <span>📑 پیش‌فاکتورها</span>
+            <span
+              id="proforma-tab-badge"
+              class="hidden bg-amber-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full min-w-[18px] text-center shadow-sm"
+              >0</span
+            >
+          </button>
+          <button
             data-view="customers"
             class="view-tab px-4 sm:px-5 py-2.5 sm:py-3 rounded-t-xl font-bold border-b-2 border-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition min-h-[42px] flex items-center gap-1.5"
           >
@@ -895,19 +906,29 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-2.5 mt-5">
-              <button
-                id="btn-print"
-                type="button"
-                class="bg-brand-600 hover:bg-brand-700 text-white font-extrabold py-3 px-4 rounded-xl text-sm sm:text-base shadow-sm transition flex items-center justify-center gap-1.5 min-h-[46px]"
-              >
-                <span>🖨️</span>
-                <span>چاپ فاکتور</span>
-              </button>
+            <div class="space-y-2.5 mt-5">
+              <div class="grid grid-cols-2 gap-2">
+                <button
+                  id="btn-print"
+                  type="button"
+                  class="bg-brand-600 hover:bg-brand-700 text-white font-extrabold py-3 px-3 rounded-xl text-xs sm:text-sm shadow-sm transition flex items-center justify-center gap-1.5 min-h-[46px]"
+                >
+                  <span>🖨️</span>
+                  <span>چاپ فاکتور</span>
+                </button>
+                <button
+                  id="btn-save-proforma"
+                  type="button"
+                  class="bg-amber-600 hover:bg-amber-700 text-white font-extrabold py-3 px-3 rounded-xl text-xs sm:text-sm shadow-sm transition flex items-center justify-center gap-1.5 min-h-[46px]"
+                >
+                  <span>📑</span>
+                  <span>ثبت پیش‌فاکتور</span>
+                </button>
+              </div>
               <button
                 id="btn-save"
                 type="button"
-                class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3 px-4 rounded-xl text-sm sm:text-base shadow-sm transition flex items-center justify-center gap-1.5 min-h-[46px]"
+                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3.5 px-4 rounded-xl text-sm sm:text-base shadow transition flex items-center justify-center gap-1.5 min-h-[48px]"
               >
                 <span>💾</span>
                 <span>ثبت فاکتور</span>
@@ -1338,6 +1359,133 @@
             class="hidden bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 rounded-2xl p-8 sm:p-10 text-center text-slate-400 dark:text-slate-300 text-sm"
           >
             هیچ فاکتوری با فیلتر انتخابی یافت نشد.
+          </div>
+        </section>
+
+        <!-- ============ ویو: پیش‌فاکتورها ============ -->
+        <section id="view-proformas" class="view hidden space-y-4 sm:space-y-5">
+          <div class="flex items-center justify-between flex-wrap gap-3">
+            <h2 class="font-extrabold text-base sm:text-lg flex items-center gap-2">
+              <span>📑 پیش‌فاکتورها</span>
+              <span class="text-xs font-normal text-slate-500 dark:text-slate-400">(استعلام قیمت و فروش غیرقطعی)</span>
+            </h2>
+            <div class="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+              <input
+                id="proforma-search"
+                placeholder="جستجوی پیش‌فاکتور (شماره، نام، تلفن)…"
+                class="flex-1 sm:w-64 rounded-xl border border-slate-300 dark:border-slate-600 px-4 py-2.5 text-xs sm:text-sm outline-none focus:ring-2 focus:ring-amber-500 min-h-[42px]"
+              />
+              <button
+                id="btn-proforma-advanced-filter"
+                class="relative shrink-0 bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl shadow flex items-center gap-2 transition min-h-[42px]"
+              >
+                <span>🔍</span>
+                <span>فیلتر پیشرفته</span>
+                <span
+                  id="proforma-filter-badge"
+                  class="hidden w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-bold grid place-items-center"
+                  >۰</span
+                >
+              </button>
+            </div>
+          </div>
+
+          <!-- دکمه‌های فیلتر سریع بازه زمانی (پیش‌فرض: امروز) -->
+          <div
+            class="flex items-center gap-2 overflow-x-auto no-scrollbar py-1"
+          >
+            <span
+              class="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 shrink-0 ml-1"
+              >دوره زمانی:</span
+            >
+            <button
+              data-pf-period="today"
+              class="pf-period-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition min-h-[38px]"
+            >
+              امروز
+            </button>
+            <button
+              data-pf-period="yesterday"
+              class="pf-period-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition min-h-[38px]"
+            >
+              دیروز
+            </button>
+            <button
+              data-pf-period="week"
+              class="pf-period-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition min-h-[38px]"
+            >
+              این هفته
+            </button>
+            <button
+              data-pf-period="month"
+              class="pf-period-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition min-h-[38px]"
+            >
+              این ماه
+            </button>
+            <button
+              data-pf-period="all"
+              class="pf-period-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition min-h-[38px]"
+            >
+              همه
+            </button>
+          </div>
+
+          <!-- کارت‌های آمار فیلترشده پیش‌فاکتورها -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            <div
+              class="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-slate-700 dark:to-slate-800 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 sm:p-5"
+            >
+              <p
+                class="text-sm text-amber-600 dark:text-amber-400 font-bold mb-1"
+              >
+                💰 مجموع پیش‌فاکتورهای دوره
+              </p>
+              <p
+                id="proformas-total-revenue"
+                class="text-xl sm:text-2xl font-extrabold text-amber-800 dark:text-amber-300"
+              >
+                ۰ تومان
+              </p>
+            </div>
+            <div
+              class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-slate-700 dark:to-slate-800 border border-blue-200 dark:border-blue-800 rounded-2xl p-4 sm:p-5"
+            >
+              <p
+                class="text-sm text-blue-600 dark:text-blue-400 font-bold mb-1"
+              >
+                📑 تعداد پیش‌فاکتورها
+              </p>
+              <p
+                id="proformas-total-count"
+                class="text-xl sm:text-2xl font-extrabold text-blue-800 dark:text-blue-300"
+              >
+                ۰ پیش‌فاکتور
+              </p>
+            </div>
+            <div
+              class="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 dark:border-purple-800 rounded-2xl p-4 sm:p-5"
+            >
+              <p
+                class="text-sm text-purple-600 dark:text-purple-400 font-bold mb-1"
+              >
+                📅 میانگین روزانه دوره
+              </p>
+              <p
+                id="proformas-avg-daily"
+                class="text-xl sm:text-2xl font-extrabold text-purple-800 dark:text-purple-300"
+              >
+                ۰ تومان
+              </p>
+            </div>
+          </div>
+
+          <!-- لیست پیش‌فاکتورها (جدول) -->
+          <div id="proformas-list"></div>
+          <div
+            id="proformas-empty"
+            class="hidden bg-white dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 rounded-2xl p-8 sm:p-10 text-center text-slate-400 dark:text-slate-300 text-sm"
+          >
+            هیچ پیش‌فاکتوری با فیلتر انتخابی یافت نشد.
           </div>
         </section>
 
@@ -3378,6 +3526,117 @@
           <button
             id="btn-reset-invoice-filter"
             class="px-4 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl text-sm font-bold"
+          >
+            حذف فیلترها
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== مودال: فیلتر پیشرفته پیش‌فاکتورها ===================== -->
+    <div
+      id="proforma-filter-modal"
+      class="hidden fixed inset-0 z-[65] modal-backdrop grid place-items-center p-3 sm:p-4"
+    >
+      <div
+        class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl p-4 sm:p-6 fade-in max-h-[90vh] overflow-auto"
+      >
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-extrabold text-sm sm:text-base text-amber-800 dark:text-amber-400 flex items-center gap-2">
+            <span>🔍</span>
+            <span>فیلتر پیشرفته پیش‌فاکتورها</span>
+          </h3>
+          <button
+            id="btn-close-proforma-filter"
+            class="text-slate-400 hover:text-rose-500 text-xl"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div class="space-y-4 text-sm">
+          <!-- مرتب‌سازی بر اساس مبلغ -->
+          <div>
+            <label
+              class="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1"
+            >
+              مرتب‌سازی بر اساس مبلغ پیش‌فاکتور
+            </label>
+            <select
+              id="pf-sort-amount"
+              class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-amber-500"
+            >
+              <option value="none">پیش‌فرض (بر اساس شماره پیش‌فاکتور)</option>
+              <option value="amount-desc">
+                مبلغ: نزولی (بیشترین به کمترین)
+              </option>
+              <option value="amount-asc">
+                مبلغ: صعودی (کمترین به بیشترین)
+              </option>
+            </select>
+          </div>
+
+          <!-- بازه تاریخ اختصاصی -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label
+                class="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1"
+              >
+                از تاریخ
+              </label>
+              <input
+                id="pf-date-from"
+                type="text"
+                placeholder="1405/01/01"
+                dir="ltr"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs text-left outline-none focus:ring-2 focus:ring-amber-500"
+              />
+            </div>
+            <div>
+              <label
+                class="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1"
+              >
+                تا تاریخ
+              </label>
+              <input
+                id="pf-date-to"
+                type="text"
+                placeholder="1405/12/29"
+                dir="ltr"
+                class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs text-left outline-none focus:ring-2 focus:ring-amber-500"
+              />
+            </div>
+          </div>
+
+          <!-- روش پرداخت -->
+          <div>
+            <label
+              class="text-xs font-bold text-slate-600 dark:text-slate-300 block mb-1"
+            >
+              روش پرداخت
+            </label>
+            <select
+              id="pf-payment"
+              class="w-full rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-amber-500"
+            >
+              <option value="all">همه روش‌ها</option>
+              <option value="نقدی">💵 نقدی</option>
+              <option value="کارت‌خوان">💳 کارت‌خوان</option>
+              <option value="کارت به کارت">🏦 کارت به کارت</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex gap-2 mt-6">
+          <button
+            id="btn-apply-proforma-filter"
+            class="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 rounded-xl text-sm shadow transition"
+          >
+            ✅ اعمال فیلتر
+          </button>
+          <button
+            id="btn-reset-proforma-filter"
+            class="px-4 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl text-sm font-bold transition"
           >
             حذف فیلترها
           </button>

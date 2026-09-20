@@ -436,7 +436,11 @@ window.initInvoiceDetailEvents = function () {
     btnBack.dataset.bound = "1";
     btnBack.addEventListener("click", () => {
       if (typeof setView === "function") {
-        setView("invoices");
+        if (window.lastDetailSource === "proformas") {
+          setView("proformas");
+        } else {
+          setView("invoices");
+        }
       }
     });
   }
@@ -445,8 +449,13 @@ window.initInvoiceDetailEvents = function () {
   if (btnPrintDetail && !btnPrintDetail.dataset.bound) {
     btnPrintDetail.dataset.bound = "1";
     btnPrintDetail.addEventListener("click", () => {
-      if (currentViewInvoiceNumber) {
-        window.printInvoice(currentViewInvoiceNumber);
+      const num = currentViewInvoiceNumber || window.currentViewInvoiceNumber;
+      if (num) {
+        if (window.lastDetailSource === "proformas" && typeof window.printProforma === "function") {
+          window.printProforma(num);
+        } else {
+          window.printInvoice(num);
+        }
       }
     });
   }
@@ -455,8 +464,13 @@ window.initInvoiceDetailEvents = function () {
   if (btnEditDetail && !btnEditDetail.dataset.bound) {
     btnEditDetail.dataset.bound = "1";
     btnEditDetail.addEventListener("click", () => {
-      if (currentViewInvoiceNumber) {
-        window.editInvoice(currentViewInvoiceNumber);
+      const num = currentViewInvoiceNumber || window.currentViewInvoiceNumber;
+      if (num) {
+        if (window.lastDetailSource === "proformas" && typeof window.editProforma === "function") {
+          window.editProforma(num);
+        } else {
+          window.editInvoice(num);
+        }
       }
     });
   }
@@ -465,8 +479,13 @@ window.initInvoiceDetailEvents = function () {
   if (btnDeleteDetail && !btnDeleteDetail.dataset.bound) {
     btnDeleteDetail.dataset.bound = "1";
     btnDeleteDetail.addEventListener("click", () => {
-      if (currentViewInvoiceNumber) {
-        window.deleteInvoice(currentViewInvoiceNumber);
+      const num = currentViewInvoiceNumber || window.currentViewInvoiceNumber;
+      if (num) {
+        if (window.lastDetailSource === "proformas" && typeof window.deleteProforma === "function") {
+          window.deleteProforma(num);
+        } else {
+          window.deleteInvoice(num);
+        }
       }
     });
   }
@@ -480,6 +499,7 @@ window.viewInvoice = function (invNumber) {
   if (!invoice) return;
 
   currentViewInvoiceNumber = numericNumber;
+  window.lastDetailSource = "invoices";
 
   let itemsHtml = invoice.items
     .map(

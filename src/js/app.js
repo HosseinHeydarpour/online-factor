@@ -7,6 +7,7 @@ import {
   addProductToInvoice,
 } from "./products.js";
 import { initInvoicesList } from "./invoices-list.js";
+import { initProformasList, updateProformaBadge } from "./proformas-list.js";
 import { initAuth } from "./auth.js";
 import { initBackup, autoSaveInvoices } from "./backup.js";
 import { initGitHubUI, autoPushGitHub } from "./github.js";
@@ -57,6 +58,7 @@ const el = {
     products: document.getElementById("view-products"),
     reports: document.getElementById("view-reports"),
     invoices: document.getElementById("view-invoices"),
+    proformas: document.getElementById("view-proformas"), // ✅ تب جدید پیش‌فاکتورها
     "invoice-detail": document.getElementById("view-invoice-detail"),
     settings: document.getElementById("view-settings"),
     customers: document.getElementById("view-customers"),
@@ -75,9 +77,9 @@ let expandedCategories = new Set(); // دسته‌بندی‌های باز شد�
 function setView(view) {
   currentView = view;
 
-  Object.entries(el.views).forEach(([k, v]) =>
-    v.classList.toggle("hidden", k !== view),
-  );
+  Object.entries(el.views).forEach(([k, v]) => {
+    if (v) v.classList.toggle("hidden", k !== view);
+  });
 
   // ✅ فقط یک کلاس active — استایل‌ها در CSS با پشتیبانی دارک‌مود تعریف شده‌اند
   el.tabs.forEach((t) => {
@@ -88,13 +90,14 @@ function setView(view) {
   const detailTab = document.getElementById("tab-invoice-detail");
   if (view === "invoice-detail") {
     detailTab?.classList.remove("hidden");
-  } else if (view !== "invoices" && view !== "invoice-detail") {
+  } else if (view !== "invoices" && view !== "proformas" && view !== "invoice-detail") {
     detailTab?.classList.add("hidden");
   }
 
   if (view === "products") renderProducts();
   if (view === "reports") initReports();
   if (view === "invoices") initInvoicesList();
+  if (view === "proformas") initProformasList();
   if (view === "customers") renderCustomers();
   if (view === "announcements") renderAnnouncements();
   if (el.views[view]) {
@@ -937,6 +940,7 @@ if (APP_ROLE === "customer") {
   initCustomers();
   initServiceModal();
   initAnnouncements();
+  updateProformaBadge();
   window.initInvoiceDetailEvents();
   setView("invoice");
   setSource("services");

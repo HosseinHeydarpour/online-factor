@@ -83,6 +83,7 @@ export function getTodayShamsiFolderDate() {
    ========================================================================= */
 export function collectAllBackupDatasets() {
   const invoices = store.getInvoices();
+  const proformas = store.getProformas();
   const products = store.getProducts();
   const productCategories = store.getProductCategories();
   const announcements = store.getAnnouncements();
@@ -94,6 +95,7 @@ export function collectAllBackupDatasets() {
   const metaPrivate = {
     exportedAt: new Date().toISOString(),
     invoiceCount: invoices.length,
+    proformaCount: proformas.length,
     productCount: products.length,
     productCategoryCount: productCategories.length,
     customerCount: customers.length,
@@ -112,6 +114,7 @@ export function collectAllBackupDatasets() {
   return {
     privateFiles: [
       { name: "invoices.json", data: invoices },
+      { name: "proformas.json", data: proformas },
       { name: "products.json", data: products },
       { name: "product-categories.json", data: productCategories },
       { name: "announcements.json", data: announcements },
@@ -135,6 +138,7 @@ export function collectAllBackupDatasets() {
       exportedAt: new Date().toISOString(),
       shamsiDate: toJalali().full,
       invoices,
+      proformas,
       products,
       productCategories,
       announcements,
@@ -522,6 +526,7 @@ async function writeInvoicesToFile(handle) {
     version: 4,
     exportedAt: new Date().toISOString(),
     invoices: store.getInvoices(),
+    proformas: store.getProformas(),
     products: store.getProducts(),
     productCategories: store.getProductCategories(),
     announcements: store.getAnnouncements(),
@@ -666,6 +671,18 @@ export function importInvoicesFile(file) {
       store.setInvoices(
         [...currentInv, ...addedInv].sort((a, b) => b.number - a.number),
       );
+
+      // ادغام پیش‌فاکتورها
+      if (Array.isArray(data.proformas) && data.proformas.length) {
+        const currentPf = store.getProformas();
+        const existingPfNums = new Set(currentPf.map((p) => p.number));
+        const addedPf = data.proformas.filter(
+          (p) => p && p.number && !existingPfNums.has(p.number),
+        );
+        store.setProformas(
+          [...currentPf, ...addedPf].sort((a, b) => b.number - a.number),
+        );
+      }
 
       if (Array.isArray(announcements) && announcements.length) {
         const currentAnn = store.getAnnouncements();

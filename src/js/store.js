@@ -6,6 +6,8 @@ const KEYS = {
   ANNOUNCEMENTS: "cafe_announcements", // ✅ کلید ذخیره اخبار و اعلانات
   INVOICES: "cafe_invoices",
   COUNTER: "cafe_invoice_counter",
+  PROFORMAS: "cafe_proformas",
+  PROFORMA_COUNTER: "cafe_proforma_counter",
   SHOP: "cafe_shop_info",
   AUTH: "cafe_auth",
   SETTINGS: "cafe_settings",
@@ -313,6 +315,41 @@ export const store = {
     return this.getInvoices().find((inv) => inv.number === numericNumber);
   },
 
+  // ---------- پیش‌فاکتورها ----------
+  nextProformaNumber() {
+    const n = read(KEYS.PROFORMA_COUNTER, 5000) + 1;
+    write(KEYS.PROFORMA_COUNTER, n);
+    return n;
+  },
+  saveProforma(proforma) {
+    const list = read(KEYS.PROFORMAS, []);
+    const idx = list.findIndex((p) => p.number === proforma.number);
+    if (idx >= 0) {
+      list[idx] = proforma;
+    } else {
+      list.unshift(proforma);
+    }
+    write(KEYS.PROFORMAS, list);
+    return proforma;
+  },
+  saveProformas(list) {
+    write(KEYS.PROFORMAS, list);
+    return list;
+  },
+  deleteProforma(number) {
+    const numericNumber = Number(number);
+    const list = this.getProformas().filter((p) => p.number !== numericNumber);
+    write(KEYS.PROFORMAS, list);
+    return list;
+  },
+  getProformas() {
+    return read(KEYS.PROFORMAS, []);
+  },
+  getProforma(number) {
+    const numericNumber = Number(number);
+    return this.getProformas().find((p) => p.number === numericNumber);
+  },
+
   // ---------- مشتریان ----------
   getCustomers() {
     return read(KEYS.CUSTOMERS, []);
@@ -369,6 +406,10 @@ export const store = {
 
   setInvoices(list) {
     write(KEYS.INVOICES, list);
+    return list;
+  },
+  setProformas(list) {
+    write(KEYS.PROFORMAS, list);
     return list;
   },
   setProducts(list) {
