@@ -1060,6 +1060,7 @@ export async function restoreFromGitHub({ replace = false } = {}) {
     const invoices = await readJson("backup/invoices.json");
     let products = await readJson("backup/products.json");
     let productCategories = await readJson("backup/product-categories.json"); // ✅ خواندن دسته‌های محصول از بک‌آپ
+    let announcements = await readJson("backup/announcements.json"); // ✅ خواندن اخبار و اعلانات
     const shop = await readJson("backup/shop-info.json");
     const customers = await readJson("backup/customers.json");
     const customServices = await readJson("backup/custom-services.json");
@@ -1072,8 +1073,11 @@ export async function restoreFromGitHub({ replace = false } = {}) {
     if (!productCategories || (Array.isArray(productCategories) && productCategories.length === 0)) {
       productCategories = await readJson("data/product-categories.json");
     }
+    if (!announcements || (Array.isArray(announcements) && announcements.length === 0)) {
+      announcements = await readJson("data/announcements.json");
+    }
 
-    if (!invoices && !products && !shop && !customServices && !services) {
+    if (!invoices && !products && !shop && !customServices && !services && !announcements) {
       return alert("هیچ فایل پشتیبانی در پوشه backup/ یا data/ مخزن پیدا نشد!");
     }
 
@@ -1083,6 +1087,7 @@ export async function restoreFromGitHub({ replace = false } = {}) {
       ? productCategories.length
       : 0;
     const cstCount = Array.isArray(customers) ? customers.length : 0;
+    const annCount = Array.isArray(announcements) ? announcements.length : 0;
     const srvCount =
       (customServices?.newCategories?.length || 0) +
       Object.keys(customServices?.categoryOverrides || {}).length;
@@ -1093,6 +1098,7 @@ export async function restoreFromGitHub({ replace = false } = {}) {
           `• ${invCount} فاکتور\n` +
           `• ${prdCount} محصول در ${pCatCount} دسته‌بندی\n` +
           `• ${cstCount} مشتری\n` +
+          `• ${annCount} اعلان و خبر\n` +
           `• ${srvCount} دسته‌بندی و خدمات سفارشی\n\n` +
           `حالت بازیابی: ${replace ? "⚠️ جایگزینی کامل" : "➕ ادغام بدون تکراری"}\n` +
           `ادامه می‌دهید؟`,
