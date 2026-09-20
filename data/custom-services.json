@@ -1,6 +1,37 @@
 {
   "newCategories": [
     {
+      "id": "cat-mu9eit4g891y5",
+      "title": "وام فرزند آوری",
+      "items": [
+        {
+          "id": "srv-mu9eit4g38lle",
+          "title": "ثبت برای هر فرزند (ثبت نام + ۶ صفحه اضافه)",
+          "price": 395200,
+          "custom": true
+        },
+        {
+          "id": "srv-mu9eit4gg5g36",
+          "title": "پیگیری ثبت نام همراه با پرینت",
+          "price": 71000,
+          "custom": true
+        },
+        {
+          "id": "srv-mu9eit4gh3e0d",
+          "title": "ویرایش شعبه (نصف ثبت نام + ۲ صفحه اضافه)",
+          "price": 162400,
+          "custom": true
+        },
+        {
+          "id": "srv-mu9eit4gkbv3p",
+          "title": "پرینت نتیجه نهایی",
+          "price": 21000,
+          "custom": true
+        }
+      ],
+      "custom": true
+    },
+    {
       "id": "cat-mu9eb89bf11et",
       "title": "فیلم و سریال",
       "items": [
