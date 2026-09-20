@@ -608,3 +608,8 @@ export function initProductEvents() {
     renderProducts(el.search.value.trim()),
   );
 }
+
+if (typeof window !== "undefined") {
+  window.renderProducts = renderProducts;
+  window.renderCategoryChips = renderCategoryChips;
+}

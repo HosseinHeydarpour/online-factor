@@ -175,6 +175,12 @@ function toBase64(str) {
   return btoa(unescape(encodeURIComponent(str)));
 }
 
+export function fromBase64(b64) {
+  const bin = atob(String(b64).replace(/\s/g, ""));
+  const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
 async function gh(path, cfg, options = {}) {
   const res = await fetch(`${API}${path}`, {
     ...options,
@@ -183,6 +189,95 @@ async function gh(path, cfg, options = {}) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data?.message || `HTTP ${res.status}`);
   return data;
+}
+
+/* ---------- بررسی وجود داده‌های محصولات در مخزن عمومی ---------- */
+export async function checkRemotePublicData(cfg) {
+  if (!cfg || !cfg.owner || !cfg.repo) {
+    return {
+      hasData: false,
+      productCount: 0,
+      categoryCount: 0,
+      products: [],
+      categories: [],
+    };
+  }
+
+  const branch = encodeURIComponent(cfg.branch || "main");
+  let productCount = 0;
+  let categoryCount = 0;
+  let remoteProducts = [];
+  let remoteCategories = [];
+
+  // ۱. بررسی فایل دیتای عمومی محصولات (data/products.json) از طریق GitHub API
+  try {
+    const res = await gh(
+      `/repos/${cfg.owner}/${cfg.repo}/contents/data/products.json?ref=${branch}`,
+      cfg,
+    );
+    if (res && res.content) {
+      const data = JSON.parse(fromBase64(res.content));
+      if (Array.isArray(data) && data.length > 0) {
+        productCount = data.length;
+        remoteProducts = data;
+      }
+    }
+  } catch (_) {}
+
+  // ۲. تلاش جایگزین از raw.githubusercontent.com در صورت عدم پاسخ مناسب
+  if (productCount === 0) {
+    try {
+      const rawUrl = `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${cfg.branch || "main"}/data/products.json?_=${Date.now()}`;
+      const resRaw = await fetch(rawUrl, { cache: "no-store" });
+      if (resRaw.ok) {
+        const data = await resRaw.json();
+        if (Array.isArray(data) && data.length > 0) {
+          productCount = data.length;
+          remoteProducts = data;
+        }
+      }
+    } catch (_) {}
+  }
+
+  // ۳. بررسی دسته‌بندی‌های عمومی (data/product-categories.json)
+  try {
+    const resCat = await gh(
+      `/repos/${cfg.owner}/${cfg.repo}/contents/data/product-categories.json?ref=${branch}`,
+      cfg,
+    );
+    if (resCat && resCat.content) {
+      const dataCat = JSON.parse(fromBase64(resCat.content));
+      if (Array.isArray(dataCat) && dataCat.length > 0) {
+        categoryCount = dataCat.length;
+        remoteCategories = dataCat;
+      }
+    }
+  } catch (_) {}
+
+  // ۴. اگر هیچ محصولی در data/products.json نبود، بررسی backup/products.json
+  if (productCount === 0) {
+    try {
+      const resB = await gh(
+        `/repos/${cfg.owner}/${cfg.repo}/contents/backup/products.json?ref=${branch}`,
+        cfg,
+      );
+      if (resB && resB.content) {
+        const dataB = JSON.parse(fromBase64(resB.content));
+        if (Array.isArray(dataB) && dataB.length > 0) {
+          productCount = dataB.length;
+          remoteProducts = dataB;
+        }
+      }
+    } catch (_) {}
+  }
+
+  return {
+    hasData: productCount > 0 || categoryCount > 0,
+    productCount,
+    categoryCount,
+    products: remoteProducts,
+    categories: remoteCategories,
+  };
 }
 
 /* ---------- فایل‌های پشتیبان ریپوی پرایوت ---------- */
@@ -290,6 +385,39 @@ export async function pushCombinedToGitHub(cfg, { silent = false } = {}) {
   const invs = store.getInvoices();
   const custs = store.getCustomers();
   const prods = store.getProducts();
+
+  // 🛡️ سد امنیتی ضد تخریب: اگر محصولات لوکال خالی باشد اما در ریپو دیتا وجود داشته باشد
+  if (prods.length === 0) {
+    const remoteData = await checkRemotePublicData(cfg);
+    if (remoteData.hasData) {
+      if (!silent) {
+        const shouldRestore = confirm(
+          "⛔ عملیات متوقف شد (سد امنیتی ضد تخریب)!\n\n" +
+            `حافظه این مرورگر فاقد اطلاعات محصول است، در حالی که در مخزن گیت‌هاب ${remoteData.productCount} محصول وجود دارد.\n` +
+            "ارسال لغو شد تا دیتای سرور و سایت مشتری با اطلاعات خالی جایگزین نشود.\n\n" +
+            "📥 آیا مایلید اطلاعات محصولات موجود در مخزن هم‌اکنون در این سیستم بازیابی شوند؟",
+        );
+        if (shouldRestore) {
+          if (remoteData.products && remoteData.products.length > 0) {
+            store.setProducts(remoteData.products);
+          }
+          if (remoteData.categories && remoteData.categories.length > 0) {
+            store.setProductCategories(remoteData.categories);
+          }
+          if (typeof window.renderProducts === "function") window.renderProducts();
+          if (typeof window.renderCategoryChips === "function") window.renderCategoryChips();
+          alert("✅ اطلاعات محصولات با موفقیت از مخزن بازیابی شد.");
+        }
+      } else {
+        ghToast("⚠️ سد ضد تخریب: دیتای محلی خالی است؛ پوش لغو شد تا اطلاعات مخزن پاک نشود");
+      }
+      return {
+        ok: false,
+        blockedByGuard: true,
+        message: "داده‌های محصولات در حافظه محلی خالی است در حالی که مخزن حاوی اطلاعات است؛ پوش لغو شد.",
+      };
+    }
+  }
 
   if (invs.length === 0 && custs.length === 0 && prods.length === 0) {
     if (!silent) {
@@ -466,6 +594,39 @@ export async function pushBackupToGitHub({ silent = false } = {}) {
   const prods = store.getProducts();
   const customSrv = store.getCustomServices();
 
+  // 🛡️ سد امنیتی ضد تخریب: اگر محصولات لوکال خالی باشد اما در ریپو دیتای محصولات وجود داشته باشد
+  if (prods.length === 0) {
+    const remoteData = await checkRemotePublicData(cfg);
+    if (remoteData.hasData) {
+      if (!silent) {
+        const shouldRestore = confirm(
+          "⛔ عملیات متوقف شد (سد امنیتی ضد تخریب بک‌آپ)!\n\n" +
+            `حافظه این مرورگر فاقد اطلاعات محصول است، در حالی که در مخزن گیت‌هاب ${remoteData.productCount} محصول وجود دارد.\n` +
+            "ارسال بک‌آپ لغو شد تا اطلاعات محصولات پاک نشود.\n\n" +
+            "📥 آیا مایلید اطلاعات موجود در مخزن هم‌اکنون بازیابی شوند؟",
+        );
+        if (shouldRestore) {
+          if (remoteData.products && remoteData.products.length > 0) {
+            store.setProducts(remoteData.products);
+          }
+          if (remoteData.categories && remoteData.categories.length > 0) {
+            store.setProductCategories(remoteData.categories);
+          }
+          if (typeof window.renderProducts === "function") window.renderProducts();
+          if (typeof window.renderCategoryChips === "function") window.renderCategoryChips();
+          alert("✅ محصولات با موفقیت بازیابی شدند.");
+        }
+      } else {
+        ghToast("⚠️ سد ضد تخریب: دیتای محلی خالی است؛ پوش لغو شد تا دیتای سرور با خالی جایگزین نشود");
+      }
+      return {
+        ok: false,
+        blockedByGuard: true,
+        message: "داده‌های محصولات در حافظه محلی خالی است در حالی که مخزن حاوی اطلاعات است؛ پوش لغو شد.",
+      };
+    }
+  }
+
   if (invs.length === 0 && custs.length === 0 && prods.length === 0) {
     if (!silent) {
       alert(
@@ -624,6 +785,49 @@ export async function pushToPublicRepo({ silent = false } = {}) {
       alert("ابتدا تنظیمات ریپوی پابلیک (مالک / ریپو / توکن) را کامل کنید.");
     }
     return { ok: false, message: "تنظیمات ریپوی پابلیک ناقص است" };
+  }
+
+  const prods = store.getProducts();
+
+  // 🛡️ سد امنیتی ضد تخریب ریپوی پابلیک: اگر لوکال خالی باشد و در ریپوی پابلیک دیتا باشد
+  if (prods.length === 0) {
+    const remoteData = await checkRemotePublicData(cfg);
+    if (remoteData.hasData) {
+      if (!silent) {
+        const shouldRestore = confirm(
+          "⛔ عملیات متوقف شد (سد امنیتی ضد تخریب ریپوی پابلیک)!\n\n" +
+            `حافظه این مرورگر فاقد اطلاعات محصول است، در حالی که در ریپوی پابلیک ${remoteData.productCount} محصول وجود دارد.\n` +
+            "جهت محافظت از دیتای سایت مشتری و جلوگیری از جایگزین شدن دیتای خالی، ارسال لغو شد.\n\n" +
+            "📥 آیا مایلید اطلاعات محصولات موجود در مخزن هم‌اکنون در این سیستم بازیابی شوند؟",
+        );
+        if (shouldRestore) {
+          if (remoteData.products && remoteData.products.length > 0) {
+            store.setProducts(remoteData.products);
+          }
+          if (remoteData.categories && remoteData.categories.length > 0) {
+            store.setProductCategories(remoteData.categories);
+          }
+          if (typeof window.renderProducts === "function") window.renderProducts();
+          if (typeof window.renderCategoryChips === "function") window.renderCategoryChips();
+          alert("✅ اطلاعات محصولات با موفقیت از ریپوی پابلیک دریافت و ذخیره شد.");
+        }
+      } else {
+        ghToast("⚠️ سد ضد تخریب: دیتای محلی خالی است؛ پوش پابلیک لغو شد تا دیتای سرور پاک نشود");
+      }
+      return {
+        ok: false,
+        blockedByGuard: true,
+        message: "داده‌های محلی خالی است در حالی که مخزن پابلیک حاوی اطلاعات است؛ پوش لغو شد.",
+      };
+    } else {
+      if (!silent) {
+        alert(
+          "⚠️ هیچ محصولی در حافظه محلی برای ارسال وجود ندارد.\n\n" +
+            "ابتدا در سیستم محصول تعریف کنید، سپس اقدام به ارسال نمایید.",
+        );
+      }
+      return { ok: false, message: "هیچ محصولی در حافظه محلی یافت نشد." };
+    }
   }
 
   if (!silent) {
@@ -832,12 +1036,6 @@ export async function testPublicGitHubConnection() {
   }
 }
 
-function fromBase64(b64) {
-  const bin = atob(String(b64).replace(/\s/g, ""));
-  const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
-  return new TextDecoder().decode(bytes);
-}
-
 export async function restoreFromGitHub({ replace = false } = {}) {
   const cfg = getGitHubConfig();
   if (!cfg.owner || !cfg.repo || !cfg.token) {
@@ -860,15 +1058,23 @@ export async function restoreFromGitHub({ replace = false } = {}) {
     };
 
     const invoices = await readJson("backup/invoices.json");
-    const products = await readJson("backup/products.json");
-    const productCategories = await readJson("backup/product-categories.json"); // ✅ خواندن دسته‌های محصول از بک‌آپ
+    let products = await readJson("backup/products.json");
+    let productCategories = await readJson("backup/product-categories.json"); // ✅ خواندن دسته‌های محصول از بک‌آپ
     const shop = await readJson("backup/shop-info.json");
     const customers = await readJson("backup/customers.json");
     const customServices = await readJson("backup/custom-services.json");
     const services = await readJson("backup/services.json");
 
+    // اگر در پوشه backup فایل محصولات یا دسته‌بندی‌ها نبود، از data/ بخوان
+    if (!products || (Array.isArray(products) && products.length === 0)) {
+      products = await readJson("data/products.json");
+    }
+    if (!productCategories || (Array.isArray(productCategories) && productCategories.length === 0)) {
+      productCategories = await readJson("data/product-categories.json");
+    }
+
     if (!invoices && !products && !shop && !customServices && !services) {
-      return alert("هیچ فایل پشتیبانی در پوشه backup/ مخزن پیدا نشد!");
+      return alert("هیچ فایل پشتیبانی در پوشه backup/ یا data/ مخزن پیدا نشد!");
     }
 
     const invCount = Array.isArray(invoices) ? invoices.length : 0;
