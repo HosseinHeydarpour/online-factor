@@ -1744,7 +1744,7 @@
         class="hidden fixed inset-0 z-50 modal-backdrop grid place-items-center p-3 sm:p-4"
       >
         <div
-          class="bg-white dark:bg-slate-800 w-full max-w-lg rounded-2xl shadow-2xl p-4 sm:p-6 fade-in max-h-[90vh] overflow-auto"
+          class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl p-4 sm:p-6 fade-in max-h-[90vh] overflow-auto"
         >
           <div class="flex justify-between items-center mb-4">
             <h3 id="product-modal-title" class="font-extrabold">محصول جدید</h3>
@@ -1755,7 +1755,8 @@
               ✕
             </button>
           </div>
-          <div class="space-y-3 text-sm">
+          <div class="space-y-3.5 text-sm">
+            <!-- مشخصات پایه: دسته، نام، قیمت، موجودی -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div>
                 <label
@@ -1806,6 +1807,35 @@
               </div>
             </div>
             <div id="p-price-preview"></div>
+
+            <!-- گزینه فروش ویژه -->
+            <div
+              class="flex items-center justify-between p-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/30 border border-amber-200 dark:border-amber-800/60 rounded-xl"
+            >
+              <div class="flex items-center gap-2.5">
+                <input
+                  id="p-special-offer"
+                  type="checkbox"
+                  class="w-4 h-4 accent-amber-600 rounded cursor-pointer"
+                />
+                <label
+                  for="p-special-offer"
+                  class="text-xs font-black text-amber-900 dark:text-amber-200 cursor-pointer select-none flex items-center gap-1.5"
+                >
+                  <span>🔥 قرارگیری در فروش ویژه</span>
+                  <span class="text-[11px] font-normal text-amber-700 dark:text-amber-400">
+                    (نمایش نشان ویژه و دسترسی در فیلتر «فروش ویژه» مشتریان)
+                  </span>
+                </label>
+              </div>
+              <span
+                class="hidden sm:inline-block text-[10px] font-bold bg-amber-200/80 dark:bg-amber-900/80 text-amber-800 dark:text-amber-200 px-2 py-0.5 rounded-full"
+              >
+                پیشنهاد ویژه
+              </span>
+            </div>
+
+            <!-- تصویر محصول -->
             <div>
               <label
                 class="text-xs text-slate-500 dark:text-slate-400 block mb-1"
@@ -1822,10 +1852,76 @@
                 class="hidden mt-2 w-24 h-24 object-cover rounded-xl border"
               />
             </div>
+
+            <!-- مدیریت رنگ‌های محصول -->
+            <div class="p-3 bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600 rounded-xl space-y-2.5">
+              <div class="flex justify-between items-center">
+                <label class="text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-1">
+                  <span>🎨 رنگ‌های محصول:</span>
+                  <span class="text-[10px] text-slate-400 font-normal">(اختیاری)</span>
+                </label>
+              </div>
+
+              <!-- فرم افزودن رنگ جدید -->
+              <div class="flex items-center gap-2">
+                <input
+                  id="p-color-picker"
+                  type="color"
+                  value="#111827"
+                  class="w-8 h-8 rounded-lg border border-slate-300 dark:border-slate-600 cursor-pointer p-0.5 bg-white dark:bg-slate-800 shrink-0"
+                  title="انتخاب رنگ"
+                />
+                <input
+                  id="p-color-name"
+                  placeholder="نام رنگ (مثلاً مشکی، سفید، نقره‌ای...)"
+                  class="flex-1 rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 outline-none focus:ring-2 focus:ring-brand-500 text-xs bg-white dark:bg-slate-800"
+                />
+                <button
+                  type="button"
+                  id="btn-add-color"
+                  class="bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-500 text-slate-800 dark:text-slate-100 font-bold px-3 py-1.5 rounded-lg text-xs transition shrink-0"
+                >
+                  + افزودن رنگ
+                </button>
+              </div>
+
+              <!-- پالت رنگ‌های پرکاربرد برای انتخاب سریع -->
+              <div class="flex items-center gap-1 flex-wrap">
+                <span class="text-[10px] text-slate-400 ml-1">انتخاب سریع:</span>
+                <button type="button" data-preset-color="#111827" data-preset-name="مشکی" class="flex items-center gap-1 text-[10px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 px-2 py-0.5 rounded-full hover:border-brand-500">
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#111827]"></span> مشکی
+                </button>
+                <button type="button" data-preset-color="#ffffff" data-preset-name="سفید" class="flex items-center gap-1 text-[10px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 px-2 py-0.5 rounded-full hover:border-brand-500">
+                  <span class="w-2.5 h-2.5 rounded-full bg-white border border-slate-300"></span> سفید
+                </button>
+                <button type="button" data-preset-color="#94a3b8" data-preset-name="نقره‌ای" class="flex items-center gap-1 text-[10px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 px-2 py-0.5 rounded-full hover:border-brand-500">
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#94a3b8]"></span> نقره‌ای
+                </button>
+                <button type="button" data-preset-color="#2563eb" data-preset-name="آبی" class="flex items-center gap-1 text-[10px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 px-2 py-0.5 rounded-full hover:border-brand-500">
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#2563eb]"></span> آبی
+                </button>
+                <button type="button" data-preset-color="#dc2626" data-preset-name="قرمز" class="flex items-center gap-1 text-[10px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 px-2 py-0.5 rounded-full hover:border-brand-500">
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#dc2626]"></span> قرمز
+                </button>
+                <button type="button" data-preset-color="#16a34a" data-preset-name="سبز" class="flex items-center gap-1 text-[10px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 px-2 py-0.5 rounded-full hover:border-brand-500">
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#16a34a]"></span> سبز
+                </button>
+                <button type="button" data-preset-color="#d97706" data-preset-name="طلایی" class="flex items-center gap-1 text-[10px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 px-2 py-0.5 rounded-full hover:border-brand-500">
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#d97706]"></span> طلایی
+                </button>
+              </div>
+
+              <!-- لیست رنگ‌های انتخاب شده -->
+              <div id="product-colors-list" class="flex flex-wrap gap-1.5 pt-1 min-h-[28px]">
+                <span class="text-[11px] text-slate-400">هنوز رنگی انتخاب نشده است.</span>
+              </div>
+            </div>
+
+            <!-- واریانت‌ها -->
             <div>
               <div class="flex justify-between items-center mb-1">
-                <label class="text-xs text-slate-500 dark:text-slate-400"
-                  >واریانت‌ها (مثل: حجم ۶۴ گیگ / طول ۱ متر)</label
+                <label class="text-xs text-slate-500 dark:text-slate-400 font-bold"
+                  >واریانت‌ها (مثل: حجم ۶۴ گیگ / طول ۱ متر):</label
                 >
                 <button
                   id="btn-add-variant"
@@ -1835,6 +1931,17 @@
                 </button>
               </div>
               <div id="variants-list" class="space-y-2"></div>
+            </div>
+
+            <!-- ادیتور توضیحات کامل محصول (Quill) -->
+            <div>
+              <label class="text-xs font-bold text-slate-700 dark:text-slate-200 block mb-1">
+                توضیحات و مشخصات کالا (ویرایشگر پیشرفته):
+              </label>
+              <div
+                id="product-editor-container"
+                class="rounded-xl overflow-hidden bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+              ></div>
             </div>
           </div>
           <div class="flex gap-2 mt-6">
@@ -1902,6 +2009,97 @@
             class="bg-brand-600 hover:bg-brand-700 text-white font-bold py-2 px-6 rounded-xl text-xs sm:text-sm shadow transition"
           >
             متوجه شدم / بستن
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== مودال نمایش کامل محصول پورتال مشتری ===================== -->
+    <div
+      id="cp-product-modal"
+      class="hidden fixed inset-0 z-[80] modal-backdrop grid place-items-center p-3 sm:p-4"
+    >
+      <div
+        class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl p-4 sm:p-6 fade-in max-h-[92vh] overflow-y-auto border border-slate-200 dark:border-slate-700 flex flex-col space-y-4 text-right"
+      >
+        <!-- سربرگ مودال -->
+        <div class="flex justify-between items-start gap-3 border-b border-slate-100 dark:border-slate-700 pb-3">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 flex-wrap mb-1.5">
+              <span
+                id="cp-modal-prod-category"
+                class="text-[10px] font-bold bg-brand-50 dark:bg-slate-700 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-slate-600 px-2.5 py-0.5 rounded-full"
+              ></span>
+              <span
+                id="cp-modal-prod-special-badge"
+                class="hidden text-[10px] font-black bg-gradient-to-r from-rose-500 to-amber-500 text-white px-2.5 py-0.5 rounded-full shadow-sm animate-pulse"
+              >
+                🔥 فروش ویژه
+              </span>
+            </div>
+            <h3
+              id="cp-modal-prod-name"
+              class="font-black text-base sm:text-lg text-slate-800 dark:text-slate-100 leading-7"
+            ></h3>
+          </div>
+          <button
+            id="btn-close-cp-product-modal"
+            type="button"
+            class="text-slate-400 hover:text-rose-500 text-xl font-bold p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- بخش تصویر، قیمت و ویژگی‌های اصلی -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center bg-slate-50 dark:bg-slate-700/40 p-3.5 rounded-xl border border-slate-100 dark:border-slate-700">
+          <div class="h-44 sm:h-52 bg-white dark:bg-slate-800 rounded-xl overflow-hidden grid place-items-center border border-slate-200 dark:border-slate-600 shadow-inner">
+            <img id="cp-modal-prod-image" class="w-full h-full object-contain hidden" />
+            <span id="cp-modal-prod-placeholder" class="text-6xl">📦</span>
+          </div>
+          <div class="space-y-3">
+            <div>
+              <p class="text-xs text-slate-400 mb-0.5">قیمت کالا:</p>
+              <p class="text-xl sm:text-2xl font-extrabold text-brand-600 dark:text-brand-400">
+                <span id="cp-modal-prod-price"></span> <span class="text-xs font-normal text-slate-500 dark:text-slate-400">تومان</span>
+              </p>
+            </div>
+            <div>
+              <p class="text-xs text-slate-400 mb-1">وضعیت انبار:</p>
+              <div id="cp-modal-prod-stock"></div>
+            </div>
+            <!-- رنگ‌های کالا -->
+            <div id="cp-modal-prod-colors-section" class="hidden">
+              <p class="text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">رنگ‌های قابل سفارش:</p>
+              <div id="cp-modal-prod-colors-list" class="flex flex-wrap gap-2"></div>
+            </div>
+            <!-- واریانت‌ها -->
+            <div id="cp-modal-prod-variants-section" class="hidden">
+              <p class="text-xs font-bold text-slate-600 dark:text-slate-300 mb-1.5">مدل‌ها و واریانت‌ها:</p>
+              <div id="cp-modal-prod-variants-list" class="flex flex-wrap gap-1.5"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- توضیحات کامل و فرمت‌بندی شده محصول -->
+        <div class="space-y-1.5">
+          <h4 class="font-extrabold text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+            <span>📝 توضیحات و مشخصات کالا:</span>
+          </h4>
+          <div
+            id="cp-modal-prod-description"
+            class="cp-rich-text text-sm leading-7 text-slate-700 dark:text-slate-200 overflow-y-auto max-h-[40vh] p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800"
+          ></div>
+        </div>
+
+        <!-- فوتر مودال -->
+        <div class="pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-end">
+          <button
+            id="btn-dismiss-cp-product-modal"
+            type="button"
+            class="bg-brand-600 hover:bg-brand-700 text-white font-bold py-2 px-6 rounded-xl text-xs sm:text-sm shadow transition"
+          >
+            بستن پنجره
           </button>
         </div>
       </div>

@@ -398,14 +398,193 @@ function isProductAvailableForCustomer(p) {
   return baseQty > 0;
 }
 
+/**
+ * باز کردن مودال مشخصات و توضیحات کامل محصول در پورتال مشتری
+ */
+export function openCustomerProductModal(product) {
+  const modal = document.getElementById("cp-product-modal");
+  if (!modal || !product) return;
+
+  const category = portalProductCategories.find(
+    (c) => c.id === product.categoryId,
+  );
+
+  // دسته‌بندی
+  const catEl = document.getElementById("cp-modal-prod-category");
+  if (catEl) {
+    catEl.textContent = category
+      ? `${category.icon || "📦"} ${category.name}`
+      : "📦 دسته‌بندی عمومی";
+  }
+
+  // بج فروش ویژه
+  const specialBadge = document.getElementById("cp-modal-prod-special-badge");
+  if (specialBadge) {
+    specialBadge.classList.toggle("hidden", !product.isSpecialOffer);
+  }
+
+  // نام محصول
+  const nameEl = document.getElementById("cp-modal-prod-name");
+  if (nameEl) nameEl.textContent = product.name;
+
+  // تصویر
+  const imgEl = document.getElementById("cp-modal-prod-image");
+  const placeholderEl = document.getElementById("cp-modal-prod-placeholder");
+  if (product.image) {
+    if (imgEl) {
+      imgEl.src = product.image;
+      imgEl.classList.remove("hidden");
+    }
+    if (placeholderEl) placeholderEl.classList.add("hidden");
+  } else {
+    if (imgEl) imgEl.classList.add("hidden");
+    if (placeholderEl) placeholderEl.classList.remove("hidden");
+  }
+
+  // قیمت
+  const priceEl = document.getElementById("cp-modal-prod-price");
+  if (priceEl) priceEl.textContent = faNum(product.price);
+
+  // وضعیت انبار
+  const stockEl = document.getElementById("cp-modal-prod-stock");
+  if (stockEl) {
+    const qty = product.quantity ?? 0;
+    if (qty > 0) {
+      stockEl.innerHTML = `<span class="inline-flex items-center gap-1 text-xs font-extrabold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/70 border border-emerald-300 dark:border-emerald-800 px-3 py-1 rounded-full">
+        <span>✅</span>
+        <span>موجود در انبار (${faNum(qty)} عدد)</span>
+      </span>`;
+    } else {
+      stockEl.innerHTML = `<span class="inline-flex items-center gap-1 text-xs font-extrabold text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/70 border border-rose-300 dark:border-rose-800 px-3 py-1 rounded-full">
+        <span>❌</span>
+        <span>در حال حاضر ناموجود</span>
+      </span>`;
+    }
+  }
+
+  // رنگ‌های کالا
+  const colorsSection = document.getElementById("cp-modal-prod-colors-section");
+  const colorsList = document.getElementById("cp-modal-prod-colors-list");
+  if (colorsSection && colorsList) {
+    if (Array.isArray(product.colors) && product.colors.length > 0) {
+      colorsSection.classList.remove("hidden");
+      colorsList.innerHTML = product.colors
+        .map((c) => {
+          const isLight =
+            (c.hex || "").toLowerCase() === "#ffffff" ||
+            (c.hex || "").toLowerCase() === "#fff";
+          return `
+          <div class="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-full px-2.5 py-1 text-xs shadow-sm">
+            <span class="w-3.5 h-3.5 rounded-full shrink-0 ${isLight ? "border border-slate-300 dark:border-slate-500" : ""}" style="background-color: ${c.hex}"></span>
+            <span class="font-bold text-slate-700 dark:text-slate-200">${c.name}</span>
+          </div>`;
+        })
+        .join("");
+    } else {
+      colorsSection.classList.add("hidden");
+      colorsList.innerHTML = "";
+    }
+  }
+
+  // واریانت‌ها
+  const variantsSection = document.getElementById(
+    "cp-modal-prod-variants-section",
+  );
+  const variantsList = document.getElementById("cp-modal-prod-variants-list");
+  if (variantsSection && variantsList) {
+    const activeVariants = (product.variants || []).filter((v) => {
+      const vRaw = v.quantity;
+      const vHasQty =
+        vRaw !== undefined && vRaw !== null && String(vRaw).trim() !== "";
+      const vQty = vHasQty ? Math.max(0, parseInt(vRaw, 10) || 0) : 1;
+      return vQty > 0;
+    });
+
+    if (activeVariants.length > 0) {
+      variantsSection.classList.remove("hidden");
+      variantsList.innerHTML = activeVariants
+        .map(
+          (v) => `
+          <div class="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-xl px-2.5 py-1.5 text-xs">
+            <span class="font-bold text-slate-800 dark:text-slate-200">${v.name}</span>
+            <span class="text-brand-600 dark:text-brand-400 font-mono font-bold">${faNum(v.price)} ت</span>
+            <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">(${faNum(v.quantity)} عدد)</span>
+          </div>`,
+        )
+        .join("");
+    } else {
+      variantsSection.classList.add("hidden");
+      variantsList.innerHTML = "";
+    }
+  }
+
+  // توضیحات ریچ‌تکست
+  const descEl = document.getElementById("cp-modal-prod-description");
+  if (descEl) {
+    const rawDesc = (product.description || "").trim();
+    if (rawDesc && rawDesc !== "<p><br></p>") {
+      descEl.innerHTML = rawDesc;
+    } else {
+      descEl.innerHTML = `<p class="text-xs text-slate-400 italic">توضیحات تکمیلی برای این محصول ثبت نشده است.</p>`;
+    }
+  }
+
+  initProductModalCloseHandlers();
+  modal.classList.remove("hidden");
+}
+
+function initProductModalCloseHandlers() {
+  const modal = document.getElementById("cp-product-modal");
+  const btnClose = document.getElementById("btn-close-cp-product-modal");
+  const btnDismiss = document.getElementById("btn-dismiss-cp-product-modal");
+
+  const closeModal = () => {
+    if (modal) modal.classList.add("hidden");
+  };
+
+  if (btnClose) btnClose.onclick = closeModal;
+  if (btnDismiss) btnDismiss.onclick = closeModal;
+
+  if (modal) {
+    modal.onclick = (e) => {
+      if (e.target === modal) closeModal();
+    };
+  }
+
+  const handleEsc = (e) => {
+    if (e.key === "Escape" && modal && !modal.classList.contains("hidden")) {
+      closeModal();
+    }
+  };
+  window.removeEventListener("keydown", handleEsc);
+  window.addEventListener("keydown", handleEsc);
+}
+
 function renderCustomerProductChips() {
   const container = document.getElementById("cp-product-chips");
   if (!container) return;
 
-  const availableProducts = portalProducts.filter(isProductAvailableForCustomer);
+  const availableProducts = portalProducts.filter(
+    isProductAvailableForCustomer,
+  );
+  const specialOfferCount = availableProducts.filter(
+    (p) => Boolean(p.isSpecialOffer),
+  ).length;
 
   const chips = [
-    { id: "all", name: "همه کالاها", icon: "🌐", count: availableProducts.length },
+    {
+      id: "all",
+      name: "همه کالاها",
+      icon: "🌐",
+      count: availableProducts.length,
+    },
+    {
+      id: "special_offer",
+      name: "فروش ویژه",
+      icon: "🔥",
+      count: specialOfferCount,
+      isSpecial: true,
+    },
     ...portalProductCategories.map((c) => ({
       ...c,
       count: availableProducts.filter((p) => p.categoryId === c.id).length,
@@ -415,19 +594,28 @@ function renderCustomerProductChips() {
   container.innerHTML = chips
     .map((c) => {
       const active = selectedCustomerCatId === c.id;
+      let btnClass = "";
+      if (c.isSpecial) {
+        btnClass = active
+          ? "bg-gradient-to-r from-rose-500 to-amber-500 text-white font-extrabold shadow-md ring-2 ring-rose-300 dark:ring-rose-900"
+          : "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-800/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 font-bold";
+      } else {
+        btnClass = active
+          ? "bg-brand-600 text-white font-bold"
+          : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 font-bold";
+      }
+
       return `
       <button data-cp-cat="${c.id}"
-        class="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition shadow-sm ${
-          active
-            ? "bg-brand-600 text-white"
-            : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
-        }">
+        class="shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs transition shadow-sm ${btnClass}">
         <span>${c.icon || "📦"}</span>
         <span>${c.name}</span>
         <span class="text-[10px] px-1.5 py-0.2 rounded-full ${
           active
             ? "bg-white/20 text-white"
-            : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+            : c.isSpecial
+              ? "bg-amber-200/80 dark:bg-amber-900/80 text-amber-900 dark:text-amber-200 font-black"
+              : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
         }">${faNum(c.count)}</span>
       </button>`;
     })
@@ -452,7 +640,9 @@ function renderCustomerProducts(q = "") {
   const query = q.trim().toLowerCase();
   let list = portalProducts.filter(isProductAvailableForCustomer);
 
-  if (selectedCustomerCatId !== "all") {
+  if (selectedCustomerCatId === "special_offer") {
+    list = list.filter((p) => Boolean(p.isSpecialOffer));
+  } else if (selectedCustomerCatId !== "all") {
     list = list.filter((p) => p.categoryId === selectedCustomerCatId);
   }
 
@@ -481,9 +671,9 @@ function renderCustomerProducts(q = "") {
       });
 
       return `
-      <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden fade-in flex flex-col">
+      <div data-cp-card="${p.id}" class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden fade-in flex flex-col hover:shadow-md transition cursor-pointer group">
         <div class="h-36 sm:h-40 bg-slate-100 dark:bg-slate-700/70 grid place-items-center relative overflow-hidden shrink-0">
-          ${p.image ? `<img src="${p.image}" class="w-full h-full object-cover" />` : `<span class="text-4xl">📦</span>`}
+          ${p.image ? `<img src="${p.image}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" />` : `<span class="text-4xl group-hover:scale-110 transition duration-300">📦</span>`}
           ${
             category
               ? `<span class="absolute top-2 right-2 text-[10px] font-bold bg-white/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-200 px-2 py-0.5 rounded-full shadow backdrop-blur flex items-center gap-1">
@@ -492,20 +682,44 @@ function renderCustomerProducts(q = "") {
                  </span>`
               : ""
           }
+          ${
+            p.isSpecialOffer
+              ? `<span class="absolute top-2 left-2 text-[10px] font-black bg-gradient-to-r from-rose-500 to-amber-500 text-white px-2 py-0.5 rounded-full shadow-md flex items-center gap-1 animate-pulse">
+                   <span>🔥</span>
+                   <span>فروش ویژه</span>
+                 </span>`
+              : ""
+          }
         </div>
         <div class="p-3.5 space-y-2 flex-1 flex flex-col justify-between">
           <div>
-            <h3 class="font-extrabold text-sm text-slate-800 dark:text-slate-100 truncate" title="${p.name}">${p.name}</h3>
+            <h3 class="font-extrabold text-sm text-slate-800 dark:text-slate-100 truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition" title="${p.name}">${p.name}</h3>
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              قیمت: <b class="text-brand-700 dark:text-brand-400 text-sm">${faNum(p.price)}</b> تومان
+              قیمت: <b class="text-brand-700 dark:text-brand-400 text-sm font-mono">${faNum(p.price)}</b> تومان
             </p>
           </div>
           ${
+            p.colors?.length
+              ? `<div class="flex items-center gap-1.5 pt-0.5">
+                   <span class="text-[10px] text-slate-400">رنگ‌ها:</span>
+                   <div class="flex items-center gap-1 flex-wrap">
+                     ${p.colors
+                       .map(
+                         (c) =>
+                           `<span class="w-2.5 h-2.5 rounded-full border border-slate-300 dark:border-slate-500 shrink-0" style="background-color: ${c.hex}" title="${c.name}"></span>`,
+                       )
+                       .join("")}
+                   </div>
+                 </div>`
+              : ""
+          }
+          ${
             activeVariants.length
-              ? `<div class="pt-2 border-t border-slate-100 dark:border-slate-700">
+              ? `<div class="pt-1.5 border-t border-slate-100 dark:border-slate-700">
                   <p class="text-[10px] font-bold text-slate-400 mb-1">مدل‌ها و واریانت‌ها:</p>
                   <div class="flex flex-wrap gap-1">
                     ${activeVariants
+                      .slice(0, 3)
                       .map(
                         (v) => `
                       <span class="text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 px-2 py-0.5 rounded-full font-bold">
@@ -513,14 +727,32 @@ function renderCustomerProducts(q = "") {
                       </span>`,
                       )
                       .join("")}
+                    ${activeVariants.length > 3 ? `<span class="text-[10px] text-slate-400 font-bold self-center">+${faNum(activeVariants.length - 3)} دیگر</span>` : ""}
                   </div>
                  </div>`
               : ""
           }
+          <button
+            type="button"
+            data-cp-detail-btn="${p.id}"
+            class="w-full mt-2 text-xs bg-brand-50 dark:bg-slate-700 hover:bg-brand-100 dark:hover:bg-slate-600 text-brand-700 dark:text-brand-300 font-bold py-1.5 px-3 rounded-xl border border-brand-200 dark:border-slate-600 transition flex items-center justify-center gap-1.5"
+          >
+            <span>🔍</span>
+            <span>مشاهده مشخصات و توضیحات</span>
+          </button>
         </div>
       </div>`;
     })
     .join("");
+
+  // اتصال ایونت کلیک روی کارت و دکمه برای باز شدن مودال محصول
+  listEl.querySelectorAll("[data-cp-card]").forEach((card) => {
+    card.addEventListener("click", () => {
+      const prodId = card.dataset.cpCard;
+      const product = portalProducts.find((x) => x.id === prodId);
+      if (product) openCustomerProductModal(product);
+    });
+  });
 }
 
 /* ============================================================

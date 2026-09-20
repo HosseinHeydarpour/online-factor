@@ -11,6 +11,8 @@ import { createPricePreviewHTML } from "./price-helper.js";
 let editingId = null;
 let tempImage = "";
 let tempVariants = [];
+let tempColors = [];
+let productQuillInstance = null;
 let selectedCategoryId = "all"; // فیلتر دسته‌بندی فعال
 
 const el = {
@@ -24,9 +26,11 @@ const el = {
   price: document.getElementById("p-price"),
   pricePreview: document.getElementById("p-price-preview"),
   quantity: document.getElementById("p-quantity"),
+  specialOffer: document.getElementById("p-special-offer"),
   image: document.getElementById("p-image"),
   preview: document.getElementById("p-preview"),
   variants: document.getElementById("variants-list"),
+  colorsList: document.getElementById("product-colors-list"),
   search: document.getElementById("product-search"),
 
   // مودال دسته‌ها
@@ -128,9 +132,11 @@ export function renderProducts(filter = "") {
         }
 
         ${
-          p.variants?.length
-            ? `<span class="absolute top-2 left-2 text-[10px] font-bold bg-brand-600 text-white px-2 py-0.5 rounded-full shadow">${faNum(p.variants.length)} واریانت</span>`
-            : ""
+          p.isSpecialOffer
+            ? `<span class="absolute top-2 left-2 text-[10px] font-black bg-gradient-to-r from-rose-500 to-amber-500 text-white px-2 py-0.5 rounded-full shadow animate-pulse">🔥 ویژه</span>`
+            : p.variants?.length
+              ? `<span class="absolute top-2 left-2 text-[10px] font-bold bg-brand-600 text-white px-2 py-0.5 rounded-full shadow">${faNum(p.variants.length)} واریانت</span>`
+              : ""
         }
       </div>
       <!-- بدنه -->
@@ -144,6 +150,21 @@ export function renderProducts(filter = "") {
               : `<span class="text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/30 border border-rose-200 dark:border-rose-900/40 px-2 py-0.5 rounded-full">ناموجود</span>`
           }
         </div>
+        ${
+          p.colors?.length
+            ? `<div class="flex items-center gap-1.5 pt-0.5">
+                 <span class="text-[10px] text-slate-400">رنگ‌ها:</span>
+                 <div class="flex items-center gap-1 flex-wrap">
+                   ${p.colors
+                     .map(
+                       (c) =>
+                         `<span class="w-2.5 h-2.5 rounded-full border border-slate-300 dark:border-slate-500 shrink-0" style="background-color: ${c.hex}" title="${c.name}"></span>`,
+                     )
+                     .join("")}
+                 </div>
+               </div>`
+            : ""
+        }
         ${
           p.variants?.length
             ? `<div class="flex flex-wrap gap-1">
@@ -338,10 +359,86 @@ function fillCategorySelect(selectedId = "") {
   `;
 }
 
+function initProductQuillEditor() {
+  if (productQuillInstance || typeof window === "undefined" || !window.Quill) return;
+  const container = document.getElementById("product-editor-container");
+  if (!container) return;
+
+  productQuillInstance = new window.Quill(container, {
+    theme: "snow",
+    placeholder: "توضیحات تکمیلی، مشخصات فنی، اقلام همراه یا نکات محصول را اینجا بنویسید…",
+    modules: {
+      toolbar: [
+        [{ header: [false, 1, 2, 3] }],
+        ["bold", "italic", "underline", "strike"],
+        [{ color: [] }, { background: [] }],
+        [{ list: "ordered" }, { list: "bullet" }],
+        [{ align: [] }],
+        ["link", "blockquote", "clean"],
+      ],
+    },
+  });
+
+  if (productQuillInstance.root) {
+    productQuillInstance.root.setAttribute("dir", "rtl");
+    productQuillInstance.format("direction", "rtl");
+    productQuillInstance.format("align", "right");
+  }
+}
+
+function renderProductColorsForm() {
+  const container = document.getElementById("product-colors-list");
+  if (!container) return;
+
+  if (!tempColors.length) {
+    container.innerHTML = `<span class="text-[11px] text-slate-400">هنوز رنگی انتخاب نشده است.</span>`;
+    return;
+  }
+
+  container.innerHTML = tempColors
+    .map((c, i) => {
+      const isLight =
+        (c.hex || "").toLowerCase() === "#ffffff" ||
+        (c.hex || "").toLowerCase() === "#fff";
+      return `
+      <div class="flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-full px-2.5 py-1 text-xs shadow-sm">
+        <span class="w-3 h-3 rounded-full shrink-0 ${isLight ? "border border-slate-300 dark:border-slate-500" : ""}" style="background-color: ${c.hex}"></span>
+        <span class="font-bold text-slate-700 dark:text-slate-200">${c.name}</span>
+        <button type="button" data-color-del="${i}" class="text-slate-400 hover:text-rose-500 font-bold mr-0.5 text-sm leading-none" title="حذف این رنگ">✕</button>
+      </div>`;
+    })
+    .join("");
+}
+
+function addProductColor(name, hex) {
+  const cleanName = (name || "").trim();
+  const cleanHex = (hex || "#000000").trim();
+  if (!cleanName) {
+    alert("لطفاً نام رنگ را وارد کنید (مثلاً مشکی، سفید، نقره‌ای).");
+    return;
+  }
+  if (
+    tempColors.some(
+      (c) =>
+        c.name === cleanName &&
+        c.hex.toLowerCase() === cleanHex.toLowerCase(),
+    )
+  ) {
+    return;
+  }
+  tempColors.push({ name: cleanName, hex: cleanHex });
+  renderProductColorsForm();
+  const nameInput = document.getElementById("p-color-name");
+  if (nameInput) nameInput.value = "";
+}
+
 function openModal(product = null) {
+  initProductQuillEditor();
   editingId = product?.id ?? null;
   tempImage = product?.image ?? "";
   tempVariants = product ? product.variants.map((v) => ({ ...v })) : [];
+  tempColors = product?.colors ? product.colors.map((c) => ({ ...c })) : [];
+
   el.title.textContent = product ? "ویرایش محصول" : "محصول جدید";
   el.name.value = product?.name ?? "";
   el.price.value = product?.price ?? "";
@@ -352,9 +449,23 @@ function openModal(product = null) {
         : 1
       : 1;
   }
+
+  const specialOfferEl = document.getElementById("p-special-offer");
+  if (specialOfferEl) {
+    specialOfferEl.checked = Boolean(product?.isSpecialOffer);
+  }
+
   el.preview.src = tempImage;
   el.preview.classList.toggle("hidden", !tempImage);
   el.image.value = "";
+
+  const colorNameInput = document.getElementById("p-color-name");
+  if (colorNameInput) colorNameInput.value = "";
+  renderProductColorsForm();
+
+  if (productQuillInstance) {
+    productQuillInstance.root.innerHTML = product?.description || "";
+  }
 
   fillCategorySelect(product?.categoryId || "");
   updateMainPricePreview();
@@ -593,6 +704,15 @@ export function initProductEvents() {
         };
       });
 
+    const specialOfferEl = document.getElementById("p-special-offer");
+    const isSpecialOffer = specialOfferEl ? specialOfferEl.checked : false;
+
+    let description = "";
+    if (productQuillInstance) {
+      description = productQuillInstance.root.innerHTML.trim();
+      if (description === "<p><br></p>") description = "";
+    }
+
     store.saveProduct({
       id: editingId ?? uid(),
       name,
@@ -601,6 +721,9 @@ export function initProductEvents() {
       quantity,
       image: tempImage,
       variants,
+      colors: tempColors,
+      description,
+      isSpecialOffer,
     });
 
     closeModal();
@@ -610,6 +733,47 @@ export function initProductEvents() {
 
     const prodTitle = editingId ? `ویرایش محصول «${name}»` : `ساخت محصول «${name}»`;
     await syncAllStorages({ title: prodTitle, showToast: true });
+  });
+
+  // رویدادهای رنگ محصول
+  document.getElementById("btn-add-color")?.addEventListener("click", () => {
+    const nameInput = document.getElementById("p-color-name");
+    const picker = document.getElementById("p-color-picker");
+    const name = nameInput?.value.trim();
+    const hex = picker?.value || "#111827";
+    addProductColor(name, hex);
+  });
+
+  document.getElementById("p-color-name")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const nameInput = document.getElementById("p-color-name");
+      const picker = document.getElementById("p-color-picker");
+      addProductColor(nameInput?.value.trim(), picker?.value || "#111827");
+    }
+  });
+
+  // پالت رنگ‌های پرکاربرد و دکمه حذف رنگ
+  document.getElementById("product-modal")?.addEventListener("click", (e) => {
+    const presetBtn = e.target.closest("[data-preset-color]");
+    if (presetBtn) {
+      const color = presetBtn.dataset.presetColor;
+      const name = presetBtn.dataset.presetName;
+      addProductColor(name, color);
+      const picker = document.getElementById("p-color-picker");
+      if (picker) picker.value = color;
+      return;
+    }
+
+    const delColorBtn = e.target.closest("[data-color-del]");
+    if (delColorBtn) {
+      const idx = Number(delColorBtn.dataset.colorDel);
+      if (!isNaN(idx)) {
+        tempColors.splice(idx, 1);
+        renderProductColorsForm();
+      }
+      return;
+    }
   });
 
   // کلیک‌های گرید محصولات
