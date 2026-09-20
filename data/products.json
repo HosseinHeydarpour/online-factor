@@ -1,5 +1,22 @@
 [
   {
+    "id": "mu9w1n60eumt7",
+    "name": "کابل شارژ LDINIO LS-361 تایپ C",
+    "categoryId": "pcat-cables",
+    "price": 380000,
+    "quantity": 1,
+    "image": "",
+    "variants": [],
+    "colors": [
+      {
+        "name": "قرمز",
+        "hex": "#dc2626"
+      }
+    ],
+    "description": "",
+    "isSpecialOffer": false
+  },
+  {
     "id": "mu9r2gfnnypwf",
     "name": "کابل شارژ وریتی CB 3150 T-B",
     "categoryId": "pcat-cables",
