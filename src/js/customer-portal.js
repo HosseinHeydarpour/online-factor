@@ -1,4 +1,5 @@
 import { store, faNum } from "./store.js";
+import { getPublicRepoConfig } from "./github.js";
 
 let expandedCats = new Set();
 let portalCategories = [];
@@ -97,12 +98,13 @@ async function loadPortalData() {
   portalAnnouncements = store.getAnnouncements();
 
   try {
-    const [resServices, resProducts, resCats, resAnnouncements] =
+    const [resServices, resProducts, resCats, resAnnouncements, resShop] =
       await Promise.allSettled([
         fetch("./data/services.json", { cache: "no-store" }),
         fetch("./data/products.json", { cache: "no-store" }),
         fetch("./data/product-categories.json", { cache: "no-store" }),
         fetch("./data/announcements.json", { cache: "no-store" }),
+        fetch("./data/shop-info.json", { cache: "no-store" }),
       ]);
 
     if (resServices.status === "fulfilled" && resServices.value.ok) {
@@ -198,6 +200,56 @@ async function loadPortalData() {
         });
 
         portalAnnouncements = Array.from(annMap.values());
+      }
+    }
+
+    // ۵. خواندن و ثبت لوگو و اطلاعات فروشگاه از مخزن عمومی
+    let remoteShop = null;
+    if (resShop && resShop.status === "fulfilled" && resShop.value.ok) {
+      try {
+        const data = await resShop.value.json();
+        if (data && typeof data === "object") {
+          remoteShop = data;
+        }
+      } catch (_) {}
+    }
+
+    // اگر از مسیر محلی خوانده نشد یا ناقص بود، واکشی مستقیم از ریپازیتوری پابلیک گیت‌هاب (raw.githubusercontent.com)
+    if (!remoteShop || (!remoteShop.logo && !remoteShop.name)) {
+      try {
+        const pubCfg = typeof getPublicRepoConfig === "function" ? getPublicRepoConfig() : {};
+        const owner = pubCfg.owner || "Mohamadrezaheydarpourgithub";
+        const repo = pubCfg.repo || "online-factor";
+        const branch = pubCfg.branch || "main";
+        const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/data/shop-info.json?_=${Date.now()}`;
+        const rawRes = await fetch(rawUrl, { cache: "no-store" });
+        if (rawRes.ok) {
+          const rawData = await rawRes.json();
+          if (rawData && typeof rawData === "object") {
+            remoteShop = rawData;
+          }
+        }
+      } catch (_) {}
+    }
+
+    // ثبت اطلاعات و لوگوی خوانده شده از ریپازیتوری عمومی در استور و پورتال مشتری
+    if (remoteShop && typeof remoteShop === "object") {
+      const currentShop = store.getShopInfo() || {};
+      const mergedShop = {
+        ...currentShop,
+        ...remoteShop,
+        logo: remoteShop.logo !== undefined && remoteShop.logo !== "" ? remoteShop.logo : (currentShop.logo || ""),
+      };
+
+      // ثبت در استور برای پایداری و استفاده آفلاین
+      store.saveShopInfo(mergedShop);
+
+      // به‌روزرسانی آنی لوگو و مشخصات کسب‌وکار در پورتال مشتری
+      renderCustomerShopInfo(mergedShop);
+
+      // به‌روزرسانی کارت‌های بانکی در صورت دریافت از ریپو
+      if (Array.isArray(remoteShop.bankAccounts) && remoteShop.bankAccounts.length) {
+        renderCustomerCards();
       }
     }
   } catch (_) {}
@@ -756,6 +808,43 @@ function renderCustomerProducts(q = "") {
 }
 
 /* ============================================================
+   رندر و نمایش لوگو و اطلاعات فروشگاه در پورتال مشتری
+   ============================================================ */
+export function renderCustomerShopInfo(shop = null) {
+  const s = shop || store.getShopInfo() || {};
+  const nameEl = document.getElementById("cp-name");
+  const sloganEl = document.getElementById("cp-slogan");
+  const logoEl = document.getElementById("cp-logo");
+  const contactEl = document.getElementById("cp-contact");
+  const footerNote = document.getElementById("cp-footer-note");
+
+  if (nameEl && s.name) nameEl.textContent = s.name;
+  if (sloganEl && s.slogan) sloganEl.textContent = s.slogan;
+  if (logoEl) {
+    if (s.logo) {
+      logoEl.innerHTML = `<img src="${s.logo}" alt="${s.name || 'لوگو'}" class="w-full h-full object-contain" onerror="this.src='./assets/logo.png'" />`;
+      logoEl.classList.remove("bg-brand-600", "text-white");
+      logoEl.classList.add("bg-transparent");
+    } else {
+      logoEl.innerHTML = `<img src="./assets/logo.png" alt="لوگو" class="w-full h-full object-contain" />`;
+      logoEl.classList.remove("bg-transparent");
+      logoEl.classList.add("bg-brand-600", "text-white");
+    }
+  }
+  if (contactEl) {
+    const line = [s.phone, s.address].filter(Boolean).join("  |  ");
+    contactEl.textContent = line;
+    contactEl.classList.toggle("hidden", !line);
+  }
+  if (footerNote && s.name) {
+    footerNote.textContent = `همه قیمت‌ها به تومان است · ${s.name}`;
+  }
+  if (s.name) {
+    document.title = `${s.name} - پورتال مشتریان`;
+  }
+}
+
+/* ============================================================
    راه‌اندازی کلی پورتال مشتری
    ============================================================ */
 export function initCustomerPortal() {
@@ -766,24 +855,8 @@ export function initCustomerPortal() {
   if (!portal) return;
   portal.classList.remove("hidden");
 
-  const shop = store.getShopInfo();
-  const nameEl = document.getElementById("cp-name");
-  const sloganEl = document.getElementById("cp-slogan");
-  const logoEl = document.getElementById("cp-logo");
-  const contactEl = document.getElementById("cp-contact");
-
-  if (nameEl) nameEl.textContent = shop.name || "کافی‌نت آنلاین";
-  if (sloganEl) sloganEl.textContent = shop.slogan || "نرخ‌نامه و ویترین خدمات";
-  if (logoEl && shop.logo) {
-    logoEl.innerHTML = `<img src="${shop.logo}" class="w-full h-full object-contain" />`;
-    logoEl.classList.remove("bg-brand-600", "text-white");
-    logoEl.classList.add("bg-transparent");
-  }
-  if (contactEl) {
-    const line = [shop.phone, shop.address].filter(Boolean).join("  |  ");
-    contactEl.textContent = line;
-    contactEl.classList.toggle("hidden", !line);
-  }
+  // رندر اولیه اطلاعات و لوگوی فروشگاه از استور
+  renderCustomerShopInfo();
 
   document.getElementById("cp-theme")?.addEventListener("click", () => {
     const html = document.documentElement;
@@ -899,6 +972,8 @@ export function initCustomerPortal() {
     pruneReadAnnouncementIds(portalAnnouncements);
     renderCustomerNews();
     updateCustomerNewsBadge();
+    renderCustomerShopInfo();
+    renderCustomerCards();
   });
 
   function syncWithLocalProducts() {
@@ -955,6 +1030,10 @@ export function initCustomerPortal() {
         document.getElementById("cp-news-search")?.value || "",
       );
       updateCustomerNewsBadge();
+    }
+    if (e.key === "cafe_shop_info") {
+      renderCustomerShopInfo();
+      renderCustomerCards();
     }
   });
 
