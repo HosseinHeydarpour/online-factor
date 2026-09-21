@@ -1,5 +1,5 @@
 // sw.js - Service Worker برای کارکرد ۱۰۰٪ آفلاین و قابلیت نصب PWA با سرعت حداکثری
-const CACHE_NAME = "cafe-pwa-v7";
+const CACHE_NAME = "cafe-pwa-v11";
 
 const STATIC_ASSETS = [
   "./",
@@ -21,6 +21,7 @@ const STATIC_ASSETS = [
   "./assets/vendor/quill/quill.snow.css",
   "./assets/vendor/qrcode.min.js",
   "./assets/vendor/xlsx.full.min.js",
+  "./src/js/image-utils.js",
   "./src/js/app.js",
   "./src/js/store.js",
   "./src/js/invoice.js",

@@ -7,6 +7,7 @@ import {
   syncAllStorages,
 } from "./github.js";
 import { createPricePreviewHTML } from "./price-helper.js";
+import { compressImage } from "./image-utils.js";
 
 let editingId = null;
 let tempImage = "";
@@ -629,16 +630,20 @@ export function initProductEvents() {
 
   el.price?.addEventListener("input", updateMainPricePreview);
 
-  el.image?.addEventListener("change", (e) => {
+  el.image?.addEventListener("change", async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      tempImage = reader.result;
+    try {
+      tempImage = await compressImage(file, {
+        maxWidth: 800,
+        maxHeight: 800,
+        quality: 0.75,
+      });
       el.preview.src = tempImage;
       el.preview.classList.remove("hidden");
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.warn("خطا در بهینه‌سازی تصویر محصول:", err);
+    }
   });
 
   document.getElementById("btn-add-variant")?.addEventListener("click", () => {

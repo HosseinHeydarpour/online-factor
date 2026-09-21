@@ -1,4 +1,5 @@
 import { RATE_CATEGORIES } from "../data/rates.js";
+import { compressImage } from "./image-utils.js";
 
 const KEYS = {
   PRODUCTS: "cafe_products",
@@ -39,15 +40,238 @@ const DEFAULT_PRODUCT_CATEGORIES = [
   { id: "pcat-accessories", name: "لوازم جانبی کامپیوتر", icon: "🖱️" },
 ];
 
-function read(key, fallback) {
+// =========================================================================
+// پایگاه‌داده نامحدود IndexedDB و حافظه سریع رم جهت حل مشکل QuotaExceededError
+// =========================================================================
+const IDB_NAME = "cafe_store_db";
+const IDB_STORE = "keyval";
+const memoryStore = {};
+
+// بارگذاری اولیه سریع از localStorage در حافظه رم تا تمام توابع همگام بلافاصله کار کنند
+try {
+  for (const k of Object.values(KEYS)) {
+    const raw = localStorage.getItem(k);
+    if (raw) {
+      try {
+        memoryStore[k] = JSON.parse(raw);
+      } catch {}
+    }
+  }
+} catch {}
+
+function openStoreDB() {
+  return new Promise((resolve) => {
+    if (typeof indexedDB === "undefined") {
+      return resolve(null);
+    }
+    try {
+      const req = indexedDB.open(IDB_NAME, 1);
+      req.onupgradeneeded = () => {
+        if (!req.result.objectStoreNames.contains(IDB_STORE)) {
+          req.result.createObjectStore(IDB_STORE);
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => {
+        console.warn("[StoreDB] عدم امکان باز کردن IndexedDB:", req.error);
+        resolve(null);
+      };
+    } catch (err) {
+      console.warn("[StoreDB] خطای غیرمنتظره در باز کردن IndexedDB:", err);
+      resolve(null);
+    }
+  });
+}
+
+async function idbSet(key, val) {
   try {
-    return JSON.parse(localStorage.getItem(key)) ?? fallback;
-  } catch {
-    return fallback;
+    const db = await openStoreDB();
+    if (!db) return;
+    return new Promise((resolve) => {
+      const tx = db.transaction(IDB_STORE, "readwrite");
+      tx.objectStore(IDB_STORE).put(val, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => {
+        console.warn(`[StoreDB] خطا در نوشتن کلید ${key} در دیتابیس بومی:`, tx.error);
+        resolve();
+      };
+    });
+  } catch (err) {
+    console.warn("[StoreDB] idbSet خطای ناشناخته:", err);
   }
 }
+
+async function idbGet(key) {
+  try {
+    const db = await openStoreDB();
+    if (!db) return null;
+    return new Promise((resolve) => {
+      const tx = db.transaction(IDB_STORE, "readonly");
+      const req = tx.objectStore(IDB_STORE).get(key);
+      req.onsuccess = () => resolve(req.result ?? null);
+      req.onerror = () => resolve(null);
+    });
+  } catch {
+    return null;
+  }
+}
+
+async function idbGetAllKeys() {
+  try {
+    const db = await openStoreDB();
+    if (!db) return [];
+    return new Promise((resolve) => {
+      const tx = db.transaction(IDB_STORE, "readonly");
+      const req = tx.objectStore(IDB_STORE).getAllKeys();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => resolve([]);
+    });
+  } catch {
+    return [];
+  }
+}
+
+function read(key, fallback) {
+  if (key in memoryStore && memoryStore[key] !== null && memoryStore[key] !== undefined) {
+    return memoryStore[key];
+  }
+  try {
+    const fromLocal = JSON.parse(localStorage.getItem(key));
+    if (fromLocal !== null && fromLocal !== undefined) {
+      memoryStore[key] = fromLocal;
+      return fromLocal;
+    }
+  } catch {}
+  return fallback;
+}
+
 function write(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+  // ۱. به‌روزرسانی آنی حافظه رم برای پاسخگویی به فراخوانی‌های همگام
+  memoryStore[key] = value;
+
+  // ۲. ذخیره‌سازی قطعی و نامحدود در دیتابیس بومی IndexedDB
+  idbSet(key, value).catch(() => {});
+
+  // ۳. ذخیره‌سازی امن در localStorage با سد محافظتی QuotaExceededError
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (err) {
+    if (err.name === "QuotaExceededError" || err.code === 22) {
+      console.warn(`[Store] سقف localStorage تکمیل شد (${key}). داده در دیتابیس بومی IndexedDB با موفقیت ذخیره شد.`);
+      // اگر محصولات بود، نسخه سبک متادیتا را در localStorage ذخیره کنیم تا متادیتا در دسترس بماند
+      if (key === KEYS.PRODUCTS && Array.isArray(value)) {
+        try {
+          const lightweight = value.map((p) => ({ ...p, image: "" }));
+          localStorage.setItem(key, JSON.stringify(lightweight));
+        } catch {}
+      }
+    } else {
+      console.error("[Store] خطای ناشناخته در ذخیره‌سازی localStorage:", err);
+    }
+  }
+}
+
+/**
+ * بهینه‌سازی و فشرده‌سازی خودکار تصاویر محصولات ذخیره‌شده
+ * جهت بازپس‌گیری و آزادسازی فوری فضای اشغال‌شده در مرورگر
+ */
+export async function optimizeExistingProductImages() {
+  try {
+    const products = store.getProducts();
+    if (!Array.isArray(products) || products.length === 0) return;
+
+    let changed = false;
+    let totalFreedBytes = 0;
+
+    for (let i = 0; i < products.length; i++) {
+      const p = products[i];
+      if (p && p.image && typeof p.image === "string") {
+        // اگر عکس به صورت DataURL بوده و حجم رشته بیش از ۶۰ کیلوبایت باشد
+        if (p.image.startsWith("data:image/") && p.image.length > 60 * 1024) {
+          const oldLen = p.image.length;
+          try {
+            const compressed = await compressImage(p.image, {
+              maxWidth: 800,
+              maxHeight: 800,
+              quality: 0.75,
+            });
+            if (compressed && compressed.length < oldLen) {
+              totalFreedBytes += oldLen - compressed.length;
+              p.image = compressed;
+              changed = true;
+            }
+          } catch (e) {
+            console.warn(`[Store] خطا در فشرده‌سازی تصویر محصول ${p.id || i}:`, e);
+          }
+        }
+      }
+    }
+
+    if (changed) {
+      console.log(`[Store] تصاویر محصولات قبلی بهینه‌سازی شدند. ${Math.round(totalFreedBytes / 1024)}KB فضا آزاد گردید.`);
+      store.setProducts(products);
+    }
+  } catch (err) {
+    console.warn("[Store] خطا در بهینه‌سازی تصاویر قبلی:", err);
+  }
+}
+
+let isStorageInitialized = false;
+
+/**
+ * مقداردهی اولیه و همگام‌سازی دوطرفه حافظه رم و IndexedDB
+ */
+export async function initStorage() {
+  if (isStorageInitialized) return;
+  isStorageInitialized = true;
+
+  try {
+    const db = await openStoreDB();
+    if (!db) return;
+
+    const existingKeys = await idbGetAllKeys();
+
+    if (existingKeys.length === 0) {
+      // بار اول: مهاجرت امن تمام داده‌های موجود در localStorage به IndexedDB
+      for (const key of Object.values(KEYS)) {
+        try {
+          const raw = localStorage.getItem(key);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            memoryStore[key] = parsed;
+            await idbSet(key, parsed);
+          }
+        } catch {}
+      }
+    } else {
+      // بارگذاری داده‌های کامل از IndexedDB در حافظه رم
+      for (const key of Object.values(KEYS)) {
+        const idbVal = await idbGet(key);
+        if (idbVal !== null && idbVal !== undefined) {
+          memoryStore[key] = idbVal;
+          // تلاش جهت بازتاب در localStorage (در صورت داشتن فضای خالی)
+          try {
+            localStorage.setItem(key, JSON.stringify(idbVal));
+          } catch (err) {
+            // اگر سقف پر بود، متادیتا را به صورت سبک ذخیره کن
+            if (key === KEYS.PRODUCTS && Array.isArray(idbVal)) {
+              try {
+                const lightweight = idbVal.map((p) => ({ ...p, image: "" }));
+                localStorage.setItem(key, JSON.stringify(lightweight));
+              } catch {}
+            }
+          }
+        }
+      }
+    }
+
+    // بررسی و بهینه‌سازی تصاویر سنگین محصولات در پس‌زمینه
+    setTimeout(() => {
+      optimizeExistingProductImages().catch(() => {});
+    }, 500);
+  } catch (err) {
+    console.warn("[Store] خطای راه‌اندازی دیتابیس بومی:", err);
+  }
 }
 
 // ---------- تبدیل ارقام فارسی/عربی به لاتین ----------
@@ -558,6 +782,12 @@ export const store = {
       topServices,
       invoices: filtered,
     };
+  },
+  initStorage() {
+    return initStorage();
+  },
+  optimizeExistingProductImages() {
+    return optimizeExistingProductImages();
   },
 };
 

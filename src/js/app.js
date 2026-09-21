@@ -17,6 +17,7 @@ import { initCustomerPortal } from "./customer-portal.js";
 import { autoPushPublicRepo } from "./github.js";
 import { initAnnouncements, renderAnnouncements } from "./announcements.js";
 import { enhanceAllSelects } from "./nice-select.js";
+import { compressImage } from "./image-utils.js";
 
 // لیست رسمی بانک‌های کشور جهت دراپ‌داون کارت‌های بانکی
 export const IRANIAN_BANKS = [
@@ -770,15 +771,19 @@ function initSettings() {
 
   let tempLogo = shop.logo || "";
 
-  document.getElementById("shop-logo").addEventListener("change", (e) => {
+  document.getElementById("shop-logo").addEventListener("change", async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      tempLogo = reader.result;
+    try {
+      tempLogo = await compressImage(file, {
+        maxWidth: 400,
+        maxHeight: 400,
+        quality: 0.8,
+      });
       logoPreview.innerHTML = `<img src="${tempLogo}" class="w-full h-full object-contain" />`;
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.warn("خطا در بهینه‌سازی لوگو:", err);
+    }
   });
 
   document.getElementById("btn-remove-logo").addEventListener("click", () => {
@@ -913,6 +918,9 @@ function getAppRole() {
 
   return "admin";
 }
+
+// مقداردهی اولیه و همگام‌سازی دیتابیس بومی IndexedDB و بهینه‌سازی خودکار عکس‌ها
+store.initStorage().catch((e) => console.warn("[App] خطا در initStorage:", e));
 
 const APP_ROLE = getAppRole();
 
