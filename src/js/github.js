@@ -18,24 +18,29 @@ function triggerLocalBackupOnPush() {
 export function getBackupRepoConfig() {
   const s = store.getSettings();
   const b = s.backupRepo || {};
+  let repo = b.repo ? b.repo.trim() : "";
+  // اگر مقدار خالی یا برابر با ریپوی عمومی یا با هر فرمتی از factor_backup بود، به Factor_backup استاندارد شود
+  if (!repo || repo === "online-factor" || repo.toLowerCase() === "factor_backup") {
+    repo = "Factor_backup";
+  }
   return {
-    owner: b.owner || "Mohamadrezaheydarpourgithub",
-    repo: b.repo || "online-factor",
-    branch: b.branch || "main",
-    token: b.token || "",
+    owner: (b.owner && b.owner.trim()) || "Mohamadrezaheydarpourgithub",
+    repo: repo,
+    branch: (b.branch && b.branch.trim()) || "main",
+    token: (b.token && b.token.trim()) || "",
     autoPush: b.autoPush !== false,
   };
 }
 
 export function getPublicRepoConfig() {
   const s = store.getSettings();
-  const backup = getBackupRepoConfig();
   const pub = s.publicRepo || {};
+  const backup = getBackupRepoConfig();
   return {
-    owner: pub.owner || backup.owner || "Mohamadrezaheydarpourgithub",
-    repo: pub.repo || backup.repo || "online-factor",
-    branch: pub.branch || backup.branch || "main",
-    token: pub.token || backup.token || "",
+    owner: (pub.owner && pub.owner.trim()) || "Mohamadrezaheydarpourgithub",
+    repo: (pub.repo && pub.repo.trim()) || "online-factor",
+    branch: (pub.branch && pub.branch.trim()) || "main",
+    token: (pub.token && pub.token.trim()) || backup.token || "",
     enabled: pub.enabled ?? true,
   };
 }
@@ -185,12 +190,27 @@ function headers(cfg) {
 }
 
 function toBase64(str) {
-  return btoa(unescape(encodeURIComponent(str)));
+  try {
+    const bytes = new TextEncoder().encode(str);
+    let bin = "";
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    }
+    return btoa(bin);
+  } catch (_) {
+    return btoa(unescape(encodeURIComponent(str)));
+  }
 }
 
 export function fromBase64(b64) {
+  if (!b64) return "";
   const bin = atob(String(b64).replace(/\s/g, ""));
-  const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+  const len = bin.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = bin.charCodeAt(i);
+  }
   return new TextDecoder().decode(bytes);
 }
 
@@ -204,7 +224,58 @@ async function gh(path, cfg, options = {}) {
   return data;
 }
 
-/* ---------- بررسی وجود داده‌های محصولات در مخزن عمومی ---------- */
+/* ---------- دریافت امن فایل‌های JSON از گیت‌هاب (پشتیبانی از فایل‌های بزرگتر از ۱ مگابایت با Blobs API) ---------- */
+export async function fetchGitHubJson(cfg, path) {
+  if (!cfg || !cfg.owner || !cfg.repo) return null;
+  const branch = encodeURIComponent(cfg.branch || "main");
+
+  // ۱. تلاش از طریق API contents
+  try {
+    const res = await gh(
+      `/repos/${cfg.owner}/${cfg.repo}/contents/${path}?ref=${branch}`,
+      cfg,
+    );
+    // اگر فایل کمتر از ۱ مگابایت باشد، content مستقیماً وجود دارد
+    if (res && res.content) {
+      return JSON.parse(fromBase64(res.content));
+    }
+    // اگر فایل بزرگتر از ۱ مگابایت باشد (مانند products.json)، فیلد content خالی است ولی sha وجود دارد
+    if (res && res.sha) {
+      const blob = await gh(
+        `/repos/${cfg.owner}/${cfg.repo}/git/blobs/${res.sha}`,
+        cfg,
+      );
+      if (blob && blob.content) {
+        return JSON.parse(fromBase64(blob.content));
+      }
+    }
+    // در صورت وجود download_url
+    if (res && res.download_url) {
+      const rawRes = await fetch(res.download_url, {
+        headers: cfg.token ? { Authorization: `Bearer ${cfg.token}` } : {},
+      });
+      if (rawRes.ok) {
+        return await rawRes.json();
+      }
+    }
+  } catch (_) {}
+
+  // ۲. تلاش مستقیم از آدرس raw.githubusercontent.com با هدر توکن
+  try {
+    const rawUrl = `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${cfg.branch || "main"}/${path}?_=${Date.now()}`;
+    const rawRes = await fetch(rawUrl, {
+      cache: "no-store",
+      headers: cfg.token ? { Authorization: `Bearer ${cfg.token}` } : {},
+    });
+    if (rawRes.ok) {
+      return await rawRes.json();
+    }
+  } catch (_) {}
+
+  return null;
+}
+
+/* ---------- بررسی وجود داده‌های محصولات در مخزن عمومی یا بک‌آپ ---------- */
 export async function checkRemotePublicData(cfg) {
   if (!cfg || !cfg.owner || !cfg.repo) {
     return {
@@ -216,70 +287,44 @@ export async function checkRemotePublicData(cfg) {
     };
   }
 
-  const branch = encodeURIComponent(cfg.branch || "main");
   let productCount = 0;
   let categoryCount = 0;
   let remoteProducts = [];
   let remoteCategories = [];
 
-  // ۱. بررسی فایل دیتای عمومی محصولات (data/products.json) از طریق GitHub API
+  // ۱. بررسی فایل اصلی بک‌آپ محصولات (backup/products.json)
   try {
-    const res = await gh(
-      `/repos/${cfg.owner}/${cfg.repo}/contents/data/products.json?ref=${branch}`,
-      cfg,
-    );
-    if (res && res.content) {
-      const data = JSON.parse(fromBase64(res.content));
-      if (Array.isArray(data) && data.length > 0) {
-        productCount = data.length;
-        remoteProducts = data;
-      }
+    const dataB = await fetchGitHubJson(cfg, "backup/products.json");
+    if (Array.isArray(dataB) && dataB.length > 0) {
+      productCount = dataB.length;
+      remoteProducts = dataB;
     }
   } catch (_) {}
 
-  // ۲. تلاش جایگزین از raw.githubusercontent.com در صورت عدم پاسخ مناسب
-  if (productCount === 0) {
-    try {
-      const rawUrl = `https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/${cfg.branch || "main"}/data/products.json?_=${Date.now()}`;
-      const resRaw = await fetch(rawUrl, { cache: "no-store" });
-      if (resRaw.ok) {
-        const data = await resRaw.json();
-        if (Array.isArray(data) && data.length > 0) {
-          productCount = data.length;
-          remoteProducts = data;
-        }
-      }
-    } catch (_) {}
-  }
-
-  // ۳. بررسی دسته‌بندی‌های عمومی (data/product-categories.json)
+  // ۲. بررسی فایل عمومی محصولات (data/products.json) — اگر کامل‌تر بود جایگزین کن
   try {
-    const resCat = await gh(
-      `/repos/${cfg.owner}/${cfg.repo}/contents/data/product-categories.json?ref=${branch}`,
-      cfg,
-    );
-    if (resCat && resCat.content) {
-      const dataCat = JSON.parse(fromBase64(resCat.content));
+    const data = await fetchGitHubJson(cfg, "data/products.json");
+    if (Array.isArray(data) && data.length > productCount) {
+      productCount = data.length;
+      remoteProducts = data;
+    }
+  } catch (_) {}
+
+  // ۳. بررسی دسته‌بندی‌ها (ابتدا backup سپس data)
+  try {
+    const catB = await fetchGitHubJson(cfg, "backup/product-categories.json");
+    if (Array.isArray(catB) && catB.length > 0) {
+      categoryCount = catB.length;
+      remoteCategories = catB;
+    }
+  } catch (_) {}
+
+  if (categoryCount === 0) {
+    try {
+      const dataCat = await fetchGitHubJson(cfg, "data/product-categories.json");
       if (Array.isArray(dataCat) && dataCat.length > 0) {
         categoryCount = dataCat.length;
         remoteCategories = dataCat;
-      }
-    }
-  } catch (_) {}
-
-  // ۴. اگر هیچ محصولی در data/products.json نبود، بررسی backup/products.json
-  if (productCount === 0) {
-    try {
-      const resB = await gh(
-        `/repos/${cfg.owner}/${cfg.repo}/contents/backup/products.json?ref=${branch}`,
-        cfg,
-      );
-      if (resB && resB.content) {
-        const dataB = JSON.parse(fromBase64(resB.content));
-        if (Array.isArray(dataB) && dataB.length > 0) {
-          productCount = dataB.length;
-          remoteProducts = dataB;
-        }
       }
     } catch (_) {}
   }
@@ -1173,14 +1218,11 @@ export async function restoreFromGitHub({ replace = false } = {}) {
   try {
     const branch = encodeURIComponent(cfg.branch || "main");
 
-    const readJson = async (path) => {
+    const readJson = async (path, repoCfg = cfg) => {
       try {
-        const res = await gh(
-          `/repos/${cfg.owner}/${cfg.repo}/contents/${path}?ref=${branch}`,
-          cfg,
-        );
-        return JSON.parse(fromBase64(res.content));
-      } catch {
+        return await fetchGitHubJson(repoCfg, path);
+      } catch (err) {
+        console.warn(`خطا در خواندن ${path}:`, err);
         return null;
       }
     };
@@ -1204,6 +1246,45 @@ export async function restoreFromGitHub({ replace = false } = {}) {
     }
     if (!announcements || (Array.isArray(announcements) && announcements.length === 0)) {
       announcements = await readJson("data/announcements.json");
+    }
+
+    // همچنین جهت اطمینان از بازیابی حداکثری، ریپوی عمومی را نیز بررسی و ادغام کن
+    const pubCfg = getPublicRepoConfig();
+    if (
+      pubCfg.owner &&
+      pubCfg.repo &&
+      (pubCfg.repo.toLowerCase() !== cfg.repo.toLowerCase() ||
+        pubCfg.owner.toLowerCase() !== cfg.owner.toLowerCase())
+    ) {
+      try {
+        const pubProducts = await readJson("data/products.json", pubCfg);
+        if (Array.isArray(pubProducts) && pubProducts.length > 0) {
+          if (!Array.isArray(products) || products.length === 0) {
+            products = pubProducts;
+          } else {
+            // ادغام امن بدون حذف: اگر محصولی در عمومی هست که در بک‌آپ نیست، اضافه شود
+            const currentIds = new Set(products.map((p) => p.id));
+            const missing = pubProducts.filter(
+              (p) => p && p.id && !currentIds.has(p.id),
+            );
+            if (missing.length > 0) {
+              products = [...products, ...missing];
+            }
+          }
+        }
+      } catch (_) {}
+
+      try {
+        if (
+          !productCategories ||
+          (Array.isArray(productCategories) && productCategories.length === 0)
+        ) {
+          const pubCats = await readJson("data/product-categories.json", pubCfg);
+          if (Array.isArray(pubCats) && pubCats.length > 0) {
+            productCategories = pubCats;
+          }
+        }
+      } catch (_) {}
     }
 
     if (!invoices && !proformas && !products && !shop && !customServices && !services && !announcements) {
