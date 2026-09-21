@@ -1,6 +1,19 @@
 {
   "newCategories": [
     {
+      "id": "cat-muauocdueapos",
+      "title": "ثبت نام کتاب درسی",
+      "items": [
+        {
+          "id": "srv-muauocducpm3r",
+          "title": "ثبت نام کتاب درسی",
+          "price": 120000,
+          "custom": true
+        }
+      ],
+      "custom": true
+    },
+    {
       "id": "cat-mu9rsmfq57czh",
       "title": "نصب نرم افزار موبایل",
       "items": [
