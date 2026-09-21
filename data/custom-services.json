@@ -1,6 +1,25 @@
 {
   "newCategories": [
     {
+      "id": "cat-mub41wuzkevft",
+      "title": "سریال/فیلم",
+      "items": [
+        {
+          "id": "srv-mub41wuzr964p",
+          "title": "سریال",
+          "price": 7000,
+          "custom": true
+        },
+        {
+          "id": "srv-mub41wuzhfd2g",
+          "title": "فیلم",
+          "price": 10000,
+          "custom": true
+        }
+      ],
+      "custom": true
+    },
+    {
       "id": "cat-mub3gfieq0ey5",
       "title": "تحقیق دانشگاهی /دانش آموزی",
       "items": [
