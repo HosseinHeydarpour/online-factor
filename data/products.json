@@ -1,5 +1,22 @@
 [
   {
+    "id": "mub00wb9p7o9t",
+    "name": "کابل شارژ  2 در 1",
+    "categoryId": "pcat-cables",
+    "price": 550000,
+    "quantity": 2,
+    "image": "",
+    "variants": [],
+    "colors": [
+      {
+        "name": "زرد",
+        "hex": "#f8e93f"
+      }
+    ],
+    "description": "",
+    "isSpecialOffer": false
+  },
+  {
     "id": "muazntdx22ly9",
     "name": "کابل تبدیل USB به microUSB / USB-C / لایتنینگ 3IN1 100W",
     "categoryId": "pcat-cables",
