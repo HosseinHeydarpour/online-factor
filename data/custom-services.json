@@ -21,6 +21,18 @@
           "title": "پرینت نتیجه نهایی",
           "price": 21000,
           "custom": true
+        },
+        {
+          "id": "srv-mub38utkwg2gj",
+          "title": "پرداخت اینترنتی",
+          "price": 30400,
+          "custom": true
+        },
+        {
+          "id": "srv-mub38utka1c10",
+          "title": "پرینت اضافه",
+          "price": 11000,
+          "custom": true
         }
       ],
       "custom": true
