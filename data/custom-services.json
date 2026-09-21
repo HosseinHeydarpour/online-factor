@@ -33,6 +33,12 @@
           "title": "پرینت اضافه",
           "price": 11000,
           "custom": true
+        },
+        {
+          "id": "srv-mub3bcifk4hfz",
+          "title": "هزینه جستجو جهت انتخاب دروس",
+          "price": 18400,
+          "custom": true
         }
       ],
       "custom": true
