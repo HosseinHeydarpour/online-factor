@@ -1,5 +1,22 @@
 [
   {
+    "id": "muazntdx22ly9",
+    "name": "کابل تبدیل USB به microUSB / USB-C / لایتنینگ 3IN1 100W",
+    "categoryId": "pcat-cables",
+    "price": 520000,
+    "quantity": 2,
+    "image": "",
+    "variants": [],
+    "colors": [
+      {
+        "name": "مشکی",
+        "hex": "#111827"
+      }
+    ],
+    "description": "",
+    "isSpecialOffer": false
+  },
+  {
     "id": "muaz8e1h8rrr8",
     "name": "کابل شارژ ایفون کنفی",
     "categoryId": "pcat-cables",
