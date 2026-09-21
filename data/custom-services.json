@@ -1,6 +1,19 @@
 {
   "newCategories": [
     {
+      "id": "cat-mub1w9xn24z1s",
+      "title": "آهنگ",
+      "items": [
+        {
+          "id": "srv-mub1w9xnyb1tv",
+          "title": "آهنگ",
+          "price": 120000,
+          "custom": true
+        }
+      ],
+      "custom": true
+    },
+    {
       "id": "cat-mub16n2cighcm",
       "title": "خدمات اسکن و رایت",
       "items": [
