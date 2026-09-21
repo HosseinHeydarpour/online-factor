@@ -1,5 +1,30 @@
 [
   {
+    "id": "cat-mub3gfieq0ey5",
+    "title": "تحقیق دانشگاهی /دانش آموزی",
+    "items": [
+      {
+        "id": "srv-mub3gfierrwve",
+        "title": "تحقیق یا استخراج مطلب فارسی هر صفحه(بدون پرینت)",
+        "price": 18400,
+        "custom": true
+      },
+      {
+        "id": "srv-mub3gfieooxma",
+        "title": "تحقیق یا استخراج مطلب انگلیسی هر صفحه(بدون پرینت)",
+        "price": 36800,
+        "custom": true
+      },
+      {
+        "id": "srv-mub3gfiex0bjv",
+        "title": "هر برگ پرینت",
+        "price": 11000,
+        "custom": true
+      }
+    ],
+    "custom": true
+  },
+  {
     "id": "cat-mub35c5lslb4v",
     "title": "انتخاب واحد دانشگاه",
     "items": [
