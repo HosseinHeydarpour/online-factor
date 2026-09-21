@@ -1,31 +1,19 @@
 {
   "newCategories": [
     {
-      "id": "cat-mu9eit4g891y5",
-      "title": "وام فرزند آوری",
+      "id": "cat-mub9ciahcdn9x",
+      "title": "آزمون کانون وکلا و دادگستزی",
       "items": [
         {
-          "id": "srv-mu9eit4g38lle",
-          "title": "ثبت برای هر فرزند (ثبت نام + ۶ صفحه اضافه)",
-          "price": 395200,
+          "id": "srv-mub9ciahkz6xs",
+          "title": "خرید کارت",
+          "price": 85000,
           "custom": true
         },
         {
-          "id": "srv-mu9eit4gg5g36",
-          "title": "پیگیری ثبت نام همراه با پرینت",
-          "price": 71000,
-          "custom": true
-        },
-        {
-          "id": "srv-mu9eit4gh3e0d",
-          "title": "ویرایش شعبه (نصف ثبت نام + ۲ صفحه اضافه)",
-          "price": 162400,
-          "custom": true
-        },
-        {
-          "id": "srv-mu9eit4gkbv3p",
-          "title": "پرینت نتیجه نهایی",
-          "price": 21000,
+          "id": "srv-mub9ciaho3oyu",
+          "title": "ثبت نام آزمون",
+          "price": 315000,
           "custom": true
         }
       ],
