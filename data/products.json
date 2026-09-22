@@ -1,5 +1,30 @@
 [
   {
+    "id": "muck0hccod50k",
+    "name": "فلش گلکسبیت مدل WIPER ظرفیت 32 گیگابایت",
+    "categoryId": "pcat-storage",
+    "price": 1600000,
+    "quantity": 10,
+    "image": "",
+    "variants": [],
+    "colors": [
+      {
+        "name": "سفید",
+        "hex": "#ffffff"
+      },
+      {
+        "name": "آبی",
+        "hex": "#2563eb"
+      },
+      {
+        "name": "صورتی",
+        "hex": "#f4a9cd"
+      }
+    ],
+    "description": "",
+    "isSpecialOffer": false
+  },
+  {
     "id": "mucjwrzghthiq",
     "name": "فلش VERITY وریتی مدل O511 OTG TYPE-C ظرفیت 64 گیگابایت USB3.0",
     "categoryId": "",
