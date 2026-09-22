@@ -1,6 +1,25 @@
 {
   "newCategories": [
     {
+      "id": "cat-mucq2yl47barb",
+      "title": "کار در مجموعه آفیس",
+      "items": [
+        {
+          "id": "srv-mucq2yl4542dw",
+          "title": "کار در مجموعه OFFICE به ازاء هر صفحه",
+          "price": 61000,
+          "custom": true
+        },
+        {
+          "id": "srv-mucq2yl48m6p8",
+          "title": "ایجادهر اسلاید در پاورپوینت",
+          "price": 30400,
+          "custom": true
+        }
+      ],
+      "custom": true
+    },
+    {
       "id": "cat-mucgxgl73ocxu",
       "title": "پرداخت قبض (آب-برق-گاز-تلفن)",
       "items": [
