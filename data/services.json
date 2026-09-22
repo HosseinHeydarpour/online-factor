@@ -74,6 +74,12 @@
         "title": "هزینه پرینت اضافه (به ازای هر برگ)",
         "price": 11000,
         "custom": true
+      },
+      {
+        "id": "srv-mucx5kpf7ra6p",
+        "title": "اضافه بها بابت ارائه خدمات به صورت دورکاری",
+        "price": 65000,
+        "custom": true
       }
     ],
     "custom": true
@@ -154,6 +160,12 @@
         "id": "srv-mub9ur3hvues3",
         "title": "پرینت نتیجه نهایی",
         "price": 21000,
+        "custom": true
+      },
+      {
+        "id": "srv-mucx62gd6z1t6",
+        "title": "اضافه بها بابت ارائه خدمات به صورت دورکاری",
+        "price": 65000,
         "custom": true
       }
     ],
