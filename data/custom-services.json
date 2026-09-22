@@ -69,6 +69,12 @@
           "title": "پرینت نتیجه نهایی",
           "price": 21000,
           "custom": true
+        },
+        {
+          "id": "srv-mucqik14lje1p",
+          "title": "هزینه پرینت اضافه (به ازای هر برگ)",
+          "price": 11000,
+          "custom": true
         }
       ],
       "custom": true
