@@ -7,7 +7,7 @@ export async function connectDB() {
     mongoose.set("strictQuery", false);
 
     const conn = await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 10000,
     });
 
     console.log(`🍃 اتصال به پایگاه‌داده MongoDB برقرار شد: ${conn.connection.host}/${conn.connection.name}`);

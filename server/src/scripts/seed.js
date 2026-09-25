@@ -29,7 +29,11 @@ function readJsonFile(filePath, defaultVal = []) {
 }
 
 export async function seedInitialData() {
-  await connectDB();
+  const conn = await connectDB();
+  if (!conn) {
+    console.error("❌ امکان اتصال به دیتابیس وجود ندارد. اسکریپت متوقف شد.");
+    process.exit(1);
+  }
   await ensureDefaultAdmin();
 
   const dataDir = path.resolve(__dirname, "../../../data");
