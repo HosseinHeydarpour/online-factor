@@ -93,11 +93,11 @@ function renderTopServices(services) {
     .map(
       (s, i) => `
     <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100">
-      <div class="flex items-center gap-3">
-        <span class="w-6 h-6 rounded-full bg-brand-100 text-brand-700 text-xs font-bold grid place-items-center">${faNum(i + 1)}</span>
-        <span class="text-sm font-bold truncate max-w-[200px]">${s.name}</span>
+      <div class="flex items-center gap-3 min-w-0 flex-1">
+        <span class="w-6 h-6 shrink-0 rounded-full bg-brand-100 text-brand-700 text-xs font-bold grid place-items-center">${faNum(i + 1)}</span>
+        <span class="text-sm font-bold truncate sm:whitespace-normal sm:overflow-visible" title="${s.name}">${s.name}</span>
       </div>
-      <div class="text-left">
+      <div class="text-left shrink-0 mr-3">
         <p class="text-xs font-extrabold text-brand-700">${faNum(s.revenue)} تومان</p>
         <p class="text-[10px] text-slate-400">${faNum(s.count)} فروش</p>
       </div>
