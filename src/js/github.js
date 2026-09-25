@@ -1,6 +1,7 @@
 import { store } from "./store.js";
 import { autoSaveInvoices, performLocalFolderBackup } from "./backup.js";
 import { startPushTask } from "./progress-indicator.js";
+import { uploadToBackend } from "./backendSync.js";
 
 const API = "https://api.github.com";
 
@@ -53,24 +54,31 @@ function ghToast(msg) {
   setTimeout(() => t.classList.add("hidden"), 3000);
 }
 
-/* ---------- push خودکار به ریپوی بک‌آپ ---------- */
+/* ---------- push خودکار به سرور بک‌اند MongoDB و ریپوی بک‌آپ ---------- */
 export function autoPushGitHub(title = "پشتیبان‌گیری خودکار") {
-  syncAllStorages({ title, showToast: false });
+  // ۱. آپلود مستقیم به سرور Express و پایگاه‌داده MongoDB
+  uploadToBackend(title).catch(() => {});
+  // ۲. ارسال به گیت‌هاب در صورت وجود تنظیمات
+  syncAllStorages({ title, showToast: false }).catch(() => {});
 }
 
-/* ---------- push خودکار به ریپوی پابلیک ---------- */
+/* ---------- push خودکار به سرور بک‌اند MongoDB و ریپوی پابلیک ---------- */
 export function autoPushPublicRepo(title = "همگام‌سازی عمومی") {
-  syncAllStorages({ title, showToast: false });
+  uploadToBackend(title).catch(() => {});
+  syncAllStorages({ title, showToast: false }).catch(() => {});
 }
 
-/* ---------- همگام‌سازی یکپارچه تمام حافظه‌ها (لوکال + گیت‌هاب خصوصی و عمومی) ---------- */
+/* ---------- همگام‌سازی یکپارچه تمام حافظه‌ها (سرور MongoDB + لوکال + گیت‌هاب) ---------- */
 let isSyncing = false;
 let syncDebounceTimer = null;
 
-export async function syncAllStorages({ title = "همگام‌سازی گیت‌هاب", showToast = false, _task = null } = {}) {
+export async function syncAllStorages({ title = "همگام‌سازی داده‌ها", showToast = false, _task = null } = {}) {
   try {
     autoSaveInvoices();
   } catch (_) {}
+
+  // ذخیره در سرور بک‌اند MongoDB
+  const backendPromise = uploadToBackend(title, { showIndicator: !_task });
 
   const backupCfg = getBackupRepoConfig();
   const pubCfg = getPublicRepoConfig();
@@ -79,10 +87,15 @@ export async function syncAllStorages({ title = "همگام‌سازی گیت‌
   const hasPublic = Boolean(pubCfg.owner && pubCfg.repo && pubCfg.token);
 
   if (!hasBackup && !hasPublic) {
-    if (showToast) {
-      ghToast("⚠️ اطلاعات اتصال به گیت‌هاب در تنظیمات وارد نشده است");
+    const backendRes = await backendPromise;
+    if (backendRes && backendRes.ok) {
+      if (showToast) ghToast("✅ اطلاعات با موفقیت در پایگاه‌داده MongoDB ذخیره شد 🍃");
+      return { ok: true, message: "ذخیره در سرور انجام شد" };
     }
-    return { ok: false, message: "تنظیمات گیت‌هاب یافت نشد" };
+    if (showToast) {
+      ghToast("💾 اطلاعات در حافظه محلی ذخیره شد.");
+    }
+    return { ok: true, message: "ذخیره لوکال انجام شد" };
   }
 
   const task = _task || startPushTask(title, "در حال بررسی اتصال به گیت‌هاب...");

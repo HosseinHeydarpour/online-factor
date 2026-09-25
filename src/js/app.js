@@ -19,6 +19,7 @@ import { initAnnouncements, renderAnnouncements } from "./announcements.js";
 import { enhanceAllSelects } from "./nice-select.js";
 import { compressImage } from "./image-utils.js";
 import { initDemoGuard } from "./demo.js";
+import { initBackendSync, downloadFromBackend } from "./backendSync.js";
 
 // ---- بررسی حالت دمو — باید اولین چیزی باشد که اجرا می‌شود ----
 {
@@ -974,6 +975,13 @@ if (APP_ROLE === "customer") {
 
   document.getElementById("today-date").textContent = todayFa();
   updateNavLogo(); // ✅ بارگذاری لوگو در نوبار هنگام شروع برنامه
+  initBackendSync(); // ✅ بررسی آنلاین بودن سرور Express و اتصال به دیتابیس MongoDB
+  downloadFromBackend() // ✅ همگام‌سازی آخرین فاکتورها، نرخ‌ها و محصولات از دیتابیس
+    .then((synced) => {
+      if (synced && typeof updateNavLogo === "function") updateNavLogo();
+    })
+    .catch(() => {});
+
   initAuth();
   initInvoiceEvents();
   initProductEvents();
