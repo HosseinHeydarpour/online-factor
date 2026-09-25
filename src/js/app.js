@@ -377,23 +377,43 @@ function toast(msg) {
   setTimeout(() => t.classList.add("hidden"), 2000);
 }
 
-// ---------- لوگوی نوبار ----------
+// ---------- بروزرسانی هدر و نام کسب‌وکار در نوبار ----------
+export function updateNavHeader() {
+  const shop = store.getShopInfo() || {};
+  const shopName = (shop.name || "").trim() || "کافی‌نت آنلاین";
+  const shopSlogan =
+    (shop.slogan || "").trim() || "سیستم صدور فاکتور و نرخ‌نامه خدمات";
 
-// ---------- لوگوی نوبار ----------
-function updateNavLogo() {
+  // ۱. بروزرسانی نام و شعار در هدر
+  const titleEl = document.getElementById("nav-shop-name");
+  if (titleEl) titleEl.textContent = shopName;
+
+  const sloganEl = document.getElementById("nav-shop-slogan");
+  if (sloganEl) sloganEl.textContent = shopSlogan;
+
+  // ۲. بروزرسانی لوگو / حرف اول نام
   const box = document.getElementById("nav-logo");
-  if (!box) return;
-  const shop = store.getShopInfo();
-  if (shop.logo) {
-    box.innerHTML = `<img src="${shop.logo}" class="w-full h-full object-contain" alt="لوگو" />`;
-    box.classList.remove("bg-brand-600", "text-white");
-    box.classList.add("bg-white", "dark:bg-slate-700", "p-1");
-  } else {
-    box.innerHTML = "ک";
-    box.classList.add("bg-brand-600", "text-white");
-    box.classList.remove("bg-white", "dark:bg-slate-700", "p-1");
+  if (box) {
+    if (shop.logo) {
+      box.innerHTML = `<img src="${shop.logo}" class="w-full h-full object-contain" alt="لوگو" />`;
+      box.classList.remove("bg-brand-600", "text-white");
+      box.classList.add("bg-white", "dark:bg-slate-700", "p-1");
+    } else {
+      const firstChar = shopName.charAt(0) || "ک";
+      box.textContent = firstChar;
+      box.classList.add("bg-brand-600", "text-white");
+      box.classList.remove("bg-white", "dark:bg-slate-700", "p-1");
+    }
   }
+
+  // ۳. بروزرسانی عنوان تب مرورگر
+  document.title = `${shopName} | فاکتورساز`;
 }
+
+// جهت سازگاری با سایر بخش‌ها
+export const updateNavLogo = updateNavHeader;
+window.updateNavLogo = updateNavHeader;
+window.updateNavHeader = updateNavHeader;
 
 // ---------- حساب‌های بانکی (چند کارتی) ----------
 let bankAccounts = [];
@@ -931,7 +951,12 @@ function getAppRole() {
 }
 
 // مقداردهی اولیه و همگام‌سازی دیتابیس بومی IndexedDB و بهینه‌سازی خودکار عکس‌ها
-store.initStorage().catch((e) => console.warn("[App] خطا در initStorage:", e));
+store
+  .initStorage()
+  .then(() => {
+    if (typeof updateNavHeader === "function") updateNavHeader();
+  })
+  .catch((e) => console.warn("[App] خطا در initStorage:", e));
 
 const APP_ROLE = getAppRole();
 
