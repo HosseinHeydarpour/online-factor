@@ -18,6 +18,17 @@ import { autoPushPublicRepo } from "./github.js";
 import { initAnnouncements, renderAnnouncements } from "./announcements.js";
 import { enhanceAllSelects } from "./nice-select.js";
 import { compressImage } from "./image-utils.js";
+import { initDemoGuard } from "./demo.js";
+
+// ---- بررسی حالت دمو — باید اولین چیزی باشد که اجرا می‌شود ----
+{
+  const _demoResult = await initDemoGuard();
+  if (_demoResult === "expired") {
+    // اپ متوقف می‌شود — UI توسط overlay انقضا قفل شده
+    throw new Error("DEMO_EXPIRED");
+  }
+}
+
 
 // لیست رسمی بانک‌های کشور جهت دراپ‌داون کارت‌های بانکی
 export const IRANIAN_BANKS = [

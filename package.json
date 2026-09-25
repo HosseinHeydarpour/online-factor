@@ -9,7 +9,10 @@
     "build:css": "tailwindcss -i ./src/css/input.css -o ./assets/css/tailwind.css --minify",
     "setup:vendor": "node ./scripts/copy-vendor.cjs",
     "test": "node ./scripts/verify-assets.cjs",
-    "build": "npm run setup:vendor && npm run build:css && node ./scripts/verify-assets.cjs"
+    "build": "npm run setup:vendor && npm run build:css && node ./scripts/verify-assets.cjs",
+    "build:demo": "node ./scripts/build-demo.cjs",
+    "build:full": "npm run build && npm run build:demo",
+    "token": "node ./scripts/get-demo-token.cjs"
   },
   "dependencies": {
     "chart.js": "^4.4.1",

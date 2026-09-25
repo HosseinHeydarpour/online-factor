@@ -714,7 +714,15 @@ export const store = {
 
   // ---------- ریست کامل ----------
   resetAll() {
+    // پاک کردن localStorage
     Object.values(KEYS).forEach((k) => localStorage.removeItem(k));
+    // پاک کردن sessionStorage
+    try { sessionStorage.clear(); } catch {}
+    // پاک کردن IndexedDB — هر دو دیتابیس داده‌ای
+    try { indexedDB.deleteDatabase(IDB_NAME); } catch {}
+    try { indexedDB.deleteDatabase("cafe-fs-access"); } catch {}
+    // پاک کردن حافظه رم
+    Object.keys(memoryStore).forEach((k) => delete memoryStore[k]);
   },
 
   // ---------- گزارش‌گیری ----------

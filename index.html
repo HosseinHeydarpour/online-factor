@@ -540,6 +540,49 @@
   <body
     class="bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-screen"
   >
+    <!-- ===================== نوار دمو — در حالت عادی hidden است ===================== -->
+    <div
+      id="demo-banner"
+      style="display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 1000000; background: linear-gradient(90deg, #f59e0b, #d97706); color: #0f172a; font-size: 13px; font-weight: 800; padding: 9px 16px; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); direction: rtl; text-align: center; border-bottom: 2px solid #b45309;"
+    >
+      <span style="font-size: 16px;">⏳</span>
+      <span>نسخه آزمایشی سامانه —</span>
+      <span style="background: rgba(255, 255, 255, 0.45); border-radius: 9999px; padding: 2px 12px; font-weight: 900; color: #0f172a; border: 1px solid rgba(0,0,0,0.1); font-family: monospace, sans-serif;">
+        <span id="demo-countdown">۲ روز</span> باقی‌مانده
+      </span>
+      <span class="hidden sm:inline">— برای فعال‌سازی نسخه دائمی با پشتیبانی تماس بگیرید</span>
+    </div>
+
+    <!-- ===================== صفحه انقضا دمو — در حالت عادی hidden است ===================== -->
+    <div
+      id="demo-expired-overlay"
+      style="display: none; position: fixed; inset: 0; z-index: 2000000; background: #020617; align-items: center; justify-content: center; text-align: center; padding: 24px; direction: rtl; user-select: none;"
+    >
+      <div class="max-w-sm mx-auto">
+        <div class="text-7xl mb-6 demo-bounce">⏳</div>
+        <h1 class="text-white text-2xl font-black mb-3">دوره آزمایشی پایان یافت</h1>
+        <p class="text-slate-400 text-sm mb-8 leading-relaxed">
+          مدت نسخه دمو به اتمام رسیده<br />
+          و اطلاعات به صورت خودکار پاک شد.<br /><br />
+          برای دریافت نسخه کامل با ما تماس بگیرید.
+        </p>
+        <a
+          href="tel:09xxxxxxxxx"
+          class="block bg-sky-600 hover:bg-sky-500 text-white rounded-2xl px-6 py-4 font-bold text-base transition-colors mb-3"
+          style="pointer-events: all;"
+        >
+          📞 تماس برای خرید نسخه کامل
+        </a>
+        <p class="text-slate-700 text-xs mt-6 font-mono">DEMO · EXPIRED</p>
+      </div>
+      <style>
+        @keyframes demo-bounce-anim {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-12px); }
+        }
+        .demo-bounce { animation: demo-bounce-anim 1.2s ease-in-out infinite; }
+      </style>
+    </div>
     <!-- ===================== هشدار باز کردن از طریق پروتکل فایل ===================== -->
     <aside
       id="file-protocol-warning"
