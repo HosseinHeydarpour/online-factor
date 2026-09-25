@@ -1,31 +1,197 @@
 {
   "newCategories": [
     {
-      "id": "cat-mu9eit4g891y5",
+      "id": "cat-mucqghtc7dpw3",
+      "title": "خدمات دارایی",
+      "items": [
+        {
+          "id": "srv-mucqghtcipaba",
+          "title": "ثبت نام کد اقتصادی مرحله اول",
+          "price": 288000,
+          "custom": true
+        },
+        {
+          "id": "srv-mucqghtcpr8sz",
+          "title": "ثبت نام تکمیلی کد اقتصادی",
+          "price": 214001,
+          "custom": true
+        },
+        {
+          "id": "srv-mucqghtc1wwzx",
+          "title": "اصالح کد اقتصادی",
+          "price": 188000,
+          "custom": true
+        },
+        {
+          "id": "srv-mucqghtcaicad",
+          "title": "ثبت ارزش افزوده",
+          "price": 188000,
+          "custom": true
+        },
+        {
+          "id": "srv-mucqghtcxo6it",
+          "title": "به ازای هر صفحه اضافه (ارزش افزوده)",
+          "price": 35200,
+          "custom": true
+        },
+        {
+          "id": "srv-mucqghtcztgei",
+          "title": "اظهارنامه فصلی تخصصی",
+          "price": 141600,
+          "custom": true
+        },
+        {
+          "id": "srv-mucqghtcb1h03",
+          "title": "ثبت اعتراض ( برگ تشخیص )",
+          "price": 184000,
+          "custom": true
+        },
+        {
+          "id": "srv-mucqghtcvosdw",
+          "title": "ثبت شکایت (251)",
+          "price": 560000,
+          "custom": true
+        },
+        {
+          "id": "srv-mucqghtca5665",
+          "title": "دریافت ابلاغیه",
+          "price": 91998,
+          "custom": true
+        },
+        {
+          "id": "srv-mucqghtchthti",
+          "title": "بازیابی کد رهگیری ، نام کاربری و کلمه عبور هر کدام",
+          "price": 92000,
+          "custom": true
+        },
+        {
+          "id": "srv-mucqh9zek6add",
+          "title": "پرینت نتیجه نهایی",
+          "price": 21000,
+          "custom": true
+        },
+        {
+          "id": "srv-mucqik14lje1p",
+          "title": "هزینه پرینت اضافه (به ازای هر برگ)",
+          "price": 11000,
+          "custom": true
+        },
+        {
+          "id": "srv-mucx5kpf7ra6p",
+          "title": "اضافه بها بابت ارائه خدمات غیر حضوری",
+          "price": 65000,
+          "custom": true
+        },
+        {
+          "id": "srv-muf1u2kyk7kdu",
+          "title": "ورود به سامانه و استعلام پرونده مالیاتی",
+          "price": 71000,
+          "custom": true
+        }
+      ],
+      "custom": true
+    },
+    {
+      "id": "cat-mucq2yl47barb",
+      "title": "کار در مجموعه آفیس",
+      "items": [
+        {
+          "id": "srv-mucq2yl4542dw",
+          "title": "کار در مجموعه OFFICE به ازاء هر صفحه",
+          "price": 61000,
+          "custom": true
+        },
+        {
+          "id": "srv-mucq2yl48m6p8",
+          "title": "ایجادهر اسلاید در پاورپوینت",
+          "price": 30400,
+          "custom": true
+        }
+      ],
+      "custom": true
+    },
+    {
+      "id": "cat-mucgxgl73ocxu",
+      "title": "پرداخت قبض (آب-برق-گاز-تلفن)",
+      "items": [
+        {
+          "id": "srv-mucgxgl7t7ogc",
+          "title": "پرداخت قبض آب",
+          "price": 35000,
+          "custom": true
+        },
+        {
+          "id": "srv-mucgxgl7tkm8c",
+          "title": "پرداخت قبض برق",
+          "price": 35000,
+          "custom": true
+        },
+        {
+          "id": "srv-mucgxgl7lxws7",
+          "title": "پرداخت قبض تلفن",
+          "price": 35000,
+          "custom": true
+        },
+        {
+          "id": "srv-mucgxgl7n14oj",
+          "title": "پرداخت قبض گاز",
+          "price": 35000,
+          "custom": true
+        }
+      ],
+      "custom": true
+    },
+    {
+      "id": "cat-mub9ur3hi4i94",
       "title": "وام فرزند آوری",
       "items": [
         {
-          "id": "srv-mu9eit4g38lle",
+          "id": "srv-mub9ur3h3zbu5",
           "title": "ثبت برای هر فرزند (ثبت نام + ۶ صفحه اضافه)",
           "price": 395200,
           "custom": true
         },
         {
-          "id": "srv-mu9eit4gg5g36",
+          "id": "srv-mub9ur3hg1a33",
           "title": "پیگیری ثبت نام همراه با پرینت",
           "price": 71000,
           "custom": true
         },
         {
-          "id": "srv-mu9eit4gh3e0d",
+          "id": "srv-mub9ur3hxqwtn",
           "title": "ویرایش شعبه (نصف ثبت نام + ۲ صفحه اضافه)",
           "price": 162400,
           "custom": true
         },
         {
-          "id": "srv-mu9eit4gkbv3p",
+          "id": "srv-mub9ur3hvues3",
           "title": "پرینت نتیجه نهایی",
           "price": 21000,
+          "custom": true
+        },
+        {
+          "id": "srv-mucx62gd6z1t6",
+          "title": "اضافه بها بابت ارائه خدمات غیر حضوری",
+          "price": 65000,
+          "custom": true
+        }
+      ],
+      "custom": true
+    },
+    {
+      "id": "cat-mub9ciahcdn9x",
+      "title": "آزمون کانون وکلا و دادگستزی",
+      "items": [
+        {
+          "id": "srv-mub9ciahkz6xs",
+          "title": "خرید کارت",
+          "price": 85000,
+          "custom": true
+        },
+        {
+          "id": "srv-mub9ciaho3oyu",
+          "title": "ثبت نام آزمون",
+          "price": 365000,
           "custom": true
         }
       ],
@@ -38,13 +204,13 @@
         {
           "id": "srv-mub41wuzr964p",
           "title": "سریال",
-          "price": 7000,
+          "price": 5000,
           "custom": true
         },
         {
           "id": "srv-mub41wuzhfd2g",
           "title": "فیلم",
-          "price": 10000,
+          "price": 7000,
           "custom": true
         }
       ],
@@ -220,6 +386,12 @@
           "title": "ثبت نام کتاب درسی",
           "price": 120000,
           "custom": true
+        },
+        {
+          "id": "srv-mucx72xyp8023",
+          "title": "اضافه بها بابت ارائه خدمات غیر حضوری",
+          "price": 65000,
+          "custom": true
         }
       ],
       "custom": true
@@ -263,6 +435,12 @@
           "id": "srv-mu9p4kpor493q",
           "title": "فنر 20",
           "price": 95000,
+          "custom": true
+        },
+        {
+          "id": "srv-mufsfgxu0u0z1",
+          "title": "برگ اضافه",
+          "price": 500,
           "custom": true
         }
       ],
@@ -380,6 +558,11 @@
           "id": "srv-mu9k8bl7kig1h",
           "title": "پرینت لیزری سیاه و سفید A5 – متن دورو",
           "price": 10000
+        },
+        {
+          "id": "srv-mucd78zk2c3gm",
+          "title": "پرینت لیزری سیاه و سفید A5 – عکس دورو",
+          "price": 140000
         }
       ]
     },
@@ -405,6 +588,131 @@
           "id": "sam-04",
           "title": "پرینت نتیجه نهایی",
           "price": 21000
+        }
+      ]
+    },
+    "taviz-pelak": {
+      "title": "🔄 نوبت‌گیری تعویض پلاک",
+      "items": [
+        {
+          "id": "tvz-01",
+          "title": "ثبت نام سخا (ثبت نام + ۴ تیبل + ورود)",
+          "price": 374800
+        },
+        {
+          "id": "tvz-02",
+          "title": "احراز محل سکونت خریدار از سامانه پست (GNAF)",
+          "price": 304400
+        },
+        {
+          "id": "tvz-03",
+          "title": "استعلام مالیات بر نقل و انتقال (در صورت ثبت نام)",
+          "price": 385600
+        },
+        {
+          "id": "tvz-04",
+          "title": "استعلام و پرداخت خلافی از سامانه سخا",
+          "price": 30400
+        },
+        {
+          "id": "tvz-05",
+          "title": "استعلام و پرداخت عوارض آزادراه",
+          "price": 80400
+        },
+        {
+          "id": "tvz-06",
+          "title": "اخذ نوبت و پرداخت هزینه سامانه نوبت‌گیری (۹ تیبل اضافه)",
+          "price": 531200
+        },
+        {
+          "id": "tvz-07",
+          "title": "عوارض شهرداری سامانه سمیع (ثبت نام + ۱ تیبل + خرید اینترنتی)",
+          "price": 224400
+        },
+        {
+          "id": "tvz-08",
+          "title": "پرینت نتیجه نهایی",
+          "price": 21000
+        },
+        {
+          "id": "srv-mube2jxxy216g",
+          "title": "استعلام و پرینت وضعیت محل سکونت(سخا)",
+          "price": 71000
+        },
+        {
+          "id": "srv-mubegkxqhnczf",
+          "title": "بازیابی رمز سخا",
+          "price": 61000
+        }
+      ]
+    },
+    "amlak-maskan": {
+      "title": "🏠 سامانه املاک و اسکان",
+      "items": [
+        {
+          "id": "aml-01",
+          "title": "ثبت محل سکونت – به ازای هر ملک (ورود + ثبت نام + ۶ تیبل اضافه)",
+          "price": 445200
+        },
+        {
+          "id": "aml-02",
+          "title": "ثبت ملک تحت مالکیت – به ازای هر ملک (ورود + ثبت نام + ۷ تیبل اضافه)",
+          "price": 480400
+        },
+        {
+          "id": "aml-03",
+          "title": "استعلام و پرینت وضعیت محل سکونت یا مالکیت",
+          "price": 71000
+        },
+        {
+          "id": "aml-04",
+          "title": "پرینت نهایی",
+          "price": 21000
+        },
+        {
+          "id": "aml-05",
+          "title": "هزینه پرینت اضافه (به ازای هر برگ)",
+          "price": 11000
+        },
+        {
+          "id": "srv-mucx7hdhnj3hz",
+          "title": "اضافه بها بابت ارائه خدمات غیر حضوری",
+          "price": 65000
+        }
+      ]
+    },
+    "iran-khodro": {
+      "title": "🚗 ثبت نام ایران خودرو",
+      "items": [
+        {
+          "id": "ikco-01",
+          "title": "ثبت نام اولیه (ثبت نام + ۳ تیبل)",
+          "price": 289600
+        },
+        {
+          "id": "ikco-02",
+          "title": "ورود به سامانه جهت انتخاب خودرو",
+          "price": 50000
+        },
+        {
+          "id": "ikco-03",
+          "title": "هر انتخاب",
+          "price": 70400
+        },
+        {
+          "id": "ikco-04",
+          "title": "پرینت نتیجه نهایی",
+          "price": 21000
+        },
+        {
+          "id": "ikco-05",
+          "title": "بازیابی رمز عبور",
+          "price": 61000
+        },
+        {
+          "id": "srv-mucx8batfgvx1",
+          "title": "اضافه بها بابت ارائه خدمات غیر حضوری",
+          "price": 65000
         }
       ]
     }
