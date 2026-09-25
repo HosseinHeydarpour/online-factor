@@ -6,6 +6,9 @@
   "scripts": {
     "start": "serve . -l 3000",
     "dev": "serve . -l 3000",
+    "server": "npm --prefix server start",
+    "server:dev": "npm --prefix server run dev",
+    "server:seed": "npm --prefix server run seed",
     "build:css": "tailwindcss -i ./src/css/input.css -o ./assets/css/tailwind.css --minify",
     "setup:vendor": "node ./scripts/copy-vendor.cjs",
     "test": "node ./scripts/verify-assets.cjs",
