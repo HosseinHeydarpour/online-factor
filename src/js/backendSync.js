@@ -41,7 +41,7 @@ export function updateServerStatusUI(online) {
     el.innerHTML = `
       <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span>دیتابیس ابری (MongoDB)</span>
+        <span>دیتابیس لوکال (MongoDB)</span>
       </span>
     `;
     el.title = `متصل به سرور بک‌اند: ${getApiBaseUrl()}`;
