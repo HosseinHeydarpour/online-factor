@@ -4,10 +4,12 @@
   "description": "سیستم صدور فاکتور کافی‌نت",
   "type": "module",
   "scripts": {
-    "dev": "npx serve .",
+    "start": "serve . -l 3000",
+    "dev": "serve . -l 3000",
     "build:css": "tailwindcss -i ./src/css/input.css -o ./assets/css/tailwind.css --minify",
     "setup:vendor": "node ./scripts/copy-vendor.cjs",
-    "build": "npm run setup:vendor && npm run build:css"
+    "test": "node ./scripts/verify-assets.cjs",
+    "build": "npm run setup:vendor && npm run build:css && node ./scripts/verify-assets.cjs"
   },
   "dependencies": {
     "chart.js": "^4.4.1",

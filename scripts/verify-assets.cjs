@@ -1,3 +1,4 @@
+
 const fs = require('fs');
 const path = require('path');
 
@@ -29,6 +30,32 @@ if (!allFound) {
   console.log('\n🌟 All local asset paths in index.html verified successfully!');
 }
 
+console.log('\n--- Checking Manifest Files & Icons ---');
+const manifests = ['manifest.json', 'manifest-customer.json'];
+manifests.forEach((mFile) => {
+  const mPath = path.join(rootDir, mFile);
+  if (!fs.existsSync(mPath)) {
+    console.error(`❌ Manifest missing: ${mFile}`);
+    allFound = false;
+    return;
+  }
+  try {
+    const data = JSON.parse(fs.readFileSync(mPath, 'utf8'));
+    console.log(`✅ MANIFEST VALID: ${mFile} (Name: ${data.name})`);
+    if (Array.isArray(data.icons)) {
+      data.icons.forEach((icon) => {
+        const iconClean = icon.src.replace(/^\.\//, '');
+        const iconExists = fs.existsSync(path.join(rootDir, iconClean));
+        console.log(iconExists ? '  ✅ ICON FOUND:' : '  ❌ ICON MISSING:', icon.src);
+        if (!iconExists) allFound = false;
+      });
+    }
+  } catch (err) {
+    console.error(`❌ Error parsing ${mFile}:`, err.message);
+    allFound = false;
+  }
+});
+
 console.log('\n--- Checking Service Worker STATIC_ASSETS ---');
 const swContent = fs.readFileSync(path.join(rootDir, 'sw.js'), 'utf8');
 const swMatch = swContent.match(/STATIC_ASSETS\s*=\s*\[([\s\S]*?)\];/);
@@ -41,13 +68,37 @@ if (swMatch) {
     const clean = rel.replace(/^\.\//, '');
     const exists = fs.existsSync(path.join(rootDir, clean));
     console.log(exists ? '✅ SW FOUND:' : '❌ SW MISSING:', rel);
-    if (!exists) swOk = false;
+    if (!exists) {
+      swOk = false;
+      allFound = false;
+    }
   });
   if (!swOk) {
     console.error('❌ Some SW assets missing!');
-    process.exit(1);
   } else {
     console.log('🌟 All Service Worker assets exist on disk!');
   }
+}
+
+console.log('\n--- Checking Data JSON Files ---');
+const dataDir = path.join(rootDir, 'data');
+if (fs.existsSync(dataDir)) {
+  const jsonFiles = fs.readdirSync(dataDir).filter(f => f.endsWith('.json'));
+  jsonFiles.forEach(jf => {
+    try {
+      JSON.parse(fs.readFileSync(path.join(dataDir, jf), 'utf8'));
+      console.log(`✅ DATA JSON VALID: data/${jf}`);
+    } catch (e) {
+      console.error(`❌ DATA JSON INVALID: data/${jf} - ${e.message}`);
+      allFound = false;
+    }
+  });
+}
+
+if (!allFound) {
+  console.error('\n❌ Build verification failed! Please fix missing assets.');
+  process.exit(1);
+} else {
+  console.log('\n🚀 ALL ASSETS AND CHECKS PASSED FOR PRODUCTION & INSTALLATION!');
 }
 

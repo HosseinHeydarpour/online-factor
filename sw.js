@@ -1,11 +1,14 @@
 // sw.js - Service Worker برای کارکرد ۱۰۰٪ آفلاین و قابلیت نصب PWA با سرعت حداکثری
-const CACHE_NAME = "cafe-pwa-v12";
+const CACHE_NAME = "cafe-pwa-v13";
 
 const STATIC_ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
   "./manifest-customer.json",
+  "./icon-192.png",
+  "./icon-512.png",
+  "./assets/logo.png",
   "./assets/css/tailwind.css",
   "./assets/vendor/vazirmatn/Vazirmatn-font-face.css",
   "./assets/vendor/vazirmatn/fonts/webfonts/Vazirmatn-Regular.woff2",
@@ -39,6 +42,13 @@ const STATIC_ASSETS = [
   "./src/js/announcements.js",
   "./src/js/price-helper.js",
   "./src/data/rates.js",
+  "./data/services.json",
+  "./data/products.json",
+  "./data/product-categories.json",
+  "./data/announcements.json",
+  "./data/shop-info.json",
+  "./data/custom-services.json",
+  "./data/meta.json",
 ];
 
 // دریافت پیام از کلاینت جهت فعال‌سازی آنی نسخه جدید بدون معطلی

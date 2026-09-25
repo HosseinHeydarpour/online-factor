@@ -11,11 +11,23 @@
     <link id="manifest-link" rel="manifest" href="./manifest.json" />
     <script>
       (function () {
+        var roleParam = new URLSearchParams(window.location.search)
+          .get("role")
+          ?.toLowerCase();
+        var isStandalone =
+          window.matchMedia &&
+          window.matchMedia("(display-mode: standalone)").matches;
+        var savedRole = "";
+        try {
+          savedRole = localStorage.getItem("cafe_app_role") || "";
+        } catch (e) {}
         var isCustomer =
-          new URLSearchParams(window.location.search)
-            .get("role")
-            ?.toLowerCase() === "customer" ||
-          window.location.hash === "#customer";
+          roleParam === "customer" ||
+          window.location.hash === "#customer" ||
+          (!roleParam &&
+            !window.location.hash &&
+            (isStandalone || savedRole === "customer") &&
+            savedRole === "customer");
         if (isCustomer) {
           document.documentElement.classList.add("role-customer");
           var m = document.getElementById("manifest-link");
@@ -528,6 +540,15 @@
   <body
     class="bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-screen"
   >
+    <!-- ===================== هشدار باز کردن از طریق پروتکل فایل ===================== -->
+    <aside
+      id="file-protocol-warning"
+      class="hidden sticky top-0 left-0 right-0 z-[100001] bg-amber-500 text-slate-950 font-bold px-4 py-2.5 text-center text-xs sm:text-sm shadow-md flex items-center justify-center gap-2"
+    >
+      <span>⚠️</span>
+      <span>شما برنامه را مستقیماً از روی فایل (file://) باز کرده‌اید. جهت فعال‌سازی قابلیت نصب اپلیکیشن (PWA) و کارکرد کامل آفلاین، لطفاً برنامه را با فایل <code>start.bat</code> یا دستور <code>npm start</code> اجرا کرده و از آدرس <code>http://localhost:3000</code> استفاده کنید.</span>
+    </aside>
+
     <!-- ===================== نوار سراسری اعلان نسخه جدید (مشترک ادمین و مشتری) ===================== -->
     <aside
       id="app-update-bar"
@@ -4084,7 +4105,7 @@
       // ============================================================
       // نسخه اپلیکیشن و سیستم هوشمند اعلان نسخه جدید (سرویس ورکر)
       // ============================================================
-      const CURRENT_APP_VERSION = "cafe-pwa-v12";
+      const CURRENT_APP_VERSION = "cafe-pwa-v13";
       window.APP_VERSION = CURRENT_APP_VERSION;
 
       let waitingWorker = null;
@@ -4236,8 +4257,14 @@
 
       let deferredPrompt = null;
 
+      // بررسی حالت اپلیکیشن نصب‌شده
+      const isAppStandalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        navigator.standalone === true;
+
       // نمایش دکمه نصب (هم در پنل ادمین و هم در پنل مشتری)
       function showInstallButtons() {
+        if (isAppStandalone) return;
         const adminBtn = document.getElementById("btn-install-app");
         const customerBtn = document.getElementById("cp-btn-install");
         if (adminBtn) adminBtn.classList.remove("hidden");
@@ -4249,6 +4276,17 @@
         const customerBtn = document.getElementById("cp-btn-install");
         if (adminBtn) adminBtn.classList.add("hidden");
         if (customerBtn) customerBtn.classList.add("hidden");
+      }
+
+      // در صورتی که برنامه هنوز نصب نشده است، دکمه‌ها در دسترس قرار گیرند
+      if (!isAppStandalone) {
+        showInstallButtons();
+      }
+
+      // بررسی پروتکل فایل محلی جهت اطلاع‌رسانی
+      if (window.location.protocol === "file:") {
+        const warn = document.getElementById("file-protocol-warning");
+        if (warn) warn.classList.remove("hidden");
       }
 
       // به محض اینکه مرورگر تشخیص دهد سایت شرایط نصب PWA را دارد:
@@ -4265,13 +4303,26 @@
           e.target?.closest("#btn-install-app") ||
           e.target?.closest("#cp-btn-install");
 
-        if (installBtn && deferredPrompt) {
-          deferredPrompt.prompt();
-          const { outcome } = await deferredPrompt.userChoice;
-          if (outcome === "accepted") {
-            hideInstallButtons();
+        if (installBtn) {
+          if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === "accepted") {
+              hideInstallButtons();
+            }
+            deferredPrompt = null;
+          } else {
+            // راهنمای کامل نصب در صورت عدم پشتیبانی یا در دسترس نبودن رویداد خودکار
+            alert(
+              "📲 راهنمای نصب اپلیکیشن کافی‌نت آنلاین:\n\n" +
+              "• در کامپیوتر (Chrome / Edge):\n" +
+              "روی آیکون نصب در سمت راست نوار آدرس (کنار ستاره بوک‌مارک) کلیک کرده و Install را بزنید.\n\n" +
+              "• در گوشی اندروید:\n" +
+              "منوی سه‌نقطه بالای مرورگر کروم را لمس کرده و گزینه «نصب برنامه» یا «Add to Home screen» را انتخاب کنید.\n\n" +
+              "• در آیفون (Safari):\n" +
+              "دکمه Share در پایین مرورگر را زده و سپس «Add to Home Screen» را لمس کنید."
+            );
           }
-          deferredPrompt = null;
         }
       });
 

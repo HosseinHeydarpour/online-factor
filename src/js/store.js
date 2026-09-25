@@ -642,10 +642,6 @@ export const store = {
     write(KEYS.INVOICES, list);
     return list;
   },
-  setProformas(list) {
-    write(KEYS.PROFORMAS, list);
-    return list;
-  },
   setProducts(list) {
     write(KEYS.PRODUCTS, list);
     return list;

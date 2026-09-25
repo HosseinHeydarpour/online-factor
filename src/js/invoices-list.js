@@ -74,8 +74,8 @@ function getDateRangeForPeriod(period) {
 
   if (period === "custom") {
     return {
-      start: invoiceFilter.startDate || "",
-      end: invoiceFilter.endDate || "",
+      start: toEnDigits(invoiceFilter.startDate || "").replace(/[-._]/g, "/").trim(),
+      end: toEnDigits(invoiceFilter.endDate || "").replace(/[-._]/g, "/").trim(),
     };
   }
 
